@@ -37,7 +37,7 @@ jobs:
           ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           ALPACA_PAPER: "true"
-          TOTAL_BUDGET: "1000"
+          TOTAL_BUDGET: "959.68"
           STAKES: "QQQ:317.29,AAPL:199.08,NVDA:214.8,GOOGL:196.82"
           STRATEGY: "ict"
           MAX_TRADES_PER_DAY: "21"
