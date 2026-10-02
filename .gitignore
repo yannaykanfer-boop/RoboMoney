@@ -1,0 +1,8 @@
+# Secrets — never uploaded.
+.env
+
+# Local runtime data — not needed in the cloud deploy, regenerated fresh there.
+state.json
+trading_bot.log
+__pycache__/
+*.pyc

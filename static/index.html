@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trading Bot Dashboard</title>
+<style>
+  :root{
+    --bg:#EFEFF4;
+    --surface:#FFFFFF;
+    --border:#E4E4E9;
+    --ink:#1C1C1E;
+    --muted:#8A8A8E;
+    --brand:#007AFF;
+    --up:#34C759;
+    --down:#FF3B30;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+  }
+  .wrap{ max-width:920px; margin:0 auto; padding:0 24px 96px; }
+
+  header{
+    display:flex;
+    gap:20px;
+    align-items:center;
+    padding:40px 0 30px;
+  }
+  .hero-text .eyebrow{
+    display:flex; align-items:center; gap:8px;
+    font-size:12px; font-weight:700; color:var(--brand);
+    margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;
+  }
+  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--up); }
+  .live-dot.off{ background:var(--muted); }
+  .hero-text h1{
+    font-weight:800; font-size:clamp(28px, 5vw, 40px);
+    letter-spacing:-0.01em; margin:0 0 10px; line-height:1.05;
+  }
+  .hero-text p{ color:var(--muted); margin:0; font-size:14px; }
+
+  .strip{
+    border:1px solid var(--border);
+    background:var(--surface);
+    border-radius:10px;
+    padding:14px 18px;
+    margin-bottom:24px;
+    font-size:12.5px;
+    color:var(--muted);
+  }
+  .strip.closed{ background:#FFF7E6; border-color:#F5DFA0; color:#8a6a1f; }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:20px;
+    margin-bottom:24px;
+  }
+  .panel-head{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:22px;
+  }
+  .panel-head h2{ font-weight:700; font-size:19px; margin:0; }
+  .panel-head span{ font-size:12px; color:var(--muted); font-weight:600; }
+
+  .stat-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+  .stat{
+    flex:1; min-width:150px; padding:18px 20px;
+    background:var(--bg); border:1px solid var(--border); border-radius:10px;
+  }
+  .stat .label{ font-size:11px; font-weight:700; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em; }
+  .stat .value{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-variant-numeric:tabular-nums; font-weight:700; font-size:26px;
+  }
+  .up{ color:var(--up) !important; }
+  .down{ color:var(--down) !important; }
+
+  #chart{ width:100%; height:170px; display:block; }
+
+  .holdings{
+    margin-top:24px; display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;
+  }
+  .hold-card{
+    border:1px solid var(--border); background:var(--bg);
+    border-radius:8px; padding:12px 14px;
+  }
+  .hold-card .tk{ font-size:13.5px; font-weight:800; }
+  .hold-card .qty{
+    font-size:11px; color:var(--muted); margin-top:4px;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .hold-card .val{
+    font-size:13px; font-weight:700; margin-top:8px;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .hold-card .signal{
+    font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5;
+  }
+
+  .ticker{
+    font-size:12px; background:var(--bg); border:1px solid var(--border);
+    border-radius:10px; padding:14px 16px; height:180px; overflow-y:auto;
+    margin-top:24px;
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .ticker .line{ margin-bottom:7px; color:var(--muted); }
+  .ticker .line.buy{ color:var(--up); font-weight:700; }
+  .ticker .line.sell{ color:var(--down); font-weight:700; }
+  .ticker .empty{ color:var(--muted); }
+
+  footer{
+    margin-top:40px; font-size:11.5px; color:var(--muted);
+    border-top:1px solid var(--border); padding-top:20px; line-height:1.8;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="hero-text">
+      <div class="eyebrow"><span class="live-dot off" id="live-dot"></span><span id="mode-label">PAPER ACCOUNT</span> · <span id="last-updated">connecting…</span></div>
+      <h1>Trading bot dashboard</h1>
+      <p>Live status of your bot, running separately. This page only displays — it never places trades itself.</p>
+    </div>
+  </header>
+
+  <div class="strip" id="market-strip">Checking market status…</div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Account</h2><span id="strategy-label">—</span></div>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="label">Equity</div>
+        <div class="value" id="stat-equity">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Cash</div>
+        <div class="value" id="stat-cash">—</div>
+      </div>
+      <div class="stat">
+        <div class="label">Since start</div>
+        <div class="value" id="stat-change">—</div>
+      </div>
+    </div>
+
+    <div class="strip" id="budget-strip" style="margin-bottom:0;">—</div>
+
+    <svg id="chart" viewBox="0 0 640 180" preserveAspectRatio="none" style="margin-top:24px;"></svg>
+
+    <div class="holdings" id="holdings"></div>
+
+    <div class="ticker" id="ticker"><div class="empty">No trades yet.</div></div>
+  </div>
+
+  <footer>
+    Not financial advice. This reflects your real Alpaca account (paper or live, shown above) and the bot's actual rule-based decisions — nothing here is simulated once "LIVE" mode is on.
+  </footer>
+</div>
+
+<script>
+  const chart = document.getElementById('chart');
+  const liveDot = document.getElementById('live-dot');
+  const modeLabel = document.getElementById('mode-label');
+  const lastUpdated = document.getElementById('last-updated');
+  const marketStrip = document.getElementById('market-strip');
+  const strategyLabel = document.getElementById('strategy-label');
+  const statEquity = document.getElementById('stat-equity');
+  const statCash = document.getElementById('stat-cash');
+  const statChange = document.getElementById('stat-change');
+  const budgetStrip = document.getElementById('budget-strip');
+  const holdingsEl = document.getElementById('holdings');
+  const tickerEl = document.getElementById('ticker');
+
+  function fmt(n){
+    return Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function timeAgo(tsSeconds){
+    const secs = Math.floor(Date.now()/1000 - tsSeconds);
+    if(secs < 5) return 'just now';
+    if(secs < 60) return secs + 's ago';
+    const mins = Math.floor(secs/60);
+    if(mins < 60) return mins + 'm ago';
+    return Math.floor(mins/60) + 'h ago';
+  }
+
+  function drawChart(history){
+    const w = 640, h = 180, pad = 6;
+    const vals = history.map(p => p.equity).slice(-100);
+    if(vals.length < 2){ chart.innerHTML = ''; return; }
+    const min = Math.min(...vals) * 0.999;
+    const max = Math.max(...vals) * 1.001;
+    const range = (max - min) || 1;
+    const stepX = (w - pad*2) / (vals.length - 1);
+    let d = '';
+    vals.forEach((v, i) => {
+      const x = pad + i * stepX;
+      const y = h - pad - ((v - min) / range) * (h - pad*2);
+      d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
+    });
+    const up = vals[vals.length-1] >= vals[0];
+    const color = up ? 'var(--up)' : 'var(--down)';
+    const areaD = d + `L ${(pad + (vals.length-1)*stepX).toFixed(1)} ${h} L ${pad} ${h} Z`;
+    chart.innerHTML = `
+      <path d="${areaD}" fill="${color}" opacity="0.10"/>
+      <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"/>
+    `;
+  }
+
+  function render(data){
+    liveDot.classList.remove('off');
+    modeLabel.textContent = data.paper ? 'PAPER ACCOUNT' : 'LIVE ACCOUNT — REAL MONEY';
+    modeLabel.style.color = data.paper ? '' : 'var(--down)';
+    lastUpdated.textContent = 'updated ' + timeAgo(data.updated_at);
+
+    if(data.paused){
+      marketStrip.className = 'strip closed';
+      marketStrip.textContent = 'PAUSED — not opening new trades. Stop-loss and downtrend protection still active on anything already held. Resumes automatically once a confirmed trend shows up.';
+    } else if(data.market_open){
+      marketStrip.className = 'strip';
+      marketStrip.textContent = 'Market is OPEN — the bot evaluates and trades each cycle.';
+    } else {
+      marketStrip.className = 'strip closed';
+      marketStrip.textContent = 'Market is CLOSED — the bot is idle and will resume automatically at the next open.';
+    }
+
+    strategyLabel.textContent = 'strategy: ' + (data.strategy || '—');
+    statEquity.textContent = '$' + fmt(data.equity || 0);
+    statCash.textContent = '$' + fmt(data.cash || 0);
+
+    const changeAbs = data.change_abs || 0;
+    const changePct = data.change_pct || 0;
+    const changeUp = changeAbs >= 0;
+    statChange.textContent = (changeUp ? '+' : '−') + '$' + fmt(Math.abs(changeAbs)) + ' (' + (changeUp ? '+' : '') + changePct.toFixed(2) + '%)';
+    statChange.className = 'value ' + (changeUp ? 'up' : 'down');
+
+    const allocated = data.total_allocated || 0;
+    const budget = data.total_budget || 0;
+    budgetStrip.textContent = `Allocated $${fmt(allocated)} of your $${fmt(budget)} budget across ${(data.symbols || []).join(', ') || '—'}. ` +
+      `Est. trading costs so far: $${fmt(data.est_costs || 0)} (Alpaca charges $0 commission). ` +
+      `Safeguards: max ${data.max_trades_per_day || 0} trades/day, ${data.cooldown_minutes || 0} min cooldown between trades, ` +
+      `${data.stop_loss_pct || 0}% per-stock stop-loss, $${data.max_overall_loss || 0} overall loss limit.`;
+
+    drawChart(data.history || []);
+
+    holdingsEl.innerHTML = '';
+    Object.entries(data.positions || {}).forEach(([tk, p]) => {
+      const card = document.createElement('div');
+      card.className = 'hold-card';
+      card.innerHTML = `
+        <div class="tk">${tk}</div>
+        <div class="qty">${p.qty > 0 ? p.qty.toFixed(4) + ' shares @ $' + fmt(p.price) : 'flat, in cash'}</div>
+        <div class="val">$${fmt(p.value)}${p.qty > 0 ? ` <span class="${p.pnl >= 0 ? 'up' : 'down'}">(${p.pnl >= 0 ? '+' : '−'}$${fmt(Math.abs(p.pnl))})</span>` : ''}</div>
+        ${p.qty > 0 && p.entry ? `<div class="qty">bought at $${fmt(p.entry)} · cost $${fmt(p.cost)}</div>` : ''}
+        <div class="signal">${p.signal || ''}</div>
+      `;
+      holdingsEl.appendChild(card);
+    });
+
+    const trades = (data.trades || []).slice().reverse();
+    if(trades.length === 0){
+      tickerEl.innerHTML = '<div class="empty">No trades yet.</div>';
+    } else {
+      tickerEl.innerHTML = trades.map(t => {
+        const cls = t.side === 'BUY' ? 'buy' : 'sell';
+        const when = new Date(t.t * 1000).toLocaleString();
+        const why = t.reason === 'stop-loss' ? ' (stop-loss)' : t.reason === 'downtrend-stop' ? ' (cut loss, downtrend)' : '';
+        return `<div class="line ${cls}">${t.side} ${t.symbol} @ $${fmt(t.price)}${why} — ${when}</div>`;
+      }).join('');
+    }
+  }
+
+  async function poll(){
+    try{
+      const r = await fetch('/api/status');
+      if(!r.ok){
+        marketStrip.className = 'strip closed';
+        marketStrip.textContent = 'No data yet — make sure bot.py is running in another terminal.';
+        liveDot.classList.add('off');
+        return;
+      }
+      const data = await r.json();
+      render(data);
+    } catch(e){
+      liveDot.classList.add('off');
+      marketStrip.className = 'strip closed';
+      marketStrip.textContent = 'Cannot reach the dashboard server.';
+    }
+  }
+
+  poll();
+  setInterval(poll, 5000);
+</script>
+</body>
+</html>
