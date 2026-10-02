@@ -38,7 +38,7 @@ jobs:
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           ALPACA_PAPER: "true"
           TOTAL_BUDGET: "1000"
-          STAKES: "QQQ:310,NVDA:230,AAPL:230,GOOGL:230"
+          STAKES: "QQQ:317.29,AAPL:199.08,NVDA:214.8,GOOGL:196.82"
           STRATEGY: "ict"
           MAX_TRADES_PER_DAY: "21"
           COOLDOWN_MINUTES: "5"
