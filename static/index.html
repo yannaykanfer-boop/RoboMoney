@@ -236,8 +236,8 @@
     }
 
     strategyLabel.textContent = 'strategy: ' + (data.strategy || '—');
-    statEquity.textContent = '$' + fmt(data.equity || 0);
-    statCash.textContent = '$' + fmt(data.cash || 0);
+    statEquity.textContent = '$' + fmt(data.real_equity ?? data.equity ?? 0);
+    statCash.textContent = '$' + fmt(data.real_cash ?? data.cash ?? 0);
 
     const changeAbs = data.change_abs || 0;
     const changePct = data.change_pct || 0;

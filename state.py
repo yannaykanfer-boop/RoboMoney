@@ -37,10 +37,19 @@ def save(acct, market_open, positions, new_trades, paused=None, pause_note=None)
     # balance — otherwise a real $20 gain would show as a meaningless 0.02%.
     change_pct = (change_abs / config.TOTAL_BUDGET * 100) if config.TOTAL_BUDGET else 0.0
 
+    # Alpaca's paper account is funded with a fake ~$100k balance by default —
+    # not what the user actually has. "real_equity"/"real_cash" scale that down
+    # to their actual budget, so the dashboard shows real numbers, not Alpaca's.
+    positions_value = sum(p.get("value", 0) for p in positions.values())
+    real_equity = config.TOTAL_BUDGET + change_abs
+    real_cash = real_equity - positions_value
+
     data["updated_at"] = time.time()
     data["market_open"] = market_open
     data["equity"] = acct["equity"]
     data["cash"] = acct["cash"]
+    data["real_equity"] = real_equity
+    data["real_cash"] = real_cash
     data["paper"] = acct["paper"]
     data["strategy"] = config.STRATEGY
     data["symbols"] = config.SYMBOLS
@@ -52,7 +61,7 @@ def save(acct, market_open, positions, new_trades, paused=None, pause_note=None)
     data["positions"] = positions
 
     history = data.get("history", [])
-    history.append({"t": time.time(), "equity": acct["equity"]})
+    history.append({"t": time.time(), "equity": real_equity})
     data["history"] = history[-MAX_HISTORY:]
 
     trades = data.get("trades", [])
