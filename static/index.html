@@ -283,7 +283,7 @@
 
   async function poll(){
     try{
-      const r = await fetch('/api/status');
+      const r = await fetch('state.json?t=' + Date.now());
       if(!r.ok){
         marketStrip.className = 'strip closed';
         marketStrip.textContent = 'No data yet — make sure bot.py is running in another terminal.';

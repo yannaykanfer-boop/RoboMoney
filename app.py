@@ -39,6 +39,7 @@ def index():
 
 
 @app.route("/api/status")
+@app.route("/state.json")
 @require_password
 def status():
     if not os.path.exists(config.STATE_FILE):

@@ -1,0 +1,66 @@
+name: Trade
+
+on:
+  schedule:
+    # Every 1 min, 13:00-15:59 UTC, weekdays — covers the ICT strategy's
+    # first-30-min-after-open window in both EDT (UTC-4) and EST (UTC-5),
+    # with margin. GitHub does not guarantee exact timing on schedules,
+    # especially at 1-minute granularity — runs can be a few minutes late.
+    - cron: '* 13-15 * * 1-5'
+    # Every 5 min for the rest of the trading day — keeps existing
+    # positions' stop-loss / circuit breaker checked, dashboard fresh.
+    - cron: '*/5 16-20 * * 1-5'
+  workflow_dispatch: {}
+
+concurrency:
+  group: trading-bot
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - name: Run one trading cycle
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_PAPER: "true"
+          TOTAL_BUDGET: "1000"
+          STAKES: "QQQ:310,NVDA:230,AAPL:230,GOOGL:230"
+          STRATEGY: "ict"
+          MAX_TRADES_PER_DAY: "21"
+          COOLDOWN_MINUTES: "5"
+          TREND_BUFFER_PCT: "0.05"
+          DOWNTREND_STOP_MIN_LOSS_DOLLARS: "15"
+          MAX_OVERALL_LOSS_DOLLARS: "30"
+        run: python bot.py --once
+
+      - name: Write a status summary (visible on this run's GitHub Actions page)
+        if: always()
+        run: python ci_summary.py >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish dashboard files
+        run: |
+          mkdir -p docs
+          cp static/index.html docs/index.html
+          cp state.json docs/state.json
+
+      - name: Commit updated state back to the repo
+        run: |
+          git config user.name "trading-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state.json docs/state.json docs/index.html
+          git diff --quiet --cached || git commit -m "Update bot state [skip ci]"
+          git pull --rebase
+          git push
