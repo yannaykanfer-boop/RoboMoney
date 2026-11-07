@@ -84,13 +84,27 @@
   .ticker b{ color:var(--ink); font-weight:600; margin-right:6px; }
   footer{ color:var(--faint); font-size:10px; padding:10px 16px 18px; letter-spacing:.04em; }
 
+  /* center tabs + "my money" hero */
+  .tabs{ display:flex; margin:-2px 0 14px; border-bottom:1px solid var(--edge); }
+  .tabs button{ background:none; border:none; border-bottom:2px solid transparent; color:var(--dim); padding:6px 14px 8px; cursor:pointer;
+    font:600 11px "JetBrains Mono", monospace; letter-spacing:.12em; margin-bottom:-1px; }
+  .tabs button.on{ color:var(--green); border-bottom-color:var(--green); }
+  .hero-total{ font-family:Orbitron, sans-serif; font-weight:800; font-size:clamp(34px,5.5vw,52px); color:#eef3ef; line-height:1; text-shadow:0 0 18px rgba(238,243,239,.18); }
+  .hero-change{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:17px; font-weight:600; min-height:26px; }
+  .circ{ width:26px; height:26px; border-radius:50%; display:grid; place-items:center; flex:none; }
+  .circ svg{ width:13px; height:13px; }
+  .circ.up{ background:#1f6e46; color:#d9fbe8; } .circ.down{ background:#8f2a2a; color:#ffe1de; }
+  .hero-label{ color:var(--ink); margin-top:16px; font-size:13px; }
+  #real-chart{ width:100%; height:300px; display:block; margin-top:6px; }
+
   /* real portfolio */
   .p-real{ grid-column:1 / -1; }
-  .real-wrap{ display:grid; grid-template-columns:260px 1fr; gap:24px; align-items:start; }
+  .real-wrap{ display:grid; grid-template-columns:1fr; gap:0; }
+  .real-wrap > div:first-child{ display:none; }
   .real-big{ font-family:Orbitron, sans-serif; font-weight:800; font-size:34px; color:var(--ink); text-shadow:0 0 14px rgba(200,214,204,.25); line-height:1; }
   .real-meta{ margin-top:8px; font-size:11px; line-height:1.7; }
   #real-spark{ width:100%; height:46px; display:block; margin-top:10px; }
-  .real-rows{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:1px; background:var(--grid); border:1px solid var(--grid); }
+  .real-rows{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:1px; background:var(--grid); border:1px solid var(--grid); }
   .rr{ background:var(--panel); padding:10px 12px; }
   .rr .r1{ display:flex; justify-content:space-between; gap:8px; }
   .rr .tk{ color:var(--cyan); font-weight:600; }
@@ -133,13 +147,31 @@
   </section>
 
   <section class="panel p-chart">
-    <div class="ph"><span>Cumulative P&amp;L // paper account</span><span id="pnl-hdr">—</span></div>
-    <div class="big" id="big">$0.00</div>
-    <div class="sub" id="big-sub">—</div>
-    <div id="chart-box"></div>
-    <div class="ranges" id="ranges">
-      <button data-r="1D">1D</button><button data-r="1W">1W</button><button data-r="1M">1M</button>
-      <button data-r="3M">3M</button><button data-r="All" class="on">ALL</button>
+    <div class="tabs" id="tabs">
+      <button data-v="real" class="on">MY MONEY</button><button data-v="bot">BOT · PAPER</button>
+    </div>
+
+    <div id="view-real">
+      <div class="ph"><span>Your portfolio // Greenlight · read-only</span><span id="real-hdr"></span></div>
+      <div class="hero-total" id="hero-total">$—</div>
+      <div class="hero-change" id="hero-change"></div>
+      <div class="hero-label" id="hero-label">Today</div>
+      <div id="real-chart-box"></div>
+      <div class="ranges" id="real-ranges">
+        <button data-r="1D" class="on">1D</button><button data-r="1W">1W</button><button data-r="1M">1M</button>
+        <button data-r="3M">3M</button><button data-r="All">ALL</button>
+      </div>
+    </div>
+
+    <div id="view-bot" hidden>
+      <div class="ph"><span>Cumulative P&amp;L // paper account</span><span id="pnl-hdr">—</span></div>
+      <div class="big" id="big">$0.00</div>
+      <div class="sub" id="big-sub">—</div>
+      <div id="chart-box"></div>
+      <div class="ranges" id="ranges">
+        <button data-r="1D">1D</button><button data-r="1W">1W</button><button data-r="1M">1M</button>
+        <button data-r="3M">3M</button><button data-r="All" class="on">ALL</button>
+      </div>
     </div>
   </section>
 
@@ -166,7 +198,7 @@
 
 <div class="grid" style="border-top:1px solid var(--edge)">
   <section class="panel p-real" id="real-panel" hidden>
-    <div class="ph"><span>Your real money // Greenlight</span><span class="ro">● read-only · bot never trades this</span></div>
+    <div class="ph"><span>Your investments // Greenlight</span><span class="ro">● read-only · bot never trades this</span></div>
     <div class="real-wrap">
       <div>
         <div class="real-big" id="real-total">$—</div>
@@ -244,6 +276,60 @@
       </svg>`;
   }
 
+  const ARW_UP = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2M2.5 6.5 7 2l4.5 4.5"/></svg>';
+  const ARW_DN = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v10M2.5 7.5 7 12l4.5-4.5"/></svg>';
+  const LABEL = { '1D':'Today', '1W':'Past 1 week', '1M':'Past 1 month', '3M':'Past 3 months', 'All':'All time' };
+  let view = 'real', realRange = '1D';
+
+  // Smooth line chart with a dashed baseline and end dot (the "my money" look).
+  function smoothChart(pts, baseline, color){
+    if(pts.length < 2) return '<div class="empty" style="height:300px;display:grid;place-items:center">chart fills in once the bot runs during market hours</div>';
+    const W = 800, H = 300, P = 14, vals = pts.map(p => p.v);
+    let mn = Math.min(baseline, ...vals), mx = Math.max(baseline, ...vals);
+    if(mx - mn < 0.5){ mn -= 0.5; mx += 0.5; }
+    const x = i => P + i*(W - 2*P)/(pts.length - 1), y = v => P + (1 - (v - mn)/(mx - mn))*(H - 2*P);
+    const xy = vals.map((v, i) => [x(i), y(v)]);
+    let d = `M${xy[0][0].toFixed(1)},${xy[0][1].toFixed(1)}`;
+    for(let i = 1; i < xy.length; i++){
+      const [x0, y0] = xy[i-1], [x1, y1] = xy[i], cx = ((x0 + x1)/2).toFixed(1);
+      d += ` C${cx},${y0.toFixed(1)} ${cx},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+    }
+    const [ex, ey] = xy.at(-1);
+    return `<svg id="real-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Portfolio value">
+      <defs><linearGradient id="rg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${color}" stop-opacity=".22"/><stop offset="1" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
+      <path d="${d} L${ex},${H} L${xy[0][0]},${H} Z" fill="url(#rg)"/>
+      <line x1="0" x2="${W}" y1="${y(baseline)}" y2="${y(baseline)}" stroke="#5d7266" stroke-width="1.2" stroke-dasharray="3 5" vector-effect="non-scaling-stroke"/>
+      <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+      <circle cx="${ex}" cy="${ey}" r="5" fill="#9a9af5" stroke="#070b08" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    </svg>`;
+  }
+
+  function renderReal(d){
+    const rp = d.real_portfolio;
+    if(!rp){ $('hero-total').textContent = '$—'; $('real-chart-box').innerHTML = '<div class="empty">no real portfolio set up</div>'; return; }
+    $('hero-total').textContent = usd(rp.total);
+    let pts, base;
+    if(realRange === '1D' && rp.today){
+      pts = rp.today.series; base = rp.today.prev_total;
+    } else {
+      const now = Date.now()/1000;
+      pts = (d.real_history || []).filter(p => now - p.t <= RANGE[realRange]).map(p => ({t:p.t, v:p.total}));
+      base = pts.length ? pts[0].v : rp.total;
+    }
+    const lastV = pts.length ? pts.at(-1).v : rp.total, chg = lastV - base, up = chg >= 0;
+    const pct = base ? chg / base * 100 : 0;
+    $('hero-change').innerHTML = pts.length >= 2
+      ? `<span class="circ ${up ? 'up' : 'down'}">${up ? ARW_UP : ARW_DN}</span><span class="${up ? 'up' : 'down'}">${up ? '+' : '−'}$${Math.abs(chg).toFixed(2)} (${up ? '+' : '−'}${Math.abs(pct).toFixed(2)}%)</span>`
+      : `<span class="dim" style="font-size:12px">all-time <span class="${cls(rp.gain)}">${usd(rp.gain, true)}</span></span>`;
+    const session = rp.today && rp.today.session ? new Date(rp.today.session + 'T12:00:00') : null;
+    const isToday = session && session.toDateString() === new Date().toDateString();
+    $('hero-label').textContent = realRange === '1D' && session && !isToday
+      ? 'Last trading day · ' + session.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'})
+      : LABEL[realRange];
+    $('real-hdr').innerHTML = `all-time <span class="${cls(rp.gain)}">${usd(rp.gain, true)}</span>`;
+    $('real-chart-box').innerHTML = smoothChart(pts, base, '#6b6bd6');
+  }
+
   function render(d){
     last = d;
     const budget = d.total_budget || 0, equity = d.real_equity ?? budget, pnl = equity - budget;
@@ -251,6 +337,8 @@
     const wins = rts.filter(r => r.pct > 0).length;
     const winRate = rts.length ? (wins / rts.length * 100).toFixed(1) + '%' : '—';
     const pos = d.positions || {};
+
+    renderReal(d);
 
     // top bar
     $('k-mode').innerHTML = d.paper ? '<span class="amber">PAPER</span>' : '<span class="down">LIVE $</span>';
@@ -372,6 +460,20 @@
       `<span><b>${esc(tk)}</b>${usd(p.price || 0)}${p.qty > 0 ? ` <span class="${cls(p.pnl)}">${usd(p.pnl, true)}</span>` : ''}</span>`).join('') +
       (rp ? `<span><b>REAL $</b>${usd(rp.total)}</span>` : '') + `<span><b>BOT EQUITY</b>${usd(equity)}</span><span><b>CASH</b>${usd(d.real_cash ?? equity)}</span>`;
   }
+
+  $('tabs').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    view = b.dataset.v;
+    document.querySelectorAll('#tabs button').forEach(x => x.classList.toggle('on', x === b));
+    $('view-real').hidden = view !== 'real'; $('view-bot').hidden = view !== 'bot';
+    if(last) render(last);
+  });
+  $('real-ranges').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    realRange = b.dataset.r;
+    document.querySelectorAll('#real-ranges button').forEach(x => x.classList.toggle('on', x === b));
+    if(last) render(last);
+  });
 
   $('ranges').addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;

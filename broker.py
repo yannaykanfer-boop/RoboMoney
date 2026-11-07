@@ -10,7 +10,7 @@ from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest, NewsRequest
 from alpaca.data.historical.news import NewsClient
-from alpaca.data.timeframe import TimeFrame
+from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
 import config
 
@@ -97,6 +97,18 @@ class Broker:
                                start=end - timedelta(days=10), end=end)
         rows = self.data.get_stock_bars(req).data.get(symbol, [])
         return float(rows[-1].close) if rows else None
+
+    def session_bars(self, symbol):
+        """5-minute closes for the most recent trading session: (session_date, [(epoch, close), ...])."""
+        ny = ZoneInfo("America/New_York")
+        req = StockBarsRequest(symbol_or_symbols=symbol, timeframe=TimeFrame(5, TimeFrameUnit.Minute),
+                               start=datetime.now(timezone.utc) - timedelta(days=5))
+        rows = self.data.get_stock_bars(req).data.get(symbol, [])
+        if not rows:
+            return None, []
+        day = rows[-1].timestamp.astimezone(ny).date()
+        return day, [(b.timestamp.timestamp(), float(b.close)) for b in rows
+                     if b.timestamp.astimezone(ny).date() == day]
 
     def daily_bars(self, symbol, days=120):
         req = StockBarsRequest(
