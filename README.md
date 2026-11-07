@@ -45,6 +45,36 @@ days:
   sell pops).
 - `POLL_INTERVAL_SECONDS` — how often it re-checks prices.
 
+## News strategy (`STRATEGY=news`)
+
+An event-driven mode that reads live headlines for each symbol (Alpaca News
+API — same keys, no extra signup) and trades on them:
+
+1. **Reads news**: last `NEWS_LOOKBACK_HOURS` (24) of headlines per symbol.
+2. **Scores it**: a transparent finance keyword lexicon ("beats estimates",
+   "downgrade", "investigation"…), with negation handling, weighted toward
+   recent stories (`NEWS_HALF_LIFE_HOURS`, 6). A single headline is
+   discounted; it takes several before the score counts as a trend.
+3. **Checks if it's priced in**: buys only if the score is at least `NEWS_BUY_THRESHOLD`
+   *and* price hasn't already moved more than `NEWS_MAX_RUNUP_PCT` (1.5%)
+   over the last `NEWS_PRICE_WINDOW_BARS` minute bars. If the price already
+   ran, it skips.
+4. **Exits** when news turns negative (`NEWS_SELL_THRESHOLD`), or on the normal stop-loss.
+5. **Sizes with fractional Kelly**: win rate and payoff come from the bot's
+   *own* closed trades, blended with a conservative prior (55% / 1:1, worth 20
+   trades) until real history builds up. Default is quarter-Kelly
+   (`KELLY_FRACTION=0.25`), capped at each symbol's `STAKES` amount. If its
+   record shows no edge, Kelly comes out ≤ 0 and **it stops buying**.
+
+All existing guardrails (paper default, daily trade limit, cooldown, circuit
+breaker, stop-loss) still apply. Run the offline tests with
+`python -m unittest discover tests`.
+
+Be realistic: headline sentiment on large caps is heavily competed. Funds
+react in milliseconds, and this bot polls every few minutes. Treat it as an
+experiment and paper-trade it for weeks before any real money. Beat
+buy-and-hold first.
+
 ## What this is and isn't
 
 - It's a deterministic rule-based bot, not an LLM deciding trades live —

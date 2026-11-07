@@ -39,7 +39,7 @@ jobs:
           ALPACA_PAPER: "true"
           TOTAL_BUDGET: "959.68"
           STAKES: "QQQ:317.29,AAPL:199.08,NVDA:214.8,GOOGL:196.82"
-          STRATEGY: "ict"
+          STRATEGY: "news"
           MAX_TRADES_PER_DAY: "21"
           COOLDOWN_MINUTES: "5"
           TREND_BUFFER_PCT: "0.05"
