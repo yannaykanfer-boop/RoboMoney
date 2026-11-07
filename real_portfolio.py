@@ -7,7 +7,7 @@ by how much its price has moved since that date's close. Nothing is ever traded.
 
 import json
 import os
-from datetime import date
+from datetime import date, timedelta
 
 FILE = "real_portfolio.json"
 
@@ -37,6 +37,34 @@ def valuate(port, ref_prices, live_prices):
             "since_snapshot": round(total - snap_total, 2)}
 
 
+def today(port, refs, bars, prev_closes, max_points=160):
+    """Pure: intraday portfolio value for the latest session.
+    bars: {sym: [(epoch, close), ...]}; prev_closes: {sym: close the day before}.
+    Each holding is treated as (snapshot value / ref price) shares; missing data -> flat at snapshot value."""
+    shares = {s: h["value"] / refs[s] for s, h in port["holdings"].items() if refs.get(s)}
+    fixed = sum(h["value"] for s, h in port["holdings"].items() if s not in shares) + port.get("cash", 0.0)
+    prev_total = fixed + sum(q * prev_closes.get(s, refs[s]) for s, q in shares.items())
+    times = sorted({t for s in shares for t, _ in bars.get(s, [])})
+    if not times:
+        return None
+    idx = {s: 0 for s in shares}
+    lastp = {s: prev_closes.get(s, refs[s]) for s in shares}
+    series = []
+    for t in times:
+        for s in shares:  # forward-fill each symbol's latest price at or before t
+            b = bars.get(s, [])
+            while idx[s] < len(b) and b[idx[s]][0] <= t:
+                lastp[s] = b[idx[s]][1]
+                idx[s] += 1
+        series.append({"t": t, "v": round(fixed + sum(q * lastp[s] for s, q in shares.items()), 2)})
+    if len(series) > max_points:
+        step = len(series) / max_points
+        series = [series[int(i * step)] for i in range(max_points)] + [series[-1]]
+    last = series[-1]["v"]
+    return {"prev_total": round(prev_total, 2), "series": series, "change": round(last - prev_total, 2),
+            "pct": round((last - prev_total) / prev_total * 100, 2) if prev_total else 0.0}
+
+
 def update(broker, prior_state, log):
     """Fetch prices and return (valuation, ref_prices_to_cache). Never raises."""
     port = load()
@@ -58,4 +86,21 @@ def update(broker, prior_state, log):
                 lives[sym] = closes[-1]
         except Exception as e:
             log.warning(f"real portfolio: no price for {sym} ({e}) — showing its last known value.")
-    return valuate(port, refs, lives), cache
+    result = valuate(port, refs, lives)
+    try:
+        bars, prev, session = {}, {}, None
+        for sym in port["holdings"]:
+            day, b = broker.session_bars(sym)
+            if not b:
+                continue
+            bars[sym], session = b, max(session or day, day)
+            pc = broker.close_on_or_before(sym, day - timedelta(days=1))
+            if pc:
+                prev[sym] = pc
+        t = today(port, refs, bars, prev)
+        if t:
+            t["session"] = session.isoformat() if session else None
+            result["today"] = t
+    except Exception as e:
+        log.warning(f"real portfolio: couldn't build today's chart ({e}).")
+    return result, cache
