@@ -190,7 +190,7 @@ def run_cycle(broker, log):
                     stake = config.STAKES[symbol] if config.STRATEGY != "news" else stake
                     order = broker.buy_notional(symbol, stake)
                     log.info(f"{symbol}: BUY ~${stake} (order id {order.id})")
-                    new_trades.append({"t": time.time(), "symbol": symbol, "side": "BUY", "price": price,
+                    new_trades.append({"t": time.time(), "symbol": symbol, "side": "BUY", "price": price, "dollars": stake,
                                        "reason": reason, "est_cost": config.EST_COST_PER_TRADE})
                     last_trade[symbol] = time.time()
                     trades_today += 1
@@ -198,7 +198,7 @@ def run_cycle(broker, log):
                 elif action == "sell":
                     order = broker.sell_all(symbol)
                     log.info(f"{symbol}: SELL all ({qty} shares, {reason}, order id {order.id if order else 'n/a'})")
-                    new_trades.append({"t": time.time(), "symbol": symbol, "side": "SELL", "price": price,
+                    new_trades.append({"t": time.time(), "symbol": symbol, "side": "SELL", "price": price, "qty": qty,
                                        "reason": reason, "est_cost": config.EST_COST_PER_TRADE})
                     last_trade[symbol] = time.time()
                     trades_today += 1
