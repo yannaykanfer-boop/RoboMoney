@@ -84,11 +84,26 @@
   .ticker b{ color:var(--ink); font-weight:600; margin-right:6px; }
   footer{ color:var(--faint); font-size:10px; padding:10px 16px 18px; letter-spacing:.04em; }
 
+  /* real portfolio */
+  .p-real{ grid-column:1 / -1; }
+  .real-wrap{ display:grid; grid-template-columns:260px 1fr; gap:24px; align-items:start; }
+  .real-big{ font-family:Orbitron, sans-serif; font-weight:800; font-size:34px; color:var(--ink); text-shadow:0 0 14px rgba(200,214,204,.25); line-height:1; }
+  .real-meta{ margin-top:8px; font-size:11px; line-height:1.7; }
+  #real-spark{ width:100%; height:46px; display:block; margin-top:10px; }
+  .real-rows{ display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:1px; background:var(--grid); border:1px solid var(--grid); }
+  .rr{ background:var(--panel); padding:10px 12px; }
+  .rr .r1{ display:flex; justify-content:space-between; gap:8px; }
+  .rr .tk{ color:var(--cyan); font-weight:600; }
+  .rr .nm{ color:var(--faint); font-size:10px; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .rr .r3{ display:flex; justify-content:space-between; font-size:11px; margin-top:6px; }
+  .ro{ color:var(--amber); }
+
   @media (max-width:1000px){
     .grid{ grid-template-columns:1fr 1fr; }
     .p-chart{ grid-column:1 / -1; order:-1; }
   }
   @media (max-width:640px){
+    .real-wrap{ grid-template-columns:1fr; }
     .grid{ grid-template-columns:1fr; }
     .top{ gap:14px; } .kpis{ gap:14px; } .clock{ display:none; }
     #chart{ height:220px; }
@@ -149,8 +164,22 @@
   </section>
 </div>
 
+<div class="grid" style="border-top:1px solid var(--edge)">
+  <section class="panel p-real" id="real-panel" hidden>
+    <div class="ph"><span>Your real money // Greenlight</span><span class="ro">● read-only · bot never trades this</span></div>
+    <div class="real-wrap">
+      <div>
+        <div class="real-big" id="real-total">$—</div>
+        <div class="real-meta" id="real-meta"></div>
+        <div id="real-spark-box"></div>
+      </div>
+      <div class="real-rows" id="real-rows"></div>
+    </div>
+  </section>
+</div>
+
 <div class="ticker" id="ticker"></div>
-<footer>Every number here is real output from your bot's paper (fake-money) account. Nothing is simulated or made up. Not financial advice.</footer>
+<footer>The bot panels are its paper (fake-money) account. The Greenlight panel is your real money, display only: the bot can't trade it. Nothing is made up. Not financial advice.</footer>
 
 <script>
   const $ = id => document.getElementById(id);
@@ -311,10 +340,37 @@
     }).join('') || '<tr><td colspan="4" class="empty wrap">no fills yet</td></tr>';
     $('fills-n').textContent = Math.min(trades.length, 10) + ' fills';
 
+    // real (Greenlight) portfolio, read-only
+    const rp = d.real_portfolio;
+    $('real-panel').hidden = !rp;
+    if(rp){
+      $('real-total').textContent = usd(rp.total);
+      const asOf = rp.as_of ? new Date(rp.as_of + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '—';
+      $('real-meta').innerHTML =
+        `all-time <span class="${cls(rp.gain)}">${usd(rp.gain, true)}</span><br>` +
+        `since ${asOf} close <span class="${cls(rp.since_snapshot)}">${usd(rp.since_snapshot, true)}</span><br>` +
+        `<span class="dim">cash ${usd(rp.cash || 0)} · moves with live prices each bot run</span>`;
+      const rh = (d.real_history || []).map(p => p.total);
+      if(rh.length >= 2){
+        const W = 260, H = 46, mn = Math.min(...rh), mx = Math.max(...rh), rg = (mx - mn) || 1;
+        const pts = rh.map((v, i) => `${(i*W/(rh.length-1)).toFixed(1)},${(H - 3 - (v - mn)/rg*(H - 6)).toFixed(1)}`).join(' ');
+        const c = rh.at(-1) >= rh[0] ? '#3ddc84' : '#ff4d5e';
+        $('real-spark-box').innerHTML = `<svg id="real-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.5" vector-effect="non-scaling-stroke"/></svg>`;
+      } else $('real-spark-box').innerHTML = '';
+      const anyLive = Object.values(rp.holdings || {}).some(h => h.live);
+      $('real-rows').innerHTML = Object.entries(rp.holdings || {}).map(([tk, h]) => `
+        <div class="rr">
+          <div class="r1"><span class="tk">${esc(tk)}</span><span>${usd(h.value)}</span></div>
+          <div class="nm">${esc(h.name)}${!h.live && anyLive ? ' · no live price' : ''}</div>
+          <div class="r3"><span class="dim">all-time</span><span class="${cls(h.gain)}">${usd(h.gain, true)}</span></div>
+          <div class="r3"><span class="dim">since ${asOf}</span><span class="${cls(h.since_snapshot)}">${usd(h.since_snapshot, true)}</span></div>
+        </div>`).join('');
+    }
+
     // bottom ticker: last prices
     $('ticker').innerHTML = Object.entries(pos).map(([tk, p]) =>
       `<span><b>${esc(tk)}</b>${usd(p.price || 0)}${p.qty > 0 ? ` <span class="${cls(p.pnl)}">${usd(p.pnl, true)}</span>` : ''}</span>`).join('') +
-      `<span><b>EQUITY</b>${usd(equity)}</span><span><b>CASH</b>${usd(d.real_cash ?? equity)}</span>`;
+      (rp ? `<span><b>REAL $</b>${usd(rp.total)}</span>` : '') + `<span><b>BOT EQUITY</b>${usd(equity)}</span><span><b>CASH</b>${usd(d.real_cash ?? equity)}</span>`;
   }
 
   $('ranges').addEventListener('click', e => {

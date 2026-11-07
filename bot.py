@@ -18,6 +18,7 @@ from broker import Broker
 import strategy
 import state
 import news
+import real_portfolio
 
 LIVE_CONFIRM_PHRASE = "trade real money"
 NY = ZoneInfo("America/New_York")
@@ -222,7 +223,11 @@ def run_cycle(broker, log):
         except Exception as e:
             log.error(f"{symbol}: error during cycle — {e}")
 
-    state.save(acct, market_open, positions, new_trades, paused=paused, pause_note=pause_note)
+    real, real_refs = real_portfolio.update(broker, prior, log)
+    if real:
+        log.info(f"Real portfolio (read-only): ${real['total']:.2f} ({real['since_snapshot']:+.2f} since {real['as_of']})")
+    state.save(acct, market_open, positions, new_trades, paused=paused, pause_note=pause_note,
+               real=real, real_ref_prices=real_refs)
 
 
 def main():

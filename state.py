@@ -22,8 +22,16 @@ def load():
         return {"history": [], "trades": []}
 
 
-def save(acct, market_open, positions, new_trades, paused=None, pause_note=None):
+def save(acct, market_open, positions, new_trades, paused=None, pause_note=None, real=None, real_ref_prices=None):
     data = load()
+
+    if real is not None:
+        data["real_portfolio"] = real
+        rh = data.get("real_history", [])
+        rh.append({"t": time.time(), "total": real["total"]})
+        data["real_history"] = rh[-MAX_HISTORY:]
+    if real_ref_prices is not None:
+        data["real_ref_prices"] = real_ref_prices
 
     if paused is not None:
         data["paused"] = paused
