@@ -90,6 +90,14 @@ class Broker:
         rows = self.data.get_stock_bars(req).data.get(symbol, [])
         return [float(b.close) for b in rows]
 
+    def close_on_or_before(self, symbol, day):
+        """Daily close on `day` (a date), or the last trading day before it."""
+        end = datetime(day.year, day.month, day.day, tzinfo=timezone.utc) + timedelta(days=1)
+        req = StockBarsRequest(symbol_or_symbols=symbol, timeframe=TimeFrame.Day,
+                               start=end - timedelta(days=10), end=end)
+        rows = self.data.get_stock_bars(req).data.get(symbol, [])
+        return float(rows[-1].close) if rows else None
+
     def daily_bars(self, symbol, days=120):
         req = StockBarsRequest(
             symbol_or_symbols=symbol,
