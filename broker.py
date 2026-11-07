@@ -99,16 +99,22 @@ class Broker:
         return float(rows[-1].close) if rows else None
 
     def session_bars(self, symbol):
-        """5-minute closes for the most recent trading session: (session_date, [(epoch, close), ...])."""
+        """Regular-hours (9:30-16:00 ET) 5-minute closes for the latest session.
+        Returns (session_date, [(epoch, close), ...], previous_session_close)."""
         ny = ZoneInfo("America/New_York")
         req = StockBarsRequest(symbol_or_symbols=symbol, timeframe=TimeFrame(5, TimeFrameUnit.Minute),
-                               start=datetime.now(timezone.utc) - timedelta(days=5))
-        rows = self.data.get_stock_bars(req).data.get(symbol, [])
-        if not rows:
-            return None, []
-        day = rows[-1].timestamp.astimezone(ny).date()
-        return day, [(b.timestamp.timestamp(), float(b.close)) for b in rows
-                     if b.timestamp.astimezone(ny).date() == day]
+                               start=datetime.now(timezone.utc) - timedelta(days=7))
+        by_day = {}
+        for b in self.data.get_stock_bars(req).data.get(symbol, []):
+            t = b.timestamp.astimezone(ny)
+            mins = t.hour * 60 + t.minute
+            if 9 * 60 + 30 <= mins < 16 * 60:  # skip pre-market / after-hours
+                by_day.setdefault(t.date(), []).append((b.timestamp.timestamp(), float(b.close)))
+        if not by_day:
+            return None, [], None
+        days = sorted(by_day)
+        prev = by_day[days[-2]][-1][1] if len(days) > 1 else None
+        return days[-1], by_day[days[-1]], prev
 
     def daily_bars(self, symbol, days=120):
         req = StockBarsRequest(

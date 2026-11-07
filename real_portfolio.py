@@ -7,7 +7,7 @@ by how much its price has moved since that date's close. Nothing is ever traded.
 
 import json
 import os
-from datetime import date, timedelta
+from datetime import date
 
 FILE = "real_portfolio.json"
 
@@ -75,28 +75,24 @@ def update(broker, prior_state, log):
         cache = {"as_of": port.get("as_of"), "prices": {}}
     refs, lives = cache["prices"], {}
     as_of = date.fromisoformat(port["as_of"])
+    bars, prev, session = {}, {}, None
     for sym in port["holdings"]:
         try:
             if sym not in refs:
                 ref = broker.close_on_or_before(sym, as_of)
                 if ref:
                     refs[sym] = ref
-            closes = broker.recent_closes(sym, lookback=1)
-            if closes:
-                lives[sym] = closes[-1]
+            day, b, pc = broker.session_bars(sym)
+            if b:
+                bars[sym] = b
+                lives[sym] = b[-1][1]          # last regular-hours price
+                session = max(session or day, day)
+            if pc:
+                prev[sym] = pc
         except Exception as e:
             log.warning(f"real portfolio: no price for {sym} ({e}) — showing its last known value.")
     result = valuate(port, refs, lives)
     try:
-        bars, prev, session = {}, {}, None
-        for sym in port["holdings"]:
-            day, b = broker.session_bars(sym)
-            if not b:
-                continue
-            bars[sym], session = b, max(session or day, day)
-            pc = broker.close_on_or_before(sym, day - timedelta(days=1))
-            if pc:
-                prev[sym] = pc
         t = today(port, refs, bars, prev)
         if t:
             t["session"] = session.isoformat() if session else None
