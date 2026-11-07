@@ -42,3 +42,22 @@ class TodayTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PerfTests(unittest.TestCase):
+    def test_continues_greenlight_returns(self):
+        port = {"cash": 0, "you_pct_at_snapshot": -10.0, "holdings": {"A": {"value": 100.0}}}
+        hist = [{"date": "2026-10-04", "you_pct": 4.0, "sp_pct": 30.0}]
+        p = real_portfolio.perf(port, 110.0, hist, spy_now=110.0, spy_anchor=100.0)
+        self.assertAlmostEqual(p["you_pct"], -1.0)   # 0.9 * 1.1 - 1
+        self.assertAlmostEqual(p["sp_pct"], 43.0)    # 1.3 * 1.1 - 1
+
+    def test_missing_spy(self):
+        port = {"cash": 0, "you_pct_at_snapshot": -9.47, "holdings": {"A": {"value": 100.0}}}
+        p = real_portfolio.perf(port, 100.0, [], None, None)
+        self.assertEqual(p, {"you_pct": -9.47})
+
+    def test_history_file_loads(self):
+        pts = real_portfolio.load_history(os.path.join(os.path.dirname(__file__), "..", "greenlight_history.json"))
+        self.assertGreater(len(pts), 10)
+        self.assertEqual(sorted(pts, key=lambda p: p["date"]), pts)

@@ -3,10 +3,31 @@
   "as_of": "2026-11-06",
   "cash": 0.34,
   "holdings": {
-    "AAPL":  {"name": "Apple Inc.",                      "value": 204.47, "gain": 4.47},
-    "NVDA":  {"name": "NVIDIA Corporation",              "value": 171.18, "gain": -28.82},
-    "GOOGL": {"name": "Alphabet Inc. Class A",           "value": 179.41, "gain": -40.59},
-    "SPCX":  {"name": "Space Exploration Technologies",  "value": 41.83,  "gain": -8.17},
-    "QQQ":   {"name": "Invesco QQQ Trust",               "value": 232.20, "gain": -13.60}
-  }
+    "AAPL": {
+      "name": "Apple Inc.",
+      "value": 204.47,
+      "gain": 4.47
+    },
+    "NVDA": {
+      "name": "NVIDIA Corporation",
+      "value": 171.18,
+      "gain": -28.82
+    },
+    "GOOGL": {
+      "name": "Alphabet Inc. Class A",
+      "value": 179.41,
+      "gain": -40.59
+    },
+    "SPCX": {
+      "name": "Space Exploration Technologies",
+      "value": 41.83,
+      "gain": -8.17
+    },
+    "QQQ": {
+      "name": "Invesco QQQ Trust",
+      "value": 232.2,
+      "gain": -13.6
+    }
+  },
+  "you_pct_at_snapshot": -9.47
 }

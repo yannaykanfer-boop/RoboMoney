@@ -28,7 +28,7 @@ def save(acct, market_open, positions, new_trades, paused=None, pause_note=None,
     if real is not None:
         data["real_portfolio"] = real
         rh = data.get("real_history", [])
-        rh.append({"t": time.time(), "total": real["total"]})
+        rh.append({"t": time.time(), "total": real["total"], **real.get("perf", {})})
         data["real_history"] = rh[-MAX_HISTORY:]
     if real_ref_prices is not None:
         data["real_ref_prices"] = real_ref_prices
