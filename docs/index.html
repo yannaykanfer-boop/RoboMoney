@@ -3,304 +3,296 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trading Bot Dashboard</title>
+<meta name="theme-color" content="#121212">
+<title>RoboMoney</title>
 <style>
   :root{
-    --bg:#EFEFF4;
-    --surface:#FFFFFF;
-    --border:#E4E4E9;
-    --ink:#1C1C1E;
-    --muted:#8A8A8E;
-    --brand:#007AFF;
-    --up:#34C759;
-    --down:#FF3B30;
+    --bg:#121212;
+    --card:#232323;
+    --card-2:#2c2c2c;
+    --line:#333333;
+    --ink:#F5F5F5;
+    --muted:#A3A3A3;
+    --mint:#8EE6CC;
+    --mint-ink:#0F3B32;
+    --chart:#6B6BD6;
+    --up:#2E9E6A;
+    --up-ink:#7EE2B0;
+    --down:#A3302B;
+    --down-ink:#FF8A80;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    line-height:1.5;
-    min-height:100vh;
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
   }
-  .wrap{ max-width:920px; margin:0 auto; padding:0 24px 96px; }
+  .wrap{ max-width:480px; margin:0 auto; padding:0 16px 48px; }
+  .num{ font-variant-numeric:tabular-nums; }
 
-  header{
-    display:flex;
-    gap:20px;
-    align-items:center;
-    padding:40px 0 30px;
-  }
-  .hero-text .eyebrow{
-    display:flex; align-items:center; gap:8px;
-    font-size:12px; font-weight:700; color:var(--brand);
-    margin-bottom:8px; text-transform:uppercase; letter-spacing:0.06em;
-  }
-  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--up); }
-  .live-dot.off{ background:var(--muted); }
-  .hero-text h1{
-    font-weight:800; font-size:clamp(28px, 5vw, 40px);
-    letter-spacing:-0.01em; margin:0 0 10px; line-height:1.05;
-  }
-  .hero-text p{ color:var(--muted); margin:0; font-size:14px; }
-
-  .strip{
-    border:1px solid var(--border);
-    background:var(--surface);
-    border-radius:10px;
-    padding:14px 18px;
-    margin-bottom:24px;
-    font-size:12.5px;
-    color:var(--muted);
-  }
-  .strip.closed{ background:#FFF7E6; border-color:#F5DFA0; color:#8a6a1f; }
-
-  .panel{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:20px;
-    margin-bottom:24px;
-  }
-  .panel-head{
-    display:flex; align-items:baseline; justify-content:space-between;
-    margin-bottom:22px;
-  }
-  .panel-head h2{ font-weight:700; font-size:19px; margin:0; }
-  .panel-head span{ font-size:12px; color:var(--muted); font-weight:600; }
-
-  .stat-row{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
-  .stat{
-    flex:1; min-width:150px; padding:18px 20px;
-    background:var(--bg); border:1px solid var(--border); border-radius:10px;
-  }
-  .stat .label{ font-size:11px; font-weight:700; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:0.04em; }
-  .stat .value{
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-    font-variant-numeric:tabular-nums; font-weight:700; font-size:26px;
-  }
-  .up{ color:var(--up) !important; }
-  .down{ color:var(--down) !important; }
-
-  #chart{ width:100%; height:170px; display:block; }
-
-  .holdings{
-    margin-top:24px; display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px;
-  }
-  .hold-card{
-    border:1px solid var(--border); background:var(--bg);
-    border-radius:8px; padding:12px 14px;
-  }
-  .hold-card .tk{ font-size:13.5px; font-weight:800; }
-  .hold-card .qty{
-    font-size:11px; color:var(--muted); margin-top:4px;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  .hold-card .val{
-    font-size:13px; font-weight:700; margin-top:8px;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  }
-  .hold-card .signal{
-    font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5;
+  header{ display:flex; align-items:center; justify-content:center; position:relative; padding:28px 0 22px; }
+  header h1{ font-size:20px; font-weight:600; margin:0; }
+  .gem{
+    position:absolute; right:0; width:40px; height:40px; background:#3D9C86;
+    clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+    display:grid; place-items:center; color:#E8FFF8; font-size:18px;
   }
 
-  .ticker{
-    font-size:12px; background:var(--bg); border:1px solid var(--border);
-    border-radius:10px; padding:14px 16px; height:180px; overflow-y:auto;
-    margin-top:24px;
-    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  .status{
+    display:flex; align-items:center; gap:10px; background:var(--card);
+    border-radius:16px; padding:12px 16px; font-size:14px; color:var(--muted); margin-bottom:22px;
   }
-  .ticker .line{ margin-bottom:7px; color:var(--muted); }
-  .ticker .line.buy{ color:var(--up); font-weight:700; }
-  .ticker .line.sell{ color:var(--down); font-weight:700; }
-  .ticker .empty{ color:var(--muted); }
+  .dot{ width:8px; height:8px; border-radius:50%; background:var(--muted); flex:none; }
+  .dot.on{ background:var(--mint); box-shadow:0 0 0 4px rgba(142,230,204,.15); }
+  .status b{ color:var(--ink); font-weight:600; }
 
-  footer{
-    margin-top:40px; font-size:11.5px; color:var(--muted);
-    border-top:1px solid var(--border); padding-top:20px; line-height:1.8;
+  .total{ font-size:44px; font-weight:700; letter-spacing:-0.02em; margin:4px 0 6px; }
+  .change-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .change{ display:flex; align-items:center; gap:10px; font-size:19px; font-weight:600; }
+  .arrow{ width:28px; height:28px; border-radius:50%; display:grid; place-items:center; flex:none; }
+  .arrow svg{ width:14px; height:14px; }
+  .arrow.up{ background:var(--up); color:#DFFBEA; }
+  .arrow.down{ background:var(--down); color:#FFE3E0; }
+  .arrow.small{ width:22px; height:22px; } .arrow.small svg{ width:11px; height:11px; }
+  .up-t{ color:var(--up-ink); } .down-t{ color:var(--down-ink); }
+  .pill-btn{
+    border:1.5px solid #3a3a3a; border-radius:14px; padding:10px 16px; font-size:15px;
+    font-weight:600; color:var(--ink); background:transparent;
   }
+  .period{ color:var(--ink); font-size:15px; margin:18px 0 8px; }
+
+  #chart{ width:100%; height:220px; display:block; }
+  .empty-chart{ height:220px; display:grid; place-items:center; color:var(--muted); font-size:14px; }
+
+  .ranges{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin:16px 0 34px; }
+  .ranges button{
+    background:var(--card-2); color:var(--ink); border:2px solid transparent; border-radius:14px;
+    padding:13px 0; font-size:16px; font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .ranges button.active{ border-color:#58C4A6; background:#1d1d1d; }
+
+  .section-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .section-head h2{ font-size:20px; font-weight:600; margin:0; }
+  .tag{ background:var(--card); border-radius:999px; padding:8px 14px; font-size:14px; font-weight:600; color:var(--ink); }
+
+  .card{ background:var(--card); border-radius:26px; padding:20px 0 4px; margin-bottom:16px; overflow:hidden; }
+  .card > h3{ font-size:17px; font-weight:600; margin:0 20px 6px; }
+  .row{ display:flex; align-items:center; gap:14px; padding:16px 20px; border-top:1px solid var(--line); }
+  .card > h3 + .row{ border-top:none; }
+  .logo{
+    width:46px; height:46px; border-radius:50%; flex:none; display:grid; place-items:center;
+    font-weight:800; font-size:13px; letter-spacing:.02em; border:2px solid #333;
+  }
+  .row .name{ flex:1; min-width:0; }
+  .row .tk{ font-size:19px; font-weight:600; }
+  .row .sub{ font-size:14px; color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .right{ text-align:right; flex:none; }
+  .row .val{ font-size:18px; font-weight:600; }
+  .row .chg{ display:flex; align-items:center; justify-content:flex-end; gap:6px; font-size:15px; margin-top:4px; }
+  .signal{ font-size:13px; color:var(--muted); padding:0 20px 14px 80px; margin-top:-8px; line-height:1.45; }
+
+  .cash{ display:flex; align-items:center; justify-content:space-between; background:var(--card); border-radius:26px; padding:22px 20px; margin-bottom:16px; }
+  .cash .lbl{ font-size:16px; color:var(--muted); }
+  .cash .amt{ font-size:30px; font-weight:700; margin-top:2px; }
+  .cash .badge{ background:var(--mint); color:var(--mint-ink); border-radius:16px; padding:14px 18px; font-weight:700; font-size:15px; }
+
+  .trade{ display:flex; justify-content:space-between; gap:12px; padding:14px 20px; border-top:1px solid var(--line); font-size:15px; }
+  .trade .side{ font-weight:700; }
+  .trade .when{ color:var(--muted); font-size:13px; }
+  .none{ color:var(--muted); font-size:14px; padding:6px 20px 18px; }
+
+  .rules{ font-size:13px; color:var(--muted); line-height:1.6; padding:4px 20px 18px; }
+  footer{ font-size:12px; color:#7a7a7a; text-align:center; line-height:1.6; margin-top:26px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <header>
-    <div class="hero-text">
-      <div class="eyebrow"><span class="live-dot off" id="live-dot"></span><span id="mode-label">PAPER ACCOUNT</span> · <span id="last-updated">connecting…</span></div>
-      <h1>Trading bot dashboard</h1>
-      <p>Live status of your bot, running separately. This page only displays — it never places trades itself.</p>
-    </div>
+    <h1>Your bot portfolio</h1>
+    <div class="gem" aria-hidden="true">✦</div>
   </header>
 
-  <div class="strip" id="market-strip">Checking market status…</div>
+  <div class="status"><span class="dot" id="dot"></span><span id="status">Connecting…</span></div>
 
-  <div class="panel">
-    <div class="panel-head"><h2>Account</h2><span id="strategy-label">—</span></div>
-
-    <div class="stat-row">
-      <div class="stat">
-        <div class="label">Equity</div>
-        <div class="value" id="stat-equity">—</div>
-      </div>
-      <div class="stat">
-        <div class="label">Cash</div>
-        <div class="value" id="stat-cash">—</div>
-      </div>
-      <div class="stat">
-        <div class="label">Since start</div>
-        <div class="value" id="stat-change">—</div>
-      </div>
-    </div>
-
-    <div class="strip" id="budget-strip" style="margin-bottom:0;">—</div>
-
-    <svg id="chart" viewBox="0 0 640 180" preserveAspectRatio="none" style="margin-top:24px;"></svg>
-
-    <div class="holdings" id="holdings"></div>
-
-    <div class="ticker" id="ticker"><div class="empty">No trades yet.</div></div>
+  <div class="total num" id="total">$—</div>
+  <div class="change-row">
+    <div class="change num" id="change"></div>
+    <span class="pill-btn" id="mode">Paper</span>
   </div>
 
-  <footer>
-    Not financial advice. This reflects your real Alpaca account (paper or live, shown above) and the bot's actual rule-based decisions — nothing here is simulated once "LIVE" mode is on.
-  </footer>
+  <div class="period" id="period">Past 1 month</div>
+  <div id="chart-box"></div>
+
+  <div class="ranges" id="ranges">
+    <button data-r="1D">1D</button>
+    <button data-r="1W">1W</button>
+    <button data-r="1M" class="active">1M</button>
+    <button data-r="3M">3M</button>
+    <button data-r="All">All</button>
+  </div>
+
+  <div class="section-head"><h2>Your investments</h2><span class="tag" id="strategy">—</span></div>
+
+  <div class="card" id="holdings"><h3>Stocks &amp; ETFs</h3></div>
+
+  <div class="cash">
+    <div><div class="lbl">Cash to invest</div><div class="amt num" id="cash">$—</div></div>
+    <div class="badge" id="paper-badge">Fake $</div>
+  </div>
+
+  <div class="card"><h3>Recent trades</h3><div id="trades"></div></div>
+
+  <div class="card"><h3>Safety rules</h3><div class="rules" id="rules">—</div></div>
+
+  <footer>Practice account with fake money (unless marked LIVE). This page only shows what the bot is doing. It never places trades. Not financial advice.</footer>
 </div>
 
 <script>
-  const chart = document.getElementById('chart');
-  const liveDot = document.getElementById('live-dot');
-  const modeLabel = document.getElementById('mode-label');
-  const lastUpdated = document.getElementById('last-updated');
-  const marketStrip = document.getElementById('market-strip');
-  const strategyLabel = document.getElementById('strategy-label');
-  const statEquity = document.getElementById('stat-equity');
-  const statCash = document.getElementById('stat-cash');
-  const statChange = document.getElementById('stat-change');
-  const budgetStrip = document.getElementById('budget-strip');
-  const holdingsEl = document.getElementById('holdings');
-  const tickerEl = document.getElementById('ticker');
+  const $ = id => document.getElementById(id);
+  const ARROW_UP = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2M2.5 6.5 7 2l4.5 4.5"/></svg>';
+  const ARROW_DOWN = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v10M2.5 7.5 7 12l4.5-4.5"/></svg>';
+  const RANGE = { '1D':86400, '1W':7*86400, '1M':30*86400, '3M':90*86400, 'All':Infinity };
+  const RANGE_LABEL = { '1D':'Past day', '1W':'Past week', '1M':'Past 1 month', '3M':'Past 3 months', 'All':'All time' };
+  const NAMES = { QQQ:'Invesco QQQ Trust', SPY:'SPDR S&P 500 ETF', AAPL:'Apple Inc.', NVDA:'NVIDIA Corporation',
+                  GOOGL:'Alphabet Inc. Class A', MSFT:'Microsoft Corporation', AMZN:'Amazon.com Inc.', TSLA:'Tesla Inc.', META:'Meta Platforms Inc.' };
+  const ETFS = new Set(['QQQ','SPY','VOO','VTI','IWM','DIA']);
+  const LOGO_COLORS = ['#1E3A5F','#3B2A55','#1F4D3A','#5A2A2A','#4A3F1E','#24434F'];
+  let range = '1M', last = null;
 
-  function fmt(n){
-    return Number(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const money = n => '$' + Number(Math.abs(n)).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const arrow = (up, small) => `<span class="arrow ${up ? 'up' : 'down'}${small ? ' small' : ''}">${up ? ARROW_UP : ARROW_DOWN}</span>`;
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function ago(ts){
+    const s = Math.floor(Date.now()/1000 - ts);
+    if(s < 60) return 'just now';
+    if(s < 3600) return Math.floor(s/60) + ' min ago';
+    if(s < 86400) return Math.floor(s/3600) + ' h ago';
+    return Math.floor(s/86400) + ' days ago';
+  }
+  function logoColor(tk){ let h = 0; for(const c of tk) h = (h*31 + c.charCodeAt(0)) >>> 0; return LOGO_COLORS[h % LOGO_COLORS.length]; }
+
+  // History is already in your real-budget dollars. Drop leftover points from before setup
+  // (e.g. Alpaca's raw ~$100k paper balance): a move bigger than the whole budget is impossible.
+  function realSeries(data){
+    const budget = data.total_budget ?? 0;
+    return (data.history || [])
+      .filter(p => !budget || Math.abs(p.equity - budget) < budget)
+      .map(p => ({ t:p.t, v:p.equity }));
   }
 
-  function timeAgo(tsSeconds){
-    const secs = Math.floor(Date.now()/1000 - tsSeconds);
-    if(secs < 5) return 'just now';
-    if(secs < 60) return secs + 's ago';
-    const mins = Math.floor(secs/60);
-    if(mins < 60) return mins + 'm ago';
-    return Math.floor(mins/60) + 'h ago';
-  }
-
-  function drawChart(history){
-    const w = 640, h = 180, pad = 6;
-    const vals = history.map(p => p.equity).slice(-100);
-    if(vals.length < 2){ chart.innerHTML = ''; return; }
-    const min = Math.min(...vals) * 0.999;
-    const max = Math.max(...vals) * 1.001;
-    const range = (max - min) || 1;
-    const stepX = (w - pad*2) / (vals.length - 1);
-    let d = '';
-    vals.forEach((v, i) => {
-      const x = pad + i * stepX;
-      const y = h - pad - ((v - min) / range) * (h - pad*2);
-      d += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ' ' + y.toFixed(1) + ' ';
-    });
-    const up = vals[vals.length-1] >= vals[0];
-    const color = up ? 'var(--up)' : 'var(--down)';
-    const areaD = d + `L ${(pad + (vals.length-1)*stepX).toFixed(1)} ${h} L ${pad} ${h} Z`;
-    chart.innerHTML = `
-      <path d="${areaD}" fill="${color}" opacity="0.10"/>
-      <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5"/>
-    `;
+  function drawChart(data){
+    const box = $('chart-box');
+    const now = Date.now()/1000;
+    let pts = realSeries(data).filter(p => now - p.t <= RANGE[range]);
+    if(pts.length < 2){
+      box.innerHTML = '<div class="empty-chart">Not enough history for this range yet</div>';
+      return pts;
+    }
+    if(pts.length > 160){ const step = pts.length / 160; pts = Array.from({length:160}, (_, i) => pts[Math.floor(i*step)]).concat([pts[pts.length-1]]); }
+    const W = 640, H = 220, padX = 4, padY = 14;
+    const vals = pts.map(p => p.v);
+    let min = Math.min(...vals), max = Math.max(...vals);
+    if(max - min < 0.01){ min -= 1; max += 1; }
+    const x = i => padX + i * (W - padX*2) / (pts.length - 1);
+    const y = v => padY + (1 - (v - min) / (max - min)) * (H - padY*2);
+    const xy = pts.map((p, i) => [x(i), y(p.v)]);
+    let d = `M${xy[0][0]},${xy[0][1]}`;
+    for(let i = 1; i < xy.length; i++){                     // smooth curve
+      const [x0,y0] = xy[i-1], [x1,y1] = xy[i], cx = (x0 + x1) / 2;
+      d += ` C${cx},${y0} ${cx},${y1} ${x1},${y1}`;
+    }
+    const [ex, ey] = xy[xy.length-1];
+    const startY = y(vals[0]);
+    box.innerHTML = `
+      <svg id="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Portfolio value chart">
+        <defs><linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6B6BD6" stop-opacity=".22"/><stop offset="1" stop-color="#6B6BD6" stop-opacity="0"/>
+        </linearGradient></defs>
+        <path d="${d} L${ex},${H} L${xy[0][0]},${H} Z" fill="url(#fill)"/>
+        <line x1="0" x2="${W}" y1="${startY}" y2="${startY}" stroke="#777" stroke-width="1.5" stroke-dasharray="4 5" vector-effect="non-scaling-stroke"/>
+        <path d="${d}" fill="none" stroke="var(--chart)" stroke-width="3" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+        <circle cx="${ex}" cy="${ey}" r="6" fill="#8C8CF0" stroke="#121212" stroke-width="2.5" vector-effect="non-scaling-stroke"/>
+      </svg>`;
+    return pts;
   }
 
   function render(data){
-    liveDot.classList.remove('off');
-    modeLabel.textContent = data.paper ? 'PAPER ACCOUNT' : 'LIVE ACCOUNT — REAL MONEY';
-    modeLabel.style.color = data.paper ? '' : 'var(--down)';
-    lastUpdated.textContent = 'updated ' + timeAgo(data.updated_at);
+    last = data;
+    const total = data.real_equity ?? data.equity ?? 0;
+    $('total').textContent = money(total);
 
-    if(data.paused){
-      marketStrip.className = 'strip closed';
-      marketStrip.textContent = 'PAUSED — not opening new trades. Stop-loss and downtrend protection still active on anything already held. Resumes automatically once a confirmed trend shows up.';
-    } else if(data.market_open){
-      marketStrip.className = 'strip';
-      marketStrip.textContent = 'Market is OPEN — the bot evaluates and trades each cycle.';
-    } else {
-      marketStrip.className = 'strip closed';
-      marketStrip.textContent = 'Market is CLOSED — the bot is idle and will resume automatically at the next open.';
-    }
+    const pts = drawChart(data);
+    const startV = pts.length ? pts[0].v : (data.total_budget ?? total);
+    const diff = total - startV, pct = startV ? diff / startV * 100 : 0, up = diff >= 0;
+    $('change').innerHTML = `${arrow(up)}<span class="${up ? 'up-t' : 'down-t'}">${up ? '+' : '−'}${money(diff)} (${up ? '+' : '−'}${Math.abs(pct).toFixed(2)}%)</span>`;
+    $('period').textContent = RANGE_LABEL[range];
 
-    strategyLabel.textContent = 'strategy: ' + (data.strategy || '—');
-    statEquity.textContent = '$' + fmt(data.real_equity ?? data.equity ?? 0);
-    statCash.textContent = '$' + fmt(data.real_cash ?? data.cash ?? 0);
+    $('mode').textContent = data.paper ? 'Paper' : 'LIVE';
+    $('mode').style.color = data.paper ? '' : 'var(--down-ink)';
+    $('paper-badge').textContent = data.paper ? 'Fake $' : 'Real $';
+    $('dot').className = 'dot' + (data.market_open && !data.paused ? ' on' : '');
+    $('status').innerHTML = data.paused
+      ? `<b>Paused</b> · not opening new trades (${esc(data.pause_note || 'loss limit')})`
+      : data.market_open
+        ? `<b>Market open</b> · bot is trading · updated ${ago(data.updated_at)}`
+        : `<b>Market closed</b> · bot resumes at the next open · updated ${ago(data.updated_at)}`;
+    $('strategy').textContent = 'Strategy: ' + (data.strategy || '—');
+    $('cash').textContent = money(data.real_cash ?? data.cash ?? 0);
 
-    const changeAbs = data.change_abs || 0;
-    const changePct = data.change_pct || 0;
-    const changeUp = changeAbs >= 0;
-    statChange.textContent = (changeUp ? '+' : '−') + '$' + fmt(Math.abs(changeAbs)) + ' (' + (changeUp ? '+' : '') + changePct.toFixed(2) + '%)';
-    statChange.className = 'value ' + (changeUp ? 'up' : 'down');
-
-    const allocated = data.total_allocated || 0;
-    const budget = data.total_budget || 0;
-    budgetStrip.textContent = `Allocated $${fmt(allocated)} of your $${fmt(budget)} budget across ${(data.symbols || []).join(', ') || '—'}. ` +
-      `Est. trading costs so far: $${fmt(data.est_costs || 0)} (Alpaca charges $0 commission). ` +
-      `Safeguards: max ${data.max_trades_per_day || 0} trades/day, ${data.cooldown_minutes || 0} min cooldown between trades, ` +
-      `${data.stop_loss_pct || 0}% per-stock stop-loss, $${data.max_overall_loss || 0} overall loss limit.`;
-
-    drawChart(data.history || []);
-
-    holdingsEl.innerHTML = '';
+    const holdings = $('holdings');
+    holdings.innerHTML = '<h3>Stocks &amp; ETFs</h3>';
     Object.entries(data.positions || {}).forEach(([tk, p]) => {
-      const card = document.createElement('div');
-      card.className = 'hold-card';
-      card.innerHTML = `
-        <div class="tk">${tk}</div>
-        <div class="qty">${p.qty > 0 ? p.qty.toFixed(4) + ' shares @ $' + fmt(p.price) : 'flat, in cash'}</div>
-        <div class="val">$${fmt(p.value)}${p.qty > 0 ? ` <span class="${p.pnl >= 0 ? 'up' : 'down'}">(${p.pnl >= 0 ? '+' : '−'}$${fmt(Math.abs(p.pnl))})</span>` : ''}</div>
-        ${p.qty > 0 && p.entry ? `<div class="qty">bought at $${fmt(p.entry)} · cost $${fmt(p.cost)}</div>` : ''}
-        <div class="signal">${p.signal || ''}</div>
-      `;
-      holdingsEl.appendChild(card);
+      const held = p.qty > 0, pup = (p.pnl || 0) >= 0;
+      const name = NAMES[tk] || (ETFS.has(tk) ? 'ETF' : 'Stock');
+      holdings.insertAdjacentHTML('beforeend', `
+        <div class="row">
+          <div class="logo" style="background:${logoColor(tk)}">${esc(tk.slice(0,4))}</div>
+          <div class="name"><div class="tk">${esc(tk)}</div><div class="sub">${esc(held ? p.qty.toFixed(4) + ' shares' : name)}</div></div>
+          <div class="right">
+            <div class="val num">${held ? money(p.value) : money(p.price)}</div>
+            ${held ? `<div class="chg num">${arrow(pup, true)}<span>${money(p.pnl)}</span></div>`
+                   : `<div class="chg" style="color:var(--muted)">not held</div>`}
+          </div>
+        </div>
+        ${p.signal ? `<div class="signal">${esc(p.signal)}</div>` : ''}`);
     });
+    if(!Object.keys(data.positions || {}).length) holdings.insertAdjacentHTML('beforeend', '<div class="none">Waiting for the bot\'s first run…</div>');
 
-    const trades = (data.trades || []).slice().reverse();
-    if(trades.length === 0){
-      tickerEl.innerHTML = '<div class="empty">No trades yet.</div>';
-    } else {
-      tickerEl.innerHTML = trades.map(t => {
-        const cls = t.side === 'BUY' ? 'buy' : 'sell';
-        const when = new Date(t.t * 1000).toLocaleString();
-        const why = t.reason === 'stop-loss' ? ' (stop-loss)' : t.reason === 'downtrend-stop' ? ' (cut loss, downtrend)' : '';
-        return `<div class="line ${cls}">${t.side} ${t.symbol} @ $${fmt(t.price)}${why} — ${when}</div>`;
-      }).join('');
-    }
+    const trades = (data.trades || []).slice(-15).reverse();
+    $('trades').innerHTML = trades.length ? trades.map(t => {
+      const buy = t.side === 'BUY';
+      const why = t.reason && t.reason !== 'signal' ? ` · ${esc(t.reason)}` : '';
+      return `<div class="trade"><div><span class="side ${buy ? 'up-t' : 'down-t'}">${buy ? 'Bought' : 'Sold'}</span> ${esc(t.symbol)} @ ${money(t.price)}<div class="when">${new Date(t.t*1000).toLocaleString()}${why}</div></div></div>`;
+    }).join('') : '<div class="none">No trades yet. The bot only trades when it sees a clear signal.</div>';
+
+    $('rules').textContent = `Budget ${money(data.total_budget || 0)} across ${(data.symbols || []).join(', ') || '—'}. ` +
+      `Max ${data.max_trades_per_day || 0} trades a day, ${data.cooldown_minutes || 0} min between trades, ` +
+      `${data.stop_loss_pct || 0}% stop-loss per stock, and the bot pauses itself if it's down ${money(data.max_overall_loss || 0)} overall.`;
   }
+
+  $('ranges').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    range = b.dataset.r;
+    document.querySelectorAll('#ranges button').forEach(x => x.classList.toggle('active', x === b));
+    try{ localStorage.setItem('range', range); }catch(_){}
+    if(last) render(last);
+  });
+  try{ const r = localStorage.getItem('range'); if(r && RANGE[r]){ range = r; document.querySelectorAll('#ranges button').forEach(x => x.classList.toggle('active', x.dataset.r === r)); } }catch(_){}
 
   async function poll(){
     try{
       const r = await fetch('state.json?t=' + Date.now());
-      if(!r.ok){
-        marketStrip.className = 'strip closed';
-        marketStrip.textContent = 'No data yet — make sure bot.py is running in another terminal.';
-        liveDot.classList.add('off');
-        return;
-      }
-      const data = await r.json();
-      render(data);
-    } catch(e){
-      liveDot.classList.add('off');
-      marketStrip.className = 'strip closed';
-      marketStrip.textContent = 'Cannot reach the dashboard server.';
+      if(!r.ok) throw new Error(r.status);
+      render(await r.json());
+    }catch(e){
+      $('dot').className = 'dot';
+      $('status').innerHTML = '<b>No data yet</b> · the bot hasn\'t published its status';
     }
   }
-
   poll();
-  setInterval(poll, 5000);
+  setInterval(poll, 15000);
 </script>
 </body>
 </html>
