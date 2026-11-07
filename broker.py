@@ -8,7 +8,8 @@ from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
+from alpaca.data.requests import StockBarsRequest, NewsRequest
+from alpaca.data.historical.news import NewsClient
 from alpaca.data.timeframe import TimeFrame
 
 import config
@@ -18,6 +19,20 @@ class Broker:
     def __init__(self):
         self.trading = TradingClient(config.API_KEY, config.SECRET_KEY, paper=config.PAPER)
         self.data = StockHistoricalDataClient(config.API_KEY, config.SECRET_KEY)
+        self.news = NewsClient(config.API_KEY, config.SECRET_KEY)
+
+    def recent_news(self, symbol, hours=24, limit=50):
+        """Headlines mentioning `symbol` in the last `hours`, oldest first."""
+        req = NewsRequest(
+            symbols=symbol,
+            start=datetime.now(timezone.utc) - timedelta(hours=hours),
+            limit=limit,
+            sort=Sort.DESC,
+        )
+        articles = self.news.get_news(req).data.get("news", [])
+        out = [{"t": a.created_at.timestamp(), "headline": a.headline or "",
+                "summary": a.summary or "", "source": a.source} for a in articles]
+        return sorted(out, key=lambda a: a["t"])
 
     def account_summary(self):
         acct = self.trading.get_account()

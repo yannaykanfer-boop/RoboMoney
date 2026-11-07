@@ -17,6 +17,7 @@ import config
 from broker import Broker
 import strategy
 import state
+import news
 
 LIVE_CONFIRM_PHRASE = "trade real money"
 NY = ZoneInfo("America/New_York")
@@ -92,6 +93,13 @@ def run_cycle(broker, log):
             ohlc = broker.recent_bars(symbol, lookback=ict_lookback)
             closes = [b["close"] for b in ohlc]
             series = ohlc
+        elif config.STRATEGY == "news":
+            closes = broker.recent_closes(symbol, lookback=config.NEWS_PRICE_WINDOW_BARS)
+            try:
+                series = broker.recent_news(symbol, hours=config.NEWS_LOOKBACK_HOURS)
+            except Exception as e:
+                log.warning(f"{symbol}: news fetch failed ({e}) — treating as no news.")
+                series = []
         else:
             closes = broker.recent_closes(symbol, lookback=max(config.SLOW_MA, config.MEANREV_LOOKBACK) + 5)
             series = closes
@@ -131,6 +139,10 @@ def run_cycle(broker, log):
                 if not paused:
                     if config.STRATEGY == "ict":
                         action = strategy.decide_ict(series, ict_ref_bars, has_position)
+                    elif config.STRATEGY == "news":
+                        action, news_note = news.decide_news(closes, series, has_position)
+                        if action != "hold":
+                            log.info(f"{symbol}: {news_note}")
                     else:
                         action = strategy.decide(series, has_position)
                 elif has_position:
@@ -167,8 +179,15 @@ def run_cycle(broker, log):
                     log.info(f"{symbol}: {action} signal ignored (daily limit of {config.MAX_TRADES_PER_DAY} trades reached).")
                     action = "hold"
 
+                if action == "buy" and config.STRATEGY == "news":
+                    stake, kelly_note = news.kelly_dollars(prior.get("trades", []) + new_trades,
+                                                           config.STAKES[symbol], config.TOTAL_BUDGET)
+                    log.info(f"{symbol}: {kelly_note}")
+                    if stake <= 0:
+                        action = "hold"
+
                 if action == "buy":
-                    stake = config.STAKES[symbol]
+                    stake = config.STAKES[symbol] if config.STRATEGY != "news" else stake
                     order = broker.buy_notional(symbol, stake)
                     log.info(f"{symbol}: BUY ~${stake} (order id {order.id})")
                     new_trades.append({"t": time.time(), "symbol": symbol, "side": "BUY", "price": price,
@@ -195,7 +214,9 @@ def run_cycle(broker, log):
                 "entry": pos["entry"] if pos else None,
                 "cost": pos["cost"] if pos else 0.0,
                 "pnl": pos["pnl"] if pos else 0.0,
-                "signal": strategy.describe_ict(series, ict_ref_bars) if config.STRATEGY == "ict" else strategy.describe(series),
+                "signal": (strategy.describe_ict(series, ict_ref_bars) if config.STRATEGY == "ict"
+                           else news.decide_news(closes, series, qty > 0)[1] if config.STRATEGY == "news"
+                           else strategy.describe(series)),
             }
 
         except Exception as e:

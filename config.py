@@ -81,6 +81,23 @@ ICT_REF_SYMBOL = os.getenv("ICT_REF_SYMBOL", "SPY")
 ICT_RANGE_BARS = int(os.getenv("ICT_RANGE_BARS", "20"))   # bars used to define the "recent range" that gets swept
 ICT_REACTION_BARS = int(os.getenv("ICT_REACTION_BARS", "10"))  # bars after the range to look for sweep + reversal in
 
+# News strategy: reads live headlines per symbol, buys positive news the price hasn't reacted to yet.
+NEWS_LOOKBACK_HOURS = float(os.getenv("NEWS_LOOKBACK_HOURS", "24"))
+NEWS_HALF_LIFE_HOURS = float(os.getenv("NEWS_HALF_LIFE_HOURS", "6"))
+NEWS_BUY_THRESHOLD = float(os.getenv("NEWS_BUY_THRESHOLD", "0.35"))
+NEWS_SELL_THRESHOLD = float(os.getenv("NEWS_SELL_THRESHOLD", "-0.25"))
+NEWS_MAX_RUNUP_PCT = float(os.getenv("NEWS_MAX_RUNUP_PCT", "1.5"))   # already moved this much = "priced in"
+NEWS_PRICE_WINDOW_BARS = int(os.getenv("NEWS_PRICE_WINDOW_BARS", "60"))  # minute bars used for the run-up check
+
+# Kelly sizing (news strategy). Uses the bot's own realized win rate/payoff, shrunk
+# toward a conservative prior until it has real history. Fractional Kelly (0.25 = quarter
+# Kelly) because full Kelly on a noisy edge estimate is a fast way to blow up.
+KELLY_FRACTION = float(os.getenv("KELLY_FRACTION", "0.25"))
+KELLY_PRIOR_WIN_RATE = float(os.getenv("KELLY_PRIOR_WIN_RATE", "0.55"))
+KELLY_PRIOR_PAYOFF = float(os.getenv("KELLY_PRIOR_PAYOFF", "1.0"))
+KELLY_PRIOR_TRADES = int(os.getenv("KELLY_PRIOR_TRADES", "20"))
+MIN_ORDER_DOLLARS = float(os.getenv("MIN_ORDER_DOLLARS", "1"))
+
 LOG_FILE = "trading_bot.log"
 STATE_FILE = "state.json"
 
@@ -99,6 +116,8 @@ def validate():
             f"Total STAKES (${total:.0f}) exceeds TOTAL_BUDGET (${TOTAL_BUDGET:.0f}). "
             "Lower your STAKES or raise TOTAL_BUDGET in .env if you actually have more to invest."
         )
-    if STRATEGY not in ("trend", "meanrev", "daily", "openclose", "ict"):
-        problems.append("STRATEGY must be 'trend', 'meanrev', 'daily', 'openclose' or 'ict'.")
+    if STRATEGY not in ("trend", "meanrev", "daily", "openclose", "ict", "news"):
+        problems.append("STRATEGY must be 'trend', 'meanrev', 'daily', 'openclose', 'ict' or 'news'.")
+    if not 0 < KELLY_FRACTION <= 1:
+        problems.append("KELLY_FRACTION must be between 0 and 1 (0.25 = quarter Kelly is recommended).")
     return problems
