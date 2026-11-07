@@ -10,6 +10,28 @@ import os
 from datetime import date
 
 FILE = "real_portfolio.json"
+HISTORY_FILE = "greenlight_history.json"
+BENCHMARK = "SPY"  # tracks the S&P 500
+
+
+def load_history(path=HISTORY_FILE):
+    if not os.path.exists(path):
+        return []
+    with open(path) as f:
+        return json.load(f).get("points", [])
+
+
+def perf(port, total, history, spy_now, spy_anchor):
+    """Pure: current 'You' and 'S&P 500' returns since you started, continuing Greenlight's figures.
+    You: Greenlight's return at the snapshot, moved by the portfolio's change since then.
+    S&P: Greenlight's last S&P figure, moved by SPY's change since that date."""
+    out = {}
+    snap_total = port.get("cash", 0.0) + sum(h["value"] for h in port["holdings"].values())
+    if port.get("you_pct_at_snapshot") is not None and snap_total:
+        out["you_pct"] = round(((1 + port["you_pct_at_snapshot"] / 100) * total / snap_total - 1) * 100, 2)
+    if history and spy_now and spy_anchor:
+        out["sp_pct"] = round(((1 + history[-1]["sp_pct"] / 100) * spy_now / spy_anchor - 1) * 100, 2)
+    return out
 
 
 def load(path=FILE):
@@ -92,6 +114,21 @@ def update(broker, prior_state, log):
         except Exception as e:
             log.warning(f"real portfolio: no price for {sym} ({e}) — showing its last known value.")
     result = valuate(port, refs, lives)
+    history = load_history()
+    result["history"] = history
+    try:
+        spy_now, spy_anchor = None, cache.get("spy_anchor")
+        if history:
+            anchor_day = date.fromisoformat(history[-1]["date"])
+            if not spy_anchor or cache.get("spy_anchor_date") != history[-1]["date"]:
+                spy_anchor = broker.close_on_or_before(BENCHMARK, anchor_day)
+                cache["spy_anchor"], cache["spy_anchor_date"] = spy_anchor, history[-1]["date"]
+            _, sb, _ = broker.session_bars(BENCHMARK)
+            spy_now = sb[-1][1] if sb else None
+        result["perf"] = perf(port, result["total"], history, spy_now, spy_anchor)
+    except Exception as e:
+        log.warning(f"real portfolio: couldn't compare with the S&P 500 ({e}).")
+        result["perf"] = perf(port, result["total"], history, None, None)
     try:
         t = today(port, refs, bars, prev)
         if t:

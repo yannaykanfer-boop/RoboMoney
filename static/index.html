@@ -96,6 +96,13 @@
   .circ.up{ background:#1f6e46; color:#d9fbe8; } .circ.down{ background:#8f2a2a; color:#ffe1de; }
   .hero-label{ color:var(--ink); margin-top:16px; font-size:13px; }
   #real-chart{ width:100%; height:300px; display:block; margin-top:6px; }
+  .chart-wrap{ position:relative; margin-top:6px; }
+  .chart-wrap #real-chart{ margin-top:0; }
+  .axis-lbl{ position:absolute; right:0; transform:translateY(-50%); color:#8b958f; font-size:12px; margin-top:0; }
+  .pills{ display:flex; flex-direction:column; gap:10px; }
+  .pill-row{ display:flex; align-items:center; gap:10px; }
+  .pill-lbl{ color:var(--ink); font-weight:400; }
+  .dot{ width:11px; height:11px; border-radius:50%; display:inline-block; }
 
   /* real portfolio */
   .p-real{ grid-column:1 / -1; }
@@ -159,7 +166,7 @@
       <div id="real-chart-box"></div>
       <div class="ranges" id="real-ranges">
         <button data-r="1D" class="on">1D</button><button data-r="1W">1W</button><button data-r="1M">1M</button>
-        <button data-r="3M">3M</button><button data-r="All">ALL</button>
+        <button data-r="3M">3M</button><button data-r="1Y">1Y</button><button data-r="All">ALL</button>
       </div>
     </div>
 
@@ -215,7 +222,7 @@
 
 <script>
   const $ = id => document.getElementById(id);
-  const RANGE = { '1D':86400, '1W':7*86400, '1M':30*86400, '3M':90*86400, 'All':Infinity };
+  const RANGE = { '1D':86400, '1W':7*86400, '1M':30*86400, '3M':90*86400, '1Y':365*86400, 'All':Infinity };
   const COLORS = ['#4fd1e8','#3ddc84','#f5b942','#9b7bff','#ff8a4d','#ff4d5e'];
   let range = 'All', last = null;
 
@@ -278,7 +285,7 @@
 
   const ARW_UP = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V2M2.5 6.5 7 2l4.5 4.5"/></svg>';
   const ARW_DN = '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v10M2.5 7.5 7 12l4.5-4.5"/></svg>';
-  const LABEL = { '1D':'Today', '1W':'Past 1 week', '1M':'Past 1 month', '3M':'Past 3 months', 'All':'All time' };
+  const LABEL = { '1D':'Today', '1W':'Past 1 week', '1M':'Past 1 month', '3M':'Past 3 months', '1Y':'Past 1 year', 'All':'All time' };
   let view = 'real', realRange = '1D';
 
   // Smooth line chart with a dashed baseline and end dot (the "my money" look).
@@ -304,30 +311,94 @@
     </svg>`;
   }
 
+  // Two-line % chart: You (purple, filled) vs S&P 500 (gray), dashed 0% line, axis labels on the right.
+  function perfChart(you, sp){
+    if(you.length < 2) return '<div class="empty" style="height:300px;display:grid;place-items:center">not enough history for this range yet</div>';
+    const W = 800, H = 300, P = 14, R = 56;
+    const all = you.concat(sp).map(p => p.v).concat([0]);
+    let mn = Math.min(...all), mx = Math.max(...all);
+    if(mx - mn < 1){ mn -= 1; mx += 1; }
+    const t0 = Math.min(you[0].t, sp.length ? sp[0].t : you[0].t), t1 = Math.max(you.at(-1).t, sp.length ? sp.at(-1).t : you.at(-1).t) || t0 + 1;
+    const x = t => P + (t - t0) / ((t1 - t0) || 1) * (W - P - R);
+    const y = v => P + (1 - (v - mn) / (mx - mn)) * (H - 2*P);
+    const path = pts => {
+      const xy = pts.map(p => [x(p.t), y(p.v)]);
+      let d = `M${xy[0][0].toFixed(1)},${xy[0][1].toFixed(1)}`;
+      for(let i = 1; i < xy.length; i++){
+        const [x0, y0] = xy[i-1], [x1, y1] = xy[i], cx = ((x0 + x1)/2).toFixed(1);
+        d += ` C${cx},${y0.toFixed(1)} ${cx},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+      }
+      return [d, xy];
+    };
+    const [dy, xyY] = path(you);
+    const spSvg = sp.length >= 2 ? `<path d="${path(sp)[0]}" fill="none" stroke="#8b958f" stroke-width="1.6" vector-effect="non-scaling-stroke"/>` : '';
+    const [ex, ey] = xyY.at(-1);
+    const lab = (v, txt) => `<span class="axis-lbl" style="top:${(y(v) / H * 100).toFixed(2)}%">${txt}</span>`;
+    const fmt = v => (v > 0 ? '+' : '') + Math.round(v) + '%';
+    return `<div class="chart-wrap"><svg id="real-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Your return vs the S&P 500">
+      <defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b6bd6" stop-opacity=".22"/><stop offset="1" stop-color="#6b6bd6" stop-opacity="0"/></linearGradient></defs>
+      <line x1="${P}" x2="${W - R}" y1="${y(mx)}" y2="${y(mx)}" stroke="#2a3530" vector-effect="non-scaling-stroke"/>
+      <line x1="${P}" x2="${W - R}" y1="${y(mn)}" y2="${y(mn)}" stroke="#2a3530" vector-effect="non-scaling-stroke"/>
+      <line x1="${P}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="#5d7266" stroke-width="1.2" stroke-dasharray="3 5" vector-effect="non-scaling-stroke"/>
+      <path d="${dy} L${ex},${H} L${xyY[0][0]},${H} Z" fill="url(#pg)"/>
+      ${spSvg}
+      <path d="${dy}" fill="none" stroke="#6b6bd6" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+      <circle cx="${ex}" cy="${ey}" r="5" fill="#9a9af5" stroke="#070b08" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    </svg>${lab(mx, fmt(mx))}${lab(0, '0%')}${lab(mn, fmt(mn))}</div>`;
+  }
+
+  // Greenlight history points + the bot's own runs, as {t, you, sp} returns since you started.
+  function perfSeries(d){
+    const rp = d.real_portfolio || {};
+    const pts = (rp.history || []).map(p => ({t: Date.parse(p.date + 'T20:00:00Z')/1000, you: p.you_pct, sp: p.sp_pct}));
+    (d.real_history || []).forEach(p => { if(p.you_pct != null) pts.push({t:p.t, you:p.you_pct, sp:p.sp_pct}); });
+    return pts.sort((a, b) => a.t - b.t);
+  }
+
+  const pill = (v, label, dot) => {
+    const up = v >= 0;
+    return `<div class="pill-row"><span class="circ ${up ? 'up' : 'down'}">${up ? ARW_UP : ARW_DN}</span>
+      <span class="${up ? 'up' : 'down'}">${up ? '' : '−'}${Math.abs(v).toFixed(2)}%</span><span class="pill-lbl">${label}</span><span class="dot" style="background:${dot}"></span></div>`;
+  };
+
   function renderReal(d){
     const rp = d.real_portfolio;
     if(!rp){ $('hero-total').textContent = '$—'; $('real-chart-box').innerHTML = '<div class="empty">no real portfolio set up</div>'; return; }
     $('hero-total').textContent = usd(rp.total);
-    let pts, base;
-    if(realRange === '1D' && rp.today){
-      pts = rp.today.series; base = rp.today.prev_total;
-    } else {
-      const now = Date.now()/1000;
-      pts = (d.real_history || []).filter(p => now - p.t <= RANGE[realRange]).map(p => ({t:p.t, v:p.total}));
-      base = pts.length ? pts[0].v : rp.total;
-    }
-    const lastV = pts.length ? pts.at(-1).v : rp.total, chg = lastV - base, up = chg >= 0;
-    const pct = base ? chg / base * 100 : 0;
-    $('hero-change').innerHTML = pts.length >= 2
-      ? `<span class="circ ${up ? 'up' : 'down'}">${up ? ARW_UP : ARW_DN}</span><span class="${up ? 'up' : 'down'}">${up ? '+' : '−'}$${Math.abs(chg).toFixed(2)} (${up ? '+' : '−'}${Math.abs(pct).toFixed(2)}%)</span>`
-      : `<span class="dim" style="font-size:12px">all-time <span class="${cls(rp.gain)}">${usd(rp.gain, true)}</span></span>`;
-    const session = rp.today && rp.today.session ? new Date(rp.today.session + 'T12:00:00') : null;
-    const isToday = session && session.toDateString() === new Date().toDateString();
-    $('hero-label').textContent = realRange === '1D' && session && !isToday
-      ? 'Last trading day · ' + session.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'})
-      : LABEL[realRange];
     $('real-hdr').innerHTML = `all-time <span class="${cls(rp.gain)}">${usd(rp.gain, true)}</span>`;
-    $('real-chart-box').innerHTML = smoothChart(pts, base, '#6b6bd6');
+
+    if(realRange === '1D'){
+      const pts = rp.today ? rp.today.series : [], base = rp.today ? rp.today.prev_total : rp.total;
+      const chg = (pts.length ? pts.at(-1).v : rp.total) - base, up = chg >= 0, pct = base ? chg / base * 100 : 0;
+      $('hero-change').innerHTML = pts.length >= 2
+        ? `<span class="circ ${up ? 'up' : 'down'}">${up ? ARW_UP : ARW_DN}</span><span class="${up ? 'up' : 'down'}">${up ? '+' : '−'}$${Math.abs(chg).toFixed(2)} (${up ? '+' : '−'}${Math.abs(pct).toFixed(2)}%)</span>`
+        : `<span class="dim" style="font-size:12px">all-time <span class="${cls(rp.gain)}">${usd(rp.gain, true)}</span></span>`;
+      const session = rp.today && rp.today.session ? new Date(rp.today.session + 'T12:00:00') : null;
+      const isToday = session && session.toDateString() === new Date().toDateString();
+      $('hero-label').textContent = session && !isToday
+        ? 'Last trading day · ' + session.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}) : 'Today';
+      $('real-chart-box').innerHTML = smoothChart(pts, base, '#6b6bd6');
+      return;
+    }
+
+    // 1W / 1M / 3M / ALL: You vs S&P 500, rebased to the start of the range (ALL = since you started)
+    const now = Date.now()/1000;
+    let pts = perfSeries(d);
+    if(realRange !== 'All'){
+      const inRange = pts.filter(p => now - p.t <= RANGE[realRange]);
+      const before = pts.filter(p => now - p.t > RANGE[realRange]).at(-1);
+      pts = before ? [before].concat(inRange) : inRange;
+      if(pts.length){
+        const y0 = pts[0].you, s0 = pts[0].sp;
+        pts = pts.map(p => ({t:p.t, you: ((1 + p.you/100)/(1 + y0/100) - 1)*100, sp: p.sp == null || s0 == null ? null : ((1 + p.sp/100)/(1 + s0/100) - 1)*100}));
+      }
+    }
+    const you = pts.map(p => ({t:p.t, v:p.you})), sp = pts.filter(p => p.sp != null).map(p => ({t:p.t, v:p.sp}));
+    $('hero-change').innerHTML = pts.length
+      ? `<div class="pills">${sp.length ? pill(sp.at(-1).v, 'S&amp;P 500', '#c9d1cc') : ''}${pill(you.at(-1).v, 'You', '#6b6bd6')}</div>`
+      : '';
+    $('hero-label').textContent = LABEL[realRange] + (realRange === 'All' || realRange === '1Y' || realRange === '3M' ? ' · history from your Greenlight screenshots' : '');
+    $('real-chart-box').innerHTML = perfChart(you, sp);
   }
 
   function render(d){

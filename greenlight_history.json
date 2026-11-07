@@ -1,0 +1,23 @@
+{
+  "_note": "Your Greenlight 'All' chart, read by hand from screenshots (points where the numbers were clear). you_pct / sp_pct are Greenlight's own return figures since you started; balance is null where it was blurred. The bot extends both lines from here with live prices.",
+  "points": [
+    {"date": "2025-06-11", "balance": null,   "you_pct": 6.41,  "sp_pct": 1.38},
+    {"date": "2025-07-30", "balance": 436.79, "you_pct": 20.33, "sp_pct": 4.83},
+    {"date": "2025-09-17", "balance": null,   "you_pct": 23.29, "sp_pct": 12.18},
+    {"date": "2025-10-28", "balance": 555.74, "you_pct": 34.82, "sp_pct": 15.58},
+    {"date": "2025-11-17", "balance": 503.19, "you_pct": 21.67, "sp_pct": 15.57},
+    {"date": "2025-12-25", "balance": null,   "you_pct": 27.56, "sp_pct": 17.11},
+    {"date": "2026-01-27", "balance": 532.84, "you_pct": 28.84, "sp_pct": 18.00},
+    {"date": "2026-03-03", "balance": 547.20, "you_pct": 21.88, "sp_pct": 16.46},
+    {"date": "2026-04-08", "balance": 247.69, "you_pct": 29.61, "sp_pct": 16.73},
+    {"date": "2026-04-20", "balance": 329.64, "you_pct": 0.59,  "sp_pct": 21.02},
+    {"date": "2026-04-30", "balance": 344.90, "you_pct": 5.25,  "sp_pct": 22.61},
+    {"date": "2026-05-12", "balance": 365.65, "you_pct": 11.58, "sp_pct": 26.29},
+    {"date": "2026-06-04", "balance": 360.71, "you_pct": 10.07, "sp_pct": 28.32},
+    {"date": "2026-07-14", "balance": 0.00,   "you_pct": 0.00,  "sp_pct": 28.10},
+    {"date": "2026-08-05", "balance": 932.09, "you_pct": 3.52,  "sp_pct": 31.11},
+    {"date": "2026-08-27", "balance": 934.28, "you_pct": 3.61,  "sp_pct": 30.70},
+    {"date": "2026-09-21", "balance": null,   "you_pct": 4.13,  "sp_pct": 30.12},
+    {"date": "2026-10-04", "balance": 936.74, "you_pct": 4.81,  "sp_pct": 32.93}
+  ]
+}
