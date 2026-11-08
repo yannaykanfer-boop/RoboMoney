@@ -889,3 +889,7 @@ Some ideas we could test on past data:
 4. **Your own version:** the practice page, where you make your own pretend trades against the bot.
 
 Which one do you want tested first? They're tests on pretend money, not tips for what to buy.
+
+### Owner — Nov 8, 2026, 10:47 AM
+
+Hey, it doesn’t look like adding pictures on my phone works from my gallery
