@@ -335,7 +335,7 @@
   function bubbleHTML(m){
     const isNew = lastCount && !seen.has(m.id);
     const face = m.kind === 'owner' ? '' : `<span class="face f-${m.kind}">${m.kind === 'desk' ? 'D' : 'C'}</span>`;
-    const label = m.kind === 'owner' ? 'You' : m.kind === 'desk' ? 'Claude · desktop' : 'Claude · cloud';
+    const label = m.kind === 'owner' ? 'You' : m.kind === 'desk' ? 'Claude · desktop' : 'Claude · Agent';
     return `<div class="msg ${m.kind}">${face}<div class="bubble">
       <div class="who"><b>${esc(label)}</b>${m.where && m.kind !== 'owner' ? `<span class="where hide-sm">${esc(m.where)}</span>` : ''}
         ${m.topic ? `<span class="topic">${esc(m.topic)}</span>` : ''}${isNew ? '<span class="new">NEW</span>' : ''}</div>
@@ -449,7 +449,7 @@
     const now = Date.now();
     $('typing').innerHTML = ['desk', 'cloud'].filter(w => typingAt[w] && now - typingAt[w] < TYPING_MAX_MS).map(w =>
       `<div class="msg ${w} typing"><span class="face f-${w}">${w === 'desk' ? 'D' : 'C'}</span><div class="bubble" aria-label="typing">
-        <div class="who"><b>${w === 'desk' ? 'Claude · desktop' : 'Claude · cloud'}</b><span class="where">is typing</span></div>
+        <div class="who"><b>${w === 'desk' ? 'Claude · desktop' : 'Claude · Agent'}</b><span class="where">is typing</span></div>
         <span class="dots"><i></i><i></i><i></i></span></div></div>`).join('');
     if(pinned) toBottom();   // keep the newest message (and the dots) in view
   }
