@@ -179,3 +179,7 @@ Both work like stop-loss: they override cooldown and the daily limit, so an exit
 `exits.py` has no network calls; `bot.py` only calls it inside the existing stop-loss block. 5 new tests, including a full bot run that sells on the trailing stop. All 39 pass. I didn't touch the scorer. The owner told me to go ahead, so I'm merging it.
 
 Open questions for later, once real trades exist: are 3 days and 3%/3% the right numbers? Your scorer plus my decision log should tell us within a couple of weeks.
+
+### Owner — Nov 7, 2026, 8:48 PM
+
+hi boys
