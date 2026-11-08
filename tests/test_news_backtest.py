@@ -99,5 +99,80 @@ class ScorerCheckTests(unittest.TestCase):
         self.assertLess(nb.binom_p_two_sided(100, 70), 0.001)
 
 
+class WilsonTests(unittest.TestCase):
+    def test_empty_is_unknown(self):
+        self.assertEqual(nb.wilson_interval(0, 0), (0.0, 1.0))
+
+    def test_known_value(self):
+        lo, hi = nb.wilson_interval(100, 50)
+        self.assertAlmostEqual(lo, 0.404, places=3)
+        self.assertAlmostEqual(hi, 0.596, places=3)
+
+    def test_edges_stay_in_range_and_narrow_with_n(self):
+        lo, hi = nb.wilson_interval(10, 10)
+        self.assertLessEqual(hi, 1.0)
+        self.assertGreater(lo, 0.6)
+        small = nb.wilson_interval(10, 5)
+        big = nb.wilson_interval(1000, 500)
+        self.assertGreater(small[1] - small[0], big[1] - big[0])
+
+
+DAY = 86400
+
+
+class HorizonTests(unittest.TestCase):
+    def test_three_day_horizon_differs_from_one_day(self):
+        # price is 101 one day later (hit) but 90 three days later (miss)
+        rows = [(START + i * 300, 100.0 if i == 0 else (101.0 if i <= 78 else 90.0)) for i in range(78 * 4)]
+        arts = {"AAA": [art(START, GOOD, "g")]}
+        one = nb.scorer_check({"AAA": rows}, arts, horizon_bars=78)
+        three = nb.scorer_check({"AAA": rows}, arts, horizon_bars=3 * 78)
+        self.assertEqual(one["pos"], (1, 1))
+        self.assertEqual(three["pos"], (1, 0))
+
+    def test_time_range_filters_signals(self):
+        rows = [(START + i * 300, 100.0 + i) for i in range(400)]
+        arts = {"AAA": [art(START, GOOD, "g")]}
+        inside = nb.scorer_check({"AAA": rows}, arts, t_lo=START, t_hi=START + 10)
+        outside = nb.scorer_check({"AAA": rows}, arts, t_lo=START + 10, t_hi=START + 100000)
+        self.assertEqual(inside["pos"], (1, 1))
+        self.assertEqual(outside["pos"], (0, 0))
+
+
+class PeriodTests(unittest.TestCase):
+    def _bars(self):
+        # 180 days, one bar per day: two 90-day periods, rising then falling
+        return {"AAA": [(START + d * DAY, 100.0 + (d if d < 90 else 180 - d)) for d in range(180)]}
+
+    def test_split_periods(self):
+        ps = nb.split_periods(self._bars(), 90)
+        self.assertEqual(len(ps), 2)
+        self.assertEqual(ps[0][1], ps[1][0])
+        self.assertEqual(nb.split_periods({}, 90), [])
+        self.assertEqual(len(nb.split_periods({"A": [(START, 1.0), (START + 5 * DAY, 1.0)]}, 90)), 1)
+
+    def test_breakdown_assigns_trades_and_hold(self):
+        trades = [{"buy_t": START + 10 * DAY, "pnl": 5.0}, {"buy_t": START + 20 * DAY, "pnl": -1.0},
+                  {"buy_t": START + 120 * DAY, "pnl": -3.0}]
+        rows = nb.period_breakdown(trades, self._bars(), {}, {"AAA": 100.0}, 90)
+        self.assertEqual([r["trades"] for r in rows], [2, 1])
+        self.assertEqual([r["wins"] for r in rows], [1, 0])
+        self.assertAlmostEqual(rows[0]["win_rate"], 0.5)
+        self.assertAlmostEqual(rows[0]["pnl"], 4.0)
+        self.assertAlmostEqual(rows[1]["pnl"], -3.0)
+        self.assertGreater(rows[0]["hold_pnl"], 0)
+        self.assertLess(rows[1]["hold_pnl"], 0)
+
+    def test_breakdown_hit_rates_per_period(self):
+        # 100 trading days of 78 bars, one calendar day apart; always rising
+        bars = {"AAA": [(START + (d // 78) * DAY + (d % 78) * 300, 100.0 + d) for d in range(78 * 100)]}
+        arts = {"AAA": [art(START + 60, GOOD, "early")]}
+        rows = nb.period_breakdown([], bars, arts, {"AAA": 100.0}, 50, horizon_bars=78)
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["pos"], (1, 1))
+        self.assertEqual(rows[1]["pos"], (0, 0))
+        self.assertEqual(rows[0]["trades"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

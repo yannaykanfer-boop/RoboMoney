@@ -118,17 +118,20 @@ def summarize(trades, bars, stakes):
             "reasons": reasons}
 
 
-def scorer_check(bars, articles, threshold=None, horizon_bars=BARS_PER_DAY):
+def scorer_check(bars, articles, threshold=None, horizon_bars=BARS_PER_DAY, t_lo=None, t_hi=None):
     """For each stock-day with articles scoring at least `threshold` (either sign), compare the
     price at the first bar after the first such article with the price `horizon_bars` later.
     The day's direction is the sign of its summed scores.
     Returns {'pos': (n, n_up), 'neg': (n, n_down), 'base': (n, n_up)}; base is every
-    bar-to-bar+horizon pair, i.e. how often the stock went up anyway."""
+    bar-to-bar+horizon pair, i.e. how often the stock went up anyway.
+    t_lo / t_hi (epoch, optional) keep only signals and base samples starting in [t_lo, t_hi)."""
     threshold = config.NEWS_BUY_THRESHOLD if threshold is None else threshold
     out = {"pos": [0, 0], "neg": [0, 0], "base": [0, 0]}
     for sym, rows in bars.items():
         ts = [t for t, _ in rows]
         for i in range(0, len(rows) - horizon_bars, BARS_PER_DAY // 6):
+            if not _in_range(rows[i][0], t_lo, t_hi):
+                continue
             out["base"][0] += 1
             out["base"][1] += rows[i + horizon_bars][1] > rows[i][1]
         # One signal per stock per day: ten stories on one big day are one event, not ten.
@@ -144,13 +147,17 @@ def scorer_check(bars, articles, threshold=None, horizon_bars=BARS_PER_DAY):
             day[0] += s
         for total, t in days.values():
             i = _first_at_or_after(ts, t)
-            if total == 0 or i is None or i + horizon_bars >= len(rows):
+            if total == 0 or i is None or i + horizon_bars >= len(rows) or not _in_range(t, t_lo, t_hi):
                 continue
             up = rows[i + horizon_bars][1] > rows[i][1]
             key = "pos" if total > 0 else "neg"
             out[key][0] += 1
             out[key][1] += up if total > 0 else not up
     return {k: tuple(v) for k, v in out.items()}
+
+
+def _in_range(t, t_lo, t_hi):
+    return (t_lo is None or t >= t_lo) and (t_hi is None or t < t_hi)
 
 
 def _first_at_or_after(ts, t):
@@ -170,6 +177,56 @@ def binom_p_two_sided(n, k, p=0.5):
         return 1.0
     z = (k - n * p) / math.sqrt(n * p * (1 - p))
     return math.erfc(abs(z) / math.sqrt(2))
+
+
+def wilson_interval(n, k, z=1.96):
+    """95% Wilson score range for a hit rate of k hits out of n. Returns (low, high);
+    (0.0, 1.0) when n == 0, i.e. nothing is known."""
+    if n <= 0:
+        return (0.0, 1.0)
+    p = k / n
+    denom = 1 + z * z / n
+    centre = (p + z * z / (2 * n)) / denom
+    half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
+    return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def split_periods(bars, period_days=90):
+    """Equal-width (t_lo, t_hi) epoch ranges covering all bars, each roughly period_days long
+    (the count is the span divided by period_days, rounded, at least one)."""
+    times = [t for rows in bars.values() for t, _ in rows]
+    if not times:
+        return []
+    lo, hi = min(times), max(times) + 1
+    n = max(1, round((hi - lo) / (period_days * 86400)))
+    width = (hi - lo) / n
+    return [(lo + i * width, lo + (i + 1) * width if i < n - 1 else hi) for i in range(n)]
+
+
+def period_breakdown(trades, bars, articles, stakes, period_days=90, horizon_bars=BARS_PER_DAY,
+                     threshold=None):
+    """Per-period results so one lucky stretch can't hide. Trades belong to the period they were
+    bought in; buy-and-hold uses first-to-last bar inside the period. Each row has: t_lo, t_hi,
+    trades, wins, win_rate, pnl, hold_pnl, pos (n, hits), neg (n, hits), base (n, hits)."""
+    rows_out = []
+    for lo, hi in split_periods(bars, period_days):
+        in_p = [t for t in trades if lo <= t["buy_t"] < hi]
+        hold = 0.0
+        for sym, rows in bars.items():
+            seg = [c for t, c in rows if lo <= t < hi]
+            if seg:
+                hold += stakes.get(sym, 100.0) * (seg[-1] / seg[0] - 1)
+        c = scorer_check(bars, articles, threshold=threshold, horizon_bars=horizon_bars, t_lo=lo, t_hi=hi)
+        wins = sum(1 for t in in_p if t["pnl"] > 0)
+        rows_out.append({"t_lo": lo, "t_hi": hi, "trades": len(in_p), "wins": wins,
+                         "win_rate": wins / len(in_p) if in_p else 0.0,
+                         "pnl": sum(t["pnl"] for t in in_p), "hold_pnl": hold,
+                         "pos": c["pos"], "neg": c["neg"], "base": c["base"]})
+    return rows_out
+
+
+def _rate(n, k):
+    return f"{k / n:.0%} ({k}/{n})" if n else "n/a"
 
 
 # ---------------- data download ----------------
@@ -210,7 +267,13 @@ def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--days", type=int, default=90)
     p.add_argument("--step", type=int, default=3, help="check every N five-minute bars (3 = every 15 min)")
+    p.add_argument("--horizon-days", default="1,3",
+                   help="comma-separated trading-day horizons for the scorer check (default 1,3)")
+    p.add_argument("--period-days", type=int, default=90, help="approximate length of each period in the breakdown")
     args = p.parse_args()
+    horizons = sorted({int(x) for x in args.horizon_days.split(",") if x.strip()})
+    if not horizons or horizons[0] < 1:
+        p.error("--horizon-days needs whole numbers of at least 1")
 
     stakes = config.STAKES if config.STRATEGY == "news" else LIVE_STAKES
     print(f"Downloading {args.days} days of prices and headlines for {', '.join(stakes)}...")
@@ -228,19 +291,31 @@ def main():
         print(f"    {t['symbol']:5} {bt} @ {t['buy_price']:.2f} -> {st} @ {t['sell_price']:.2f}  "
               f"{t['pnl']:+7.2f}  {t['reason']}")
 
-    c = scorer_check(bars, articles)
-    print(f"\nScorer check (headlines scoring at least ±{config.NEWS_BUY_THRESHOLD}, next trading day):")
-    n, k = c["base"]
-    base = k / n if n else 0.5
-    print(f"  any time:          up {base:.0%} of the time ({n} samples)")
-    for key, word in (("pos", "up"), ("neg", "down")):
-        n, k = c[key]
-        if not n:
-            print(f"  {key} days:     none")
-            continue
-        expect = base if key == "pos" else 1 - base
-        print(f"  {key} days:     {word} {k / n:.0%} of the time ({n} stock-days; "
-              f"would be {expect:.0%} by chance, p={binom_p_two_sided(n, k, expect):.2f})")
+    for h in horizons:
+        c = scorer_check(bars, articles, horizon_bars=h * BARS_PER_DAY)
+        label = "next trading day" if h == 1 else f"{h} trading days later"
+        print(f"\nScorer check (headlines scoring at least ±{config.NEWS_BUY_THRESHOLD}, {label}):")
+        n, k = c["base"]
+        base = k / n if n else 0.5
+        print(f"  any time:          up {base:.0%} of the time ({n} samples)")
+        for key, word in (("pos", "up"), ("neg", "down")):
+            n, k = c[key]
+            if not n:
+                print(f"  {key} days:     none")
+                continue
+            expect = base if key == "pos" else 1 - base
+            lo, hi = wilson_interval(n, k)
+            print(f"  {key} days:     {word} {k / n:.0%} of the time ({n} stock-days; "
+                  f"95% range {lo:.0%}-{hi:.0%}; would be {expect:.0%} by chance, "
+                  f"p={binom_p_two_sided(n, k, expect):.2f})")
+
+    h = horizons[0]
+    print(f"\nBy period (~{args.period_days} days each; hit rates use the {h}-day horizon):")
+    for r in period_breakdown(trades, bars, articles, stakes, args.period_days, h * BARS_PER_DAY):
+        a = datetime.fromtimestamp(r["t_lo"], NY).strftime("%Y-%m-%d")
+        b = datetime.fromtimestamp(r["t_hi"] - 1, NY).strftime("%Y-%m-%d")
+        print(f"  {a} to {b}: trades {r['trades']}, win {r['win_rate']:.0%}, bot ${r['pnl']:+.2f}, "
+              f"hold ${r['hold_pnl']:+.2f}, pos-day up {_rate(*r['pos'])}, neg-day down {_rate(*r['neg'])}")
 
 
 if __name__ == "__main__":
