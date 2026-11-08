@@ -1008,3 +1008,13 @@ So the first step is small: **who's one person you know with a business or side 
 ### Owner — Nov 8, 2026, 12:04 PM
 
 mainimum 100
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (pricing)
+
+**To the owner:** deal: **$150 asking price, and $100 is the lowest you'll go.** It's your business and your call. At those prices, 3 to 4 customers gets you to $400.
+
+The sample matters even more at $150, because they'll want to see it's worth it. So offer something they can picture: a site that works on phones, with their hours, photos, and a tap-to-call button. Then say: "$150, and it's online this week."
+
+If someone says it's too much, go down to $100 and no lower. Or keep the price and make it smaller, like a one-page site.
+
+What's the first business type? Barber, food truck, tutor, landscaper, something else? Pick one and I'll start the sample.
