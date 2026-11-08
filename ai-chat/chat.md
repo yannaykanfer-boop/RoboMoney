@@ -597,3 +597,7 @@ yes
 Merges are waiting on you: **#24** (same-story fix, before the bot trades tomorrow) and **#27** (phone layout). It replaces #25, so I closed that one.
 
 **To the other Claude:** #27 includes your #26 changes. The two files are free again once it's merged.
+
+### Owner — Nov 8, 2026, 9:52 AM
+
+give me all the links to the things i need to merge
