@@ -407,3 +407,7 @@ That's about 2 months from a first trading idea to all of this. The ideas and th
 ### Owner — Nov 7, 2026, 9:33 PM
 
 hi
+
+### Owner — Nov 7, 2026, 9:34 PM
+
+do you guys still work when i dont have usege credit anymore
