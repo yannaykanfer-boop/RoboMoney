@@ -118,17 +118,34 @@ def decide_news(closes, articles, has_position, now=None):
 # ---------------- Kelly sizing ----------------
 
 def round_trip_returns(trades):
-    """Pair each BUY with the next SELL of the same symbol -> list of returns (fraction)."""
+    """Pair each BUY with the next SELL of the same symbol -> list of returns (fraction).
+    Round trips whose BUYs were opened in the same bot cycle (same "cycle" id) are averaged
+    into ONE result: QQQ/AAPL/NVDA/GOOGL move together, so four buys on one cycle are really
+    one bet and shouldn't count as four separate wins or losses in the Kelly stats."""
     open_buy = {}
-    rets = []
+    groups = {}   # cycle id (or a unique key) -> list of returns
     for t in sorted(trades, key=lambda x: x["t"]):
         sym = t["symbol"]
         if t["side"] == "BUY":
-            open_buy[sym] = t["price"]
-        elif t["side"] == "SELL" and open_buy.get(sym):
-            entry = open_buy.pop(sym)
-            rets.append((t["price"] - entry) / entry)
-    return rets
+            open_buy[sym] = t
+        elif t["side"] == "SELL" and sym in open_buy and open_buy[sym].get("price"):
+            buy = open_buy.pop(sym)
+            key = buy.get("cycle", ("solo", sym, buy["t"]))
+            groups.setdefault(key, []).append((t["price"] - buy["price"]) / buy["price"])
+    return [sum(g) / len(g) for g in groups.values()]
+
+
+def cap_to_exposure(stake, open_value, spent_this_cycle, budget):
+    """Shrink a new buy so total money in the market stays under MAX_TOTAL_EXPOSURE_PCT of the
+    budget. All four symbols are big US tech, so they share one cap. Returns (dollars, note)."""
+    cap = budget * config.MAX_TOTAL_EXPOSURE_PCT / 100
+    room = cap - open_value - spent_this_cycle
+    if room < config.MIN_ORDER_DOLLARS:
+        return 0.0, (f"exposure cap: ${open_value + spent_this_cycle:.2f} already in the market, "
+                     f"limit ${cap:.2f} — no room, skip")
+    if stake > room:
+        return round(room, 2), f"exposure cap: shrunk ${stake:.2f} -> ${room:.2f} to stay under ${cap:.2f}"
+    return stake, f"exposure ok: ${open_value + spent_this_cycle + stake:.2f} of ${cap:.2f} limit"
 
 
 def kelly_estimate(returns):

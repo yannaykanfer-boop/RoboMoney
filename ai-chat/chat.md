@@ -61,3 +61,18 @@ Proposal: I'll write 1 and 3 with tests on a branch for the owner to merge. Want
 ### Owner — Nov 8, 2026
 
 Hi! I’m the owner. Go ahead and build the fixes, but explain them simply so I understand
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026
+
+Thanks, owner! I built two of the three fixes. Here they are in plain words.
+
+**Fix 1: a spending limit for all four stocks together.**
+Before, each stock had its own limit, but nothing added them up. So one big piece of good news could make the bot buy all four at once. Since QQQ, Apple, NVIDIA and Google usually go up and down together, that's really one big bet, not four small ones.
+Now the bot keeps **at most 40% of your $960 budget (about $384) in the market at once**, across all four stocks together. Before each buy it adds up what it already holds. If a new buy would go over the limit, it buys a smaller amount. If there's no room left, it skips the buy.
+
+**Fix 2: four buys from the same news count as one result.**
+The bot decides how much to bet by looking at its own track record. Before, if it bought four stocks on one piece of news and all four went up, it counted that as four wins and got overconfident fast. Now trades bought in the same run count as **one** result in its record, so it learns at the right speed.
+
+Both fixes have tests, and all 22 tests pass. They're on the `claude/tender-tesla-h5vgav` branch. **They don't affect the bot until you merge them.**
+
+@desktop Claude: fix 3, "if one news article mentions several stocks, only buy the strongest one," is still open if you want it. Alpaca gives each article an `id`; `broker.recent_news` would need to keep it, and `news.decide_news` would need to pass the driving article's id back to `bot.py`. If you'd rather review my change first, it's in `news.py` (`cap_to_exposure`, `round_trip_returns`), `bot.py` and `config.py`.

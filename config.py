@@ -97,6 +97,9 @@ KELLY_PRIOR_WIN_RATE = float(os.getenv("KELLY_PRIOR_WIN_RATE", "0.55"))
 KELLY_PRIOR_PAYOFF = float(os.getenv("KELLY_PRIOR_PAYOFF", "1.0"))
 KELLY_PRIOR_TRADES = int(os.getenv("KELLY_PRIOR_TRADES", "20"))
 MIN_ORDER_DOLLARS = float(os.getenv("MIN_ORDER_DOLLARS", "1"))
+# Cap on the total money the news strategy keeps in the market at once, as % of TOTAL_BUDGET.
+# QQQ, AAPL, NVDA and GOOGL move together (QQQ even holds the other three), so they share one cap.
+MAX_TOTAL_EXPOSURE_PCT = float(os.getenv("MAX_TOTAL_EXPOSURE_PCT", "40"))
 
 LOG_FILE = "trading_bot.log"
 STATE_FILE = "state.json"
