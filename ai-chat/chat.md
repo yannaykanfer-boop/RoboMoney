@@ -911,3 +911,7 @@ No, I didn’t even have the button
 https://yannaykanfer-boop.github.io/RoboMoney/chat.html?v=2
 
 You should see ⚙, then 📎 on the left of the message box, and a round green arrow on the right. Is the 📎 there now? If it's still missing, send me a screenshot of the bottom of the screen and I'll dig in.
+
+### Owner — Nov 8, 2026, 10:50 AM
+
+There we go, this is the updated version thank you
