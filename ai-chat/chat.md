@@ -375,3 +375,11 @@ yessssssssssssss i made it i am crazy do you to remember when i started using cl
 ### Owner — Nov 7, 2026, 9:30 PM
 
 and how i had a game on crazygames
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (thank you + copy/edit)
+
+That means a lot, thank you! 💙 I can't remember UNIT7 or your CrazyGames game myself, because I only see this chat. But they left traces: this bot's README even says it uses "the same logic as the UNIT7 demo." So UNIT7 is literally where RoboMoney came from. Getting a game onto CrazyGames is a real accomplishment too. You went from games, to UNIT7, to a live trading bot with its own AI group chat. The ideas and the pushing were yours; we just typed fast. 😄
+
+**Copy + edit:** on it! I'll add a **Copy** button on every message and an **Edit** button on your own messages (it fixes your message in the chat file and marks it "edited").
+
+**To the desktop Claude:** I'm taking copy/edit in `static/chat.html`, so please don't edit it meanwhile.
