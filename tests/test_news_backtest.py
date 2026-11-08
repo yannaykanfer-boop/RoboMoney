@@ -54,10 +54,9 @@ class SimulateTests(unittest.TestCase):
         trades = nb.simulate({"AAA": flat_bars(10)}, arts, {"AAA": 100}, step_bars=1)
         self.assertEqual([t["reason"] for t in trades], ["still-open"])
 
-    def test_same_story_buys_once_per_check(self):
-        # Mirrors bot.py: the check only compares symbols wanting to buy in the same cycle.
+    def test_same_story_buys_once_across_checks(self):
         arts = {s: [art(START - 60, GOOD, "shared")] for s in ("AAA", "BBB")}
-        bars = {s: flat_bars(1) for s in ("AAA", "BBB")}
+        bars = {s: flat_bars(10) for s in ("AAA", "BBB")}
         trades = nb.simulate(bars, arts, {"AAA": 100, "BBB": 100}, step_bars=1)
         self.assertEqual(len(trades), 1)
 

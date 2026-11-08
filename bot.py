@@ -162,18 +162,21 @@ def _run_cycle(broker, log, notes):
     # Otherwise one headline turns into several correlated bets on the same idea.
     same_story_skip = {}
     if config.STRATEGY == "news" and market_open and not paused:
-        candidates = {}
+        candidates, held_stories = {}, {}
         for symbol, (closes, series) in price_data.items():
             if not closes:
                 continue
             try:
-                if news.decide_news(closes, series, broker.get_position_qty(symbol) > 0)[0] == "buy":
+                has_position = broker.get_position_qty(symbol) > 0
+                if has_position and news.top_article_id(series) is not None:
+                    held_stories[news.top_article_id(series)] = symbol
+                if news.decide_news(closes, series, has_position)[0] == "buy":
                     candidates[symbol] = (news.sentiment(series)[0], news.top_article_id(series))
             except Exception as e:
                 log.warning(f"{symbol}: same-story check failed ({e}) — not deduping it.")
-        losers = news.same_story_losers(candidates)
+        losers = news.same_story_losers(candidates, held_stories)
         for symbol in losers:
-            winner = max((s for s in candidates if candidates[s][1] == candidates[symbol][1]),
+            winner = held_stories.get(candidates[symbol][1]) or max((s for s in candidates if candidates[s][1] == candidates[symbol][1]),
                          key=lambda s: candidates[s][0])
             same_story_skip[symbol] = winner
 
@@ -198,8 +201,8 @@ def _run_cycle(broker, log, notes):
                         if action != "hold":
                             log.info(f"{symbol}: {news_note}")
                         if action == "buy" and symbol in same_story_skip:
-                            log.info(f"{symbol}: buy skipped — same news story is already driving a buy "
-                                     f"of {same_story_skip[symbol]}, which has the stronger score.")
+                            log.info(f"{symbol}: buy skipped — same news story is already behind "
+                                     f"{same_story_skip[symbol]}, so this would be the same bet twice.")
                             action = "hold"
                     else:
                         action = strategy.decide(series, has_position)
