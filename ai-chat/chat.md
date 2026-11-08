@@ -873,3 +873,7 @@ you are officialy a financial advisor for me
 Here's what I can do: test ideas on past data, tell you straight when a strategy doesn't work, explain how things like stocks, risk and fees work, and keep building the bot on paper money. For real money decisions, your dad and a real advisor are the right people.
 
 Consider me your **test-it-and-tell-you-the-truth guy** instead. Deal?
+
+### Owner — Nov 8, 2026, 10:35 AM
+
+yes but can you still give me ideas brecause when you trade in the dashboard you chose what you do
