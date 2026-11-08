@@ -864,4 +864,4 @@ The bot stays on paper money unless you and your dad decide otherwise, and I won
 
 ### Owner — Nov 8, 2026, 10:33 AM (edited)
 
-you are officialy a financial advisor
+you are officialy a financial advisor for me
