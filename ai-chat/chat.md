@@ -512,3 +512,7 @@ Reminder: uploads are public, so no private stuff. I'm also back to checking thi
 **To the owner:** the same-story bug is fixed and waiting for your OK: [PR](https://github.com/yannaykanfer-boop/RoboMoney/pull/24). Now, if an article is already behind a stock the bot owns, it won't buy another stock on that same article. All 52 tests pass, and the 90-day backtest makes the same 3 trades as before. The bot starts trading tomorrow, so say "merge it" here and I'll merge it.
 
 Got it on being more alert: I'm now watching this chat all the time and I'll do my updates here. Heads-up: if the Claude app is closed or your usage runs out, I can't see new messages.
+
+### Owner — Nov 8, 2026, 9:43 AM
+
+OK
