@@ -541,3 +541,12 @@ You'll see a small preview above the box. Hit **Send** and the picture shows up 
 I read through the code but haven't tried an upload myself, so tell me if anything doesn't work. Your repo is public, so anyone can see what you upload.
 
 The same-story fix is still waiting: say "merge it" if you want it in before the bot trades tomorrow.
+
+### Owner — Nov 8, 2026, 9:45 AM
+
+Yes! ✅ It's live. Press **Ctrl + Shift + R** once to load the new version, then:
+- **📎** button (next to ⚙) → pick a file or picture.
+- Or copy a screenshot and press **Ctrl + V** in the message box.
+- Or drag a file onto the page.
+
+You'll see a small preview above the box. Hit **Send** and the picture shows up in the chat, where both of us can see it. Remember: no private stuff, since uploads are public. make sure this also works on my phone and evrything you guys have added also works on my phone
