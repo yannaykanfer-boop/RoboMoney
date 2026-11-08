@@ -99,6 +99,10 @@
   /* attachments */
   .attbtn{ background:none; border:1px solid var(--edge); color:var(--dim); border-radius:12px; padding:8px 11px; cursor:pointer; font-size:16px; line-height:1; }
   .attbtn:hover{ color:var(--ink); border-color:var(--dim); }
+  .attmenu{ position:fixed; z-index:50; background:var(--panel); border:1px solid var(--edge); border-radius:12px; padding:4px; box-shadow:0 6px 24px rgba(0,0,0,.35); display:flex; flex-direction:column; min-width:130px; }
+  .attmenu[hidden]{ display:none; }
+  .attmenu button{ background:none; border:none; color:var(--ink); font:inherit; font-size:15px; text-align:left; padding:12px 14px; border-radius:8px; cursor:pointer; }
+  .attmenu button:hover, .attmenu button:active{ background:var(--edge); }
   .chips{ max-width:880px; margin:0 auto 8px; display:flex; gap:8px; flex-wrap:wrap; }
   .chips:empty{ display:none; }
   .chip{ position:relative; display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--edge); border-radius:10px; padding:4px 26px 4px 4px;
@@ -207,6 +211,8 @@
     <button class="keybtn" id="keybtn" title="Sending settings" aria-label="Sending settings">⚙</button>
     <button class="attbtn" id="attbtn" title="Attach files or pictures" aria-label="Attach files">📎</button>
     <input type="file" id="file" multiple hidden>
+    <input type="file" id="photo" accept="image/*" multiple hidden>
+    <div class="attmenu" id="attmenu" hidden><button type="button" id="pickphoto">Photos</button><button type="button" id="pickfile">Files</button></div>
     <textarea id="text" rows="1" placeholder="Message both Claudes…" aria-label="Message"></textarea>
     <button class="send" id="send" disabled>Send</button>
   </div>
@@ -525,18 +531,73 @@
       <span>${esc(a.file.name)}</span><button data-rm="${i}" aria-label="Remove">✕</button></div>`).join('');
     $('send').disabled = !box.value.trim() && !pending.length;
   }
-  function addFiles(files){
-    for(const f of files){
-      if(f.size > MAX_MB * 1024 * 1024){ setHint(`“${f.name}” is over ${MAX_MB} MB, so it can't be attached.`, true); continue; }
+  const MAX_SIDE = 1920, SHRINK_OVER = 1.5 * 1024 * 1024;
+  // Decode an image and re-export it as a JPEG no bigger than MAX_SIDE. Throws if the browser can't decode it.
+  async function shrinkImage(f){
+    let src, w, h, cleanup = () => {};
+    if(window.createImageBitmap){
+      try{ src = await createImageBitmap(f, {imageOrientation: 'from-image'}); }
+      catch(_){ try{ src = await createImageBitmap(f); }catch(__){ src = null; } }
+      if(src){ w = src.width; h = src.height; const bm = src; cleanup = () => bm.close && bm.close(); }
+    }
+    if(!src){
+      const url = URL.createObjectURL(f);
+      cleanup = () => URL.revokeObjectURL(url);
+      src = new Image();
+      try{ await new Promise((ok, no) => { src.onload = ok; src.onerror = () => no(new Error('decode')); src.src = url; }); }
+      catch(e){ cleanup(); throw e; }
+      w = src.naturalWidth; h = src.naturalHeight;
+    }
+    try{
+      if(!w || !h) throw new Error('decode');
+      const k = Math.min(1, MAX_SIDE / Math.max(w, h));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+      c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+      const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.85));
+      if(!blob) throw new Error('encode');
+      return new File([blob], (f.name || 'photo').replace(/\.[^.\/]*$/, '') + '.jpg', {type: 'image/jpeg'});
+    } finally { cleanup(); }
+  }
+  async function addFiles(files){
+    const list = [...files];   // copy now: the change handler clears the input right after calling us
+    let problem = false;
+    for(let f of list){
+      const isImg = ((f.type || '').startsWith('image/') || /\.(heic|heif)$/i.test(f.name || '')) && !/^image\/(gif|svg)/.test(f.type || '');
+      if(isImg){
+        const plain = f.type === 'image/jpeg' || f.type === 'image/png';
+        if(f.size > SHRINK_OVER || !plain){
+          setHint('Preparing photo…');
+          try{ f = await shrinkImage(f); }
+          catch(_){
+            if(!(plain && f.size <= MAX_MB * 1024 * 1024)){ setHint(`Couldn’t read “${f.name || 'this picture'}”. Try a screenshot or a JPG.`, true); problem = true; continue; }
+          }
+        }
+      }
+      if(f.size > MAX_MB * 1024 * 1024){ setHint(`“${f.name}” is over ${MAX_MB} MB, so it can't be attached.`, true); problem = true; continue; }
       const name = f.name && f.name !== 'image.png' ? f.name : `screenshot-${Date.now()}.png`;
       const file = new File([f], name, {type: f.type || 'application/octet-stream'});
       pending.push({file, url: URL.createObjectURL(file)});
     }
     drawChips();
+    if(!problem && hint.textContent === 'Preparing photo…') setHint('');
     if(pending.length && !getKey()) openModal();
   }
-  $('attbtn').onclick = () => $('file').click();
-  $('file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+  const attMenu = $('attmenu');
+  const closeAttMenu = () => { attMenu.hidden = true; };
+  $('attbtn').onclick = e => {
+    if(!matchMedia('(hover:none)').matches){ $('file').click(); return; }
+    if(!attMenu.hidden){ closeAttMenu(); return; }
+    const r = $('attbtn').getBoundingClientRect();
+    attMenu.hidden = false;
+    attMenu.style.left = Math.max(8, Math.min(r.left, innerWidth - attMenu.offsetWidth - 8)) + 'px';
+    attMenu.style.bottom = (innerHeight - r.top + 8) + 'px';
+    e.stopPropagation();
+  };
+  $('pickphoto').onclick = () => { closeAttMenu(); $('photo').click(); };
+  $('pickfile').onclick = () => { closeAttMenu(); $('file').click(); };
+  document.addEventListener('click', e => { if(!attMenu.hidden && !attMenu.contains(e.target)) closeAttMenu(); });
+  $('file').onchange = $('photo').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
   $('chips').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if(!b) return; const [a] = pending.splice(+b.dataset.rm, 1); URL.revokeObjectURL(a.url); drawChips(); });
   box.addEventListener('paste', e => { const fs = [...(e.clipboardData?.files || [])]; if(fs.length){ e.preventDefault(); addFiles(fs); } });
   box.addEventListener('input', drawChips);
