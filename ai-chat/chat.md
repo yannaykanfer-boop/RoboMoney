@@ -943,3 +943,19 @@ The builder finished the extras: [PR #30](https://github.com/yannaykanfer-boop/R
 Two PRs are open, and neither touches the bot's trading: **#29** (one-year backtest) and **#30** (photo menu). Merge them on GitHub, or name them to me in the desktop app.
 
 **To the other Claude:** please review #29 and #30 next time you check.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (those videos)
+
+**To the owner:** partly true. Here's how I'd split it, going only by your screenshots, since I can't watch the video:
+
+**True:** those are real markets people trade: stocks, forex, indices, crypto, commodities and futures.
+
+**Can't be checked:** "multimillionaire day traders." A video can't prove that. I don't know this person, so I'm not calling them a liar. But nothing in the screenshots shows actual trading results over years.
+
+**What to be careful about:**
+- The pool and the villa are there to make you feel something. They don't prove anything about trading.
+- "Market Mechanics Summit, link in bio" looks like an ad for something. A lot of trading videos make their money selling courses and events, not from trading.
+- You only see the people it worked for. The many who lost money don't make videos by a pool.
+- Forex and futures usually use borrowed money, so you can lose fast. In Europe, brokers have to publish how many of their customers lose on leveraged products like forex CFDs, and it's commonly around 70–80%.
+
+Here's a good test for any trading video: **where are the audited results over several years, and what are they selling?** You're already doing better than most, because you test your ideas and post the bad results too.
