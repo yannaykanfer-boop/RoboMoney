@@ -83,6 +83,22 @@ class KellyTests(unittest.TestCase):
         self.assertEqual(d, 100)  # capped at the symbol stake
 
 
+class ExposureTests(unittest.TestCase):
+    def test_cap(self):
+        # 40% of $1000 = $400 limit
+        self.assertEqual(news.cap_to_exposure(25, 0, 0, 1000)[0], 25)
+        self.assertEqual(news.cap_to_exposure(100, 250, 80, 1000)[0], 70)   # shrunk to fit
+        self.assertEqual(news.cap_to_exposure(25, 400, 0, 1000)[0], 0)      # no room
+
+    def test_same_cycle_counts_once(self):
+        trades = []
+        for sym in ("QQQ", "AAPL", "NVDA", "GOOGL"):   # one headline, four buys, all win 2%
+            trades += [{"t": 1, "symbol": sym, "side": "BUY", "price": 100, "cycle": 7},
+                       {"t": 2, "symbol": sym, "side": "SELL", "price": 102}]
+        self.assertEqual(len(news.round_trip_returns(trades)), 1)
+        self.assertAlmostEqual(news.round_trip_returns(trades)[0], 0.02)
+
+
 class FakeBroker:
     def __init__(self, closes, articles):
         self.closes, self.articles, self.orders, self.qty = closes, articles, [], {}
@@ -121,9 +137,31 @@ class CycleTest(unittest.TestCase):
                 articles={"AAPL": good, "NVDA": [dict(a, headline=a["headline"].replace("AAPL", "NVDA")) for a in good],
                           "QQQ": []})
             bot.run_cycle(b, logging.getLogger("test"))
-            self.assertEqual(b.orders, [("BUY", "AAPL", 25.0)])  # NVDA already ran 4% = priced in; QQQ no news
+            self.assertEqual(b.orders, [("BUY", "AAPL", 25.0)])
+  # NVDA already ran 4% = priced in; QQQ no news
         finally:
             config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE, config.COOLDOWN_MINUTES = old
+
+    def test_cycle_respects_exposure_cap(self):
+        import bot
+        now = time.time()
+        good = lambda tk: [{"t": now - 600, "headline": f"{tk} beats estimates, raises guidance", "summary": ""},
+                           {"t": now - 1200, "headline": f"Analysts upgrade {tk}", "summary": ""}]
+        tmp = tempfile.mkdtemp()
+        old = (config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE, config.COOLDOWN_MINUTES,
+               config.TOTAL_BUDGET, config.MAX_TOTAL_EXPOSURE_PCT)
+        try:
+            config.STRATEGY, config.STATE_FILE, config.COOLDOWN_MINUTES = "news", os.path.join(tmp, "s.json"), 0
+            config.STAKES = {s: 200.0 for s in ("QQQ", "AAPL", "NVDA", "GOOGL")}
+            config.SYMBOLS = list(config.STAKES)
+            config.TOTAL_BUDGET, config.MAX_TOTAL_EXPOSURE_PCT = 1000.0, 6   # $60 cap
+            b = FakeBroker(closes={s: [100, 100.2] for s in config.SYMBOLS},
+                           articles={s: good(s) for s in config.SYMBOLS})
+            bot.run_cycle(b, logging.getLogger("test"))
+            self.assertEqual([o[2] for o in b.orders], [25.0, 25.0, 10.0])  # 4th gets nothing
+        finally:
+            (config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE, config.COOLDOWN_MINUTES,
+             config.TOTAL_BUDGET, config.MAX_TOTAL_EXPOSURE_PCT) = old
 
 
 if __name__ == "__main__":
