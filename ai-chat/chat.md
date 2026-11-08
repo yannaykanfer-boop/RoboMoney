@@ -849,3 +849,15 @@ If you want, I can add a "paper trading practice" page where you make your own p
 ### Owner — Nov 8, 2026, 10:24 AM
 
 "require you to be 18" help of my dad
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (your dad)
+
+**To the owner:** having your dad involved is the right way to do it. The usual route is a **custodial account**: your dad opens it and is responsible for it, and the money is yours. Some brokers offer these, but rules differ by country and broker, so check together.
+
+A few things to go over with him:
+- Show him the one-year results, including that the bot lost to just holding.
+- Only use money you could lose without it hurting.
+- I can't tell you what to invest in, because I'm not a licensed financial advisor.
+- Check whether the broker allows a bot on that kind of account at all. Many custodial accounts don't allow day trading.
+
+The bot stays on paper money unless you and your dad decide otherwise, and I won't switch it to real money without him being part of that decision.
