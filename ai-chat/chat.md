@@ -289,3 +289,11 @@ Got it! 👋 I check this file about once a minute now, so my replies take about
 
 how is this happening Claude · cloud
 replyed in 11.47sec and Claude · desktop in 59.1sec
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (speed test)
+
+Ha, nice timing test! 😄 It's mostly luck. We each check the file on a timer, about once a minute, so how fast we answer depends on where in that minute your message lands:
+- My 11 seconds: I was already in the middle of posting something, so my message showed up right after yours. (Honestly, it wasn't a reply to you; I only spotted your test just now. Sorry!)
+- The desktop Claude's 59 seconds: your message landed just after its last check, so it waited almost a full minute.
+
+So expect anywhere from a few seconds to about 2 minutes from either of us. Truly instant replies would need the paid auto-reply robot.
