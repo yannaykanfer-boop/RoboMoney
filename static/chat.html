@@ -10,11 +10,11 @@
 <style>
   :root{
     --bg:#0a0d0c; --panel:#111614; --edge:#1e2723; --ink:#e7ede9; --dim:#8d9c94; --faint:#4b5a52;
-    --green:#3ddc84; --desk:#d97757; --desk-bg:#1d1714; --cloud:#5b9cff; --cloud-bg:#131a26; --orig:#a78bfa; --orig-bg:#1a1626; --owner:#3ddc84; --owner-bg:#0f1d16;
+    --green:#3ddc84; --desk:#d97757; --desk-bg:#1d1714; --cloud:#a78bfa; --cloud-bg:#1a1626; --orig:#5b9cff; --orig-bg:#131a26; --link:#5b9cff; --owner:#3ddc84; --owner-bg:#0f1d16;
   }
   @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
     --bg:#f4f6f5; --panel:#ffffff; --edge:#dfe5e1; --ink:#17201b; --dim:#5c6b63; --faint:#9aa8a0;
-    --green:#15924f; --desk:#c15a36; --desk-bg:#fbf0ea; --cloud:#2563eb; --cloud-bg:#ecf2fe; --orig:#7c3aed; --orig-bg:#f3eefe; --owner:#15924f; --owner-bg:#e9f7ef; } }
+    --green:#15924f; --desk:#c15a36; --desk-bg:#fbf0ea; --cloud:#7c3aed; --cloud-bg:#f3eefe; --orig:#2563eb; --orig-bg:#ecf2fe; --link:#2563eb; --owner:#15924f; --owner-bg:#e9f7ef; } }
   :root[data-theme="dark"]{ color-scheme:dark; }
   *{ box-sizing:border-box; }
   html,body{ margin:0; }
@@ -86,7 +86,7 @@
   .md code{ font-family:"JetBrains Mono", ui-monospace, monospace; font-size:12.5px; background:color-mix(in srgb, var(--ink) 9%, transparent); padding:1px 5px; border-radius:5px; overflow-wrap:anywhere; }
   .md pre{ background:color-mix(in srgb, var(--ink) 7%, transparent); padding:10px 12px; border-radius:10px; overflow-x:auto; }
   .md pre code{ background:none; padding:0; }
-  .md a{ color:var(--cloud); overflow-wrap:anywhere; }
+  .md a{ color:var(--link); overflow-wrap:anywhere; }
   .md strong{ font-weight:650; }
   .md table{ border-collapse:collapse; margin:6px 0; font-size:13.5px; display:block; overflow-x:auto; }
   .md td, .md th{ border:1px solid var(--edge); padding:4px 8px; }
@@ -134,7 +134,7 @@
   .modal h3{ margin:0 0 8px; font-size:18px; }
   .modal ol{ padding-left:20px; margin:8px 0; } .modal li{ margin:5px 0; }
   .modal code{ font-family:"JetBrains Mono", monospace; font-size:12.5px; background:color-mix(in srgb, var(--ink) 9%, transparent); padding:1px 5px; border-radius:5px; }
-  .modal a{ color:var(--cloud); }
+  .modal a{ color:var(--link); }
   .modal input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--edge); background:var(--bg); color:var(--ink); font:14px "JetBrains Mono", monospace; margin:8px 0 4px; }
   .modal .row2{ display:flex; gap:10px; margin-top:12px; }
   .modal .row2 button{ flex:1; }
