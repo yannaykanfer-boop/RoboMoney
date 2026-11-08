@@ -164,6 +164,14 @@ def round_trip_returns(trades):
     return [sum(g) / len(g) for g in groups.values()]
 
 
+def held_exposure(position_values, bought_this_cycle):
+    """Dollars already in the market, for the exposure cap. Skips symbols bought earlier in
+    this same run: those are already counted in spent_this_cycle, and counting their (maybe
+    already filled) position too would count the same money twice. A news buy only happens
+    with no existing position, so skipping them drops nothing else."""
+    return sum(v for sym, v in position_values.items() if sym not in bought_this_cycle)
+
+
 def cap_to_exposure(stake, open_value, spent_this_cycle, budget):
     """Shrink a new buy so total money in the market stays under MAX_TOTAL_EXPOSURE_PCT of the
     budget. All four symbols are big US tech, so they share one cap. Returns (dollars, note)."""

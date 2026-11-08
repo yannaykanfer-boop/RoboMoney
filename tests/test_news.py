@@ -187,3 +187,18 @@ class SameStoryTests(unittest.TestCase):
 
     def test_tie_goes_to_first_symbol(self):
         self.assertEqual(news.same_story_losers({"QQQ": (0.5, 4), "AAPL": (0.5, 4)}), {"AAPL"})
+
+
+class HeldExposureTests(unittest.TestCase):
+    def test_skips_symbols_bought_this_cycle(self):
+        values = {"QQQ": 100.0, "AAPL": 24.0, "NVDA": 0.0}
+        self.assertEqual(news.held_exposure(values, set()), 124.0)
+        # AAPL was bought earlier this run: its $24 is already in spent_this_cycle
+        self.assertEqual(news.held_exposure(values, {"AAPL"}), 100.0)
+
+    def test_no_double_count_with_cap(self):
+        budget = 960  # cap at default 40% = $384
+        values = {"QQQ": 300.0, "AAPL": 50.0}  # AAPL's $50 was bought this run and already filled
+        held = news.held_exposure(values, {"AAPL"})
+        stake, _ = news.cap_to_exposure(30.0, held, 50.0, budget)
+        self.assertEqual(stake, 30.0)  # 300 + 50 + 30 = 380, under 384

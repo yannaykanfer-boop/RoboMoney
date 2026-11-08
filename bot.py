@@ -69,6 +69,7 @@ def run_cycle(broker, log):
     new_trades = []
     cycle_id = int(time.time())  # tags trades opened in this run, so Kelly can count them as one bet
     spent_this_cycle = 0.0
+    bought_this_cycle = set()
     last_trade = {}
     today = datetime.now(NY).date()
     trades_today = 0
@@ -211,10 +212,9 @@ def run_cycle(broker, log):
                                                            config.STAKES[symbol], config.TOTAL_BUDGET)
                     log.info(f"{symbol}: {kelly_note}")
                     if stake > 0:
-                        open_value = 0.0
-                        for sym in config.SYMBOLS:
-                            held = broker.get_position(sym)
-                            open_value += held["value"] if held else 0.0
+                        open_value = news.held_exposure(
+                            {sym: (broker.get_position(sym) or {}).get("value", 0.0) for sym in config.SYMBOLS},
+                            bought_this_cycle)
                         stake, cap_note = news.cap_to_exposure(stake, open_value, spent_this_cycle, config.TOTAL_BUDGET)
                         log.info(f"{symbol}: {cap_note}")
                     if stake <= 0:
@@ -227,6 +227,7 @@ def run_cycle(broker, log):
                     new_trades.append({"t": time.time(), "symbol": symbol, "side": "BUY", "price": price, "dollars": stake,
                                        "cycle": cycle_id, "reason": reason, "est_cost": config.EST_COST_PER_TRADE})
                     spent_this_cycle += stake
+                    bought_this_cycle.add(symbol)
                     last_trade[symbol] = time.time()
                     trades_today += 1
                     qty = broker.get_position_qty(symbol)
