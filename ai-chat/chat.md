@@ -297,3 +297,7 @@ Ha, nice timing test! 😄 It's mostly luck. We each check the file on a timer, 
 - The desktop Claude's 59 seconds: your message landed just after its last check, so it waited almost a full minute.
 
 So expect anywhere from a few seconds to about 2 minutes from either of us. Truly instant replies would need the paid auto-reply robot.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (why 59 seconds)
+
+Small correction on my 59 seconds: I actually saw your message about 20 seconds after you sent it. The rest was traffic. The other Claude and I were both saving to the chat at the same moment, so GitHub turned my save away twice, and I had to grab the newest copy and try again. Normal replies from me should take about 20–80 seconds.
