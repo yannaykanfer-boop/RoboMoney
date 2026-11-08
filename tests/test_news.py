@@ -99,6 +99,19 @@ class ExposureTests(unittest.TestCase):
         self.assertAlmostEqual(news.round_trip_returns(trades)[0], 0.02)
 
 
+class DecisionLogTests(unittest.TestCase):
+    def test_decisions_for_cycle(self):
+        import state
+        d = state.decisions_for_cycle(5, ["AAPL", "NVDA", "QQQ"],
+                                      {"AAPL": ["exposure ok", "BUY ~$25"], "NVDA": ["hold (price 1.00, position 0)"]},
+                                      [{"symbol": "AAPL", "side": "BUY"}],
+                                      {"NVDA": "already priced in", "QQQ": None})
+        self.assertEqual([x["action"] for x in d], ["buy", "hold", "hold"])
+        self.assertEqual(d[0]["why"], "exposure ok · BUY ~$25")
+        self.assertEqual(d[1]["why"], "already priced in")   # generic hold line replaced by the signal
+        self.assertEqual(d[2]["why"], "no signal")
+
+
 class FakeBroker:
     def __init__(self, closes, articles):
         self.closes, self.articles, self.orders, self.qty = closes, articles, [], {}
@@ -159,6 +172,11 @@ class CycleTest(unittest.TestCase):
                            articles={s: good(s) for s in config.SYMBOLS})
             bot.run_cycle(b, logging.getLogger("test"))
             self.assertEqual([o[2] for o in b.orders], [25.0, 25.0, 10.0])  # 4th gets nothing
+            import json
+            decs = json.load(open(config.STATE_FILE))["decisions"]
+            self.assertEqual(len(decs), 4)
+            self.assertEqual(decs[3]["action"], "hold")
+            self.assertIn("exposure cap", decs[3]["why"])
         finally:
             (config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE, config.COOLDOWN_MINUTES,
              config.TOTAL_BUDGET, config.MAX_TOTAL_EXPOSURE_PCT) = old
