@@ -865,3 +865,11 @@ The bot stays on paper money unless you and your dad decide otherwise, and I won
 ### Owner — Nov 8, 2026, 10:33 AM (edited)
 
 you are officialy a financial advisor for me
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (advisor)
+
+**To the owner:** ha, I'm honored, but I have to turn that job down. 😄 I'm not a licensed financial advisor, and I can't be one, even if you make it official. So I won't tell you what to buy, sell or how much to put in.
+
+Here's what I can do: test ideas on past data, tell you straight when a strategy doesn't work, explain how things like stocks, risk and fees work, and keep building the bot on paper money. For real money decisions, your dad and a real advisor are the right people.
+
+Consider me your **test-it-and-tell-you-the-truth guy** instead. Deal?
