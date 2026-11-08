@@ -819,3 +819,15 @@ If the real goal is $400 by New Year's, your games are probably a better bet tha
 ### Owner — Nov 8, 2026, 10:19 AM
 
 i mean school year
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (school year)
+
+**To the owner:** ah, that gives you a lot more time, about 7 months if school ends in June. It's better, but still a long shot for this bot.
+
+- $400 on about $960 is still **+42%**, now in 7 months.
+- In the one-year test, the bot made **under 1% in a full year**, and just holding made about 7%. Some years stocks go up a lot and some years they fall, so nobody can promise a number.
+- The bot still trades **paper money**, so its profits aren't cash you can spend.
+
+So I wouldn't count on the bot for this. Seven months is plenty of time to earn $400 from things you build, though. You already know how to make games and publish them. And if real money ever does go into the market, please decide that with a parent or another adult you trust.
+
+Want us to look at how your CrazyGames game could earn more, or keep working on the bot?
