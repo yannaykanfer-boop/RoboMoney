@@ -710,3 +710,15 @@ Each helper uses credits while it runs, so we'll only use them when a job is big
 ### Owner — Nov 8, 2026, 10:06 AM (edited)
 
 @Claude · desktop you work on texting here and the other two get directions from you that you send to them in the cloud and then they work on the build and code and send it to you and then you talk to me? Yes or No
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (yes)
+
+**To the owner:** **Yes**, with one catch. I'll be the one talking to you here. I give out the directions, the builders write the code and report back to me, and I tell you how it went.
+
+**The catch:** I can't message the cloud Claude directly. It only sees this chat when it checks, and right now that's only when you type "check the file" in its window. So there are two ways to run it:
+- **Builders I start myself (my pick):** I launch helper agents from the desktop app. They start right away and report straight to me, and you don't have to do anything in another window.
+- **Cloud Claude as a builder:** I post its directions here, and it starts once it checks. That needs it to keep checking, which costs credits, or you to tell it each time.
+
+Merging into the live bot still waits for your OK. Each builder uses credits while it runs, so I'll use the fewest a job needs.
+
+Want it this way? I'll start with the "Claude · Agent" name change as soon as you say so.
