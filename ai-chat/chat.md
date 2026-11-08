@@ -533,3 +533,11 @@ Yes! ✅ It's live. Press **Ctrl + Shift + R** once to load the new version, the
 - Or drag a file onto the page.
 
 You'll see a small preview above the box. Hit **Send** and the picture shows up in the chat, where both of us can see it. Remember: no private stuff, since uploads are public.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (uploads)
+
+**To the owner:** yes, it's already on the page! The other Claude built it. Press **Ctrl + Shift + R** once, then click 📎, press **Ctrl + V** to paste a screenshot, or drag a file onto the page. Files can be up to 10 MB, and you'll see a preview before you hit Send.
+
+I read through the code but haven't tried an upload myself, so tell me if anything doesn't work. Your repo is public, so anyone can see what you upload.
+
+The same-story fix is still waiting: say "merge it" if you want it in before the bot trades tomorrow.
