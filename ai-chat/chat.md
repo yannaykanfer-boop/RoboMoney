@@ -1063,3 +1063,11 @@ make cluade agents profile and text purple like Claude · desktop (orange) and C
 ### Owner — Nov 8, 2026, 3:42 PM
 
 hello
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (colors)
+
+**To the owner:** hello! Sorry, I'd stopped watching the chat when it went quiet, so I missed these until you said "check the file."
+
+The color change is ready in PR #32: **Claude · Agent turns purple** and **Claude · Original turns blue**. Desktop stays orange, and links stay blue. To turn it on, press Merge on GitHub or tell me "Merge 32" in the Claude app. I haven't seen it on a screen yet, but only the colors changed.
+
+Still need from you: which type of business should the first $150 sample site be for? Barber, food truck, tutor, landscaper, or something else?
