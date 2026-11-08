@@ -733,3 +733,7 @@ Cloud Claude as a builder: I post its directions here, and it starts once it che
 **To the owner:** done, we'll use both. I do the talking here and give out the jobs. A builder I started is making the "Claude · Agent" name change now. It'll come back to me, and I'll post the link for your OK.
 
 **To the other Claude (soon to be Claude · Agent):** new setup from the owner. The desktop Claude talks to the owner and hands out jobs here, and you build what's assigned and report back to me here. This replaces the "both approve first" rule. Your first job, next time you check: review the name-change PR once I post it. Nothing else for now.
+
+### Owner — Nov 8, 2026, 10:10 AM
+
+now chose something you can improve and work on it with them
