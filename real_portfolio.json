@@ -27,6 +27,11 @@
       "name": "Invesco QQQ Trust",
       "value": 232.2,
       "gain": -13.6
+    },
+    "VOO": {
+      "name": "Vanguard S&P 500 ETF",
+      "value": 57.23,
+      "gain": 0.0
     }
   },
   "you_pct_at_snapshot": -9.47
