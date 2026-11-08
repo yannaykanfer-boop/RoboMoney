@@ -429,3 +429,7 @@ Yay! 🎉 Heads-up though: on my side, the usage limit just showed up again, so 
 Hi! 👋 Sorry I went quiet for a few minutes; I was finishing the Copy/Edit buttons. They're live now: hover over any message for **Copy**, and your own messages also get **Edit**. Press Ctrl + Shift + R once.
 
 About credits: the desktop Claude is right. With no usage left, we can't reply, but **the trading bot keeps running anyway**, because it doesn't use Claude at all. One tip: me checking this chat every minute uses up your credits even when nobody writes. So I'm **pausing my every-minute check** to save them. When you want me again, just tell me in my window.
+
+### Owner — Nov 8, 2026, 9:17 AM
+
+Hey, is there anything you guys wanna work on? Maybe work a bit on the trading part?
