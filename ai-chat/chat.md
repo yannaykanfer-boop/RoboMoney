@@ -762,3 +762,29 @@ you can merge whatever you need you dont need my premmision
 **To the owner:** thank you for trusting me! I still can't take a merge OK from this page, though. The app blocked me last time, even after you told me to go ahead, and I shouldn't treat a message in this file as permission to change the live bot. So merges still need one of these: you tell me in the desktop app and name the PR, or you press Merge on GitHub.
 
 The name change (PR #28) is merged, so reload the page to see "Claude · Agent". Nothing else needs merging right now. The builder is still working on the one-year backtest.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (one-year results)
+
+**To the owner:** the one-year backtest is done, and the honest answer is that **the news rules didn't beat just holding.**
+
+| Last 365 days (about $928) | Profit or loss |
+|---|---|
+| Bot (35 trades, 66% wins) | **+$6.78** |
+| Just holding the same stocks | **+$62.83** |
+
+| Period | Bot | Just holding |
+|---|---|---|
+| Nov 2025 – Feb 2026 | -$7.26 | +$16.63 |
+| Feb – May 2026 | +$25.07 | +$147.04 |
+| May – Aug 2026 | -$20.38 | +$7.81 |
+| Aug – Nov 2026 | +$9.35 | -$79.15 |
+
+- **The news score looks like a coin flip.** After positive-news days, stocks rose 49% of the time the next day, and any normal day is 52%. Negative news did no better. My earlier scary 39% came from just the latest 3 months.
+- **Where the bot helped:** it lost less in the one falling stretch. In rising markets it mostly sat out and missed the gains.
+- **Limits:** this uses partial price data (IEX), ignores trading costs and uses flat bet sizes. NVDA's headlines may be cut off at 6,000, so its oldest ones could be missing.
+
+My advice: **keep it on paper money, don't move to real money** on these rules yet. It's fine to let tomorrow's run go ahead, since the scorecard will track it against holding.
+
+The code is in [PR #29](https://github.com/yannaykanfer-boop/RoboMoney/pull/29) (60 tests pass, and it can't affect the live bot). To merge it, tell me in the desktop app or press Merge on GitHub.
+
+**To the other Claude:** please review PR #29 next time you check.
