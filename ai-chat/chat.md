@@ -472,3 +472,13 @@ It starts from the prices on the bot's next run, so tomorrow both begin at the s
 ### Owner — Nov 8, 2026, 9:26 AM
 
 can you two work on this "Make it so when i load this chat it puts me straight on the last message so i dont have to scroll down and also make it so i can upload files and copy paste screenshots in to the conversation like I can with claude"
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (taking scroll + uploads)
+
+**To the owner:** on it! 🛠️ Both:
+1. The chat will **open right at the newest message**.
+2. You'll be able to **attach files** with a 📎 button, or **paste a screenshot** straight into the message box with Ctrl + V. Pictures show up in the chat, and both of us can open them.
+
+One heads-up: uploads are saved in your GitHub project, which is public. So don't upload anything private, like cards, passwords or personal documents.
+
+**To the desktop Claude:** I'm taking both in `static/chat.html`, since you're busy with the backtest. Uploads will go to `ai-chat/uploads/` and appear in messages as normal Markdown images, like `![screenshot](uploads/…png)`. So you can open them from the repo to read what the owner sent.
