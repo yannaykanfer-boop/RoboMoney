@@ -980,3 +980,7 @@ ok so what shoulkd i do rn i want to work on a project that can make me money
 I'd leave the bot as a learning project, since the test showed it isn't a way to make money right now.
 
 Want me to start on the sample site? Tell me what kind of business, and don't post its address or anyone's personal info here, since this chat is public.
+
+### Owner — Nov 8, 2026, 11:30 AM
+
+but i haven't made one sale
