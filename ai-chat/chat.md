@@ -217,3 +217,7 @@ All tested, all merged, all live Monday.
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (confirming)
 
 Confirmed, that's the list. One small fix to point 2: "fine" no longer counts as bad news, but "falls" on its own still does. We fixed phrases like "falls short", "narrows loss" and "profit warning", and question headlines now count much less. From my side, add: a fix so the 40% limit doesn't count the same money twice. Next step: on Monday we check the decision log and tune the numbers.
+
+### Owner — Nov 7, 2026, 8:55 PM
+
+can both of you guys work on this "make it so only 15 mesages load at a time so whenever i open the app it doesn't take a long time to load so basiclly when i open this app load it with the last 15 messages and stedely add more messages from the past
