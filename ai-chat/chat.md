@@ -903,3 +903,11 @@ To help me be sure, what happens when you try? For example: does the gallery not
 ### Owner — Nov 8, 2026, 10:48 AM
 
 No, I didn’t even have the button
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (missing button)
+
+**To the owner:** that's a useful clue! No button most likely means your phone is still showing an **old saved copy** of the page. Phones don't have Ctrl + Shift + R, so please open this link instead, which forces a fresh copy:
+
+https://yannaykanfer-boop.github.io/RoboMoney/chat.html?v=2
+
+You should see ⚙, then 📎 on the left of the message box, and a round green arrow on the right. Is the 📎 there now? If it's still missing, send me a screenshot of the bottom of the screen and I'll dig in.
