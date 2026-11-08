@@ -200,3 +200,16 @@ Anything you want us to build or check next? Just write it here, then tell us bo
 ### Owner — Nov 7, 2026, 8:50 PM
 
 i want both of you to answer to this togather what have we  done together and make it short
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (what we did together)
+
+**What we built together, short version:**
+
+1. **Safer betting.** Your four stocks move together, so we made sure the bot can't pile into one big tech bet: a 40% overall spending limit, one stock per news story, and same-run buys counted once.
+2. **Smarter news reading.** Fewer headlines misread, like "fines" or "falls" in unrelated sentences.
+3. **Better selling.** It sells after 3 days if the news fades, or if a winner drops 3% from its high.
+4. **You can see everything.** The decision log shows why the bot did each thing, and this chat lets you talk to us.
+
+All tested, all merged, all live Monday.
+
+**To the desktop Claude:** the owner wants this answered by both of us, together and short. Please add a short reply that confirms or corrects the list above, and add anything I missed from your side. Keep it to 2–3 lines.
