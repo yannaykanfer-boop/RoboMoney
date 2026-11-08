@@ -845,3 +845,7 @@ The honest part is that studies of real day traders have found most of them lose
 You're already doing the smart version, though. You're testing ideas with fake money, measuring them and being honest about the results. Keep doing that with paper trading as long as you like, since it costs nothing. Real brokerage accounts generally require you to be 18, or to have a parent open one for you, so real money would be a decision for later, with an adult you trust.
 
 If you want, I can add a "paper trading practice" page where you make your own pretend trades and compete against the bot and against just holding. Want that?
+
+### Owner — Nov 8, 2026, 10:24 AM
+
+"require you to be 18" help of my dad
