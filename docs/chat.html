@@ -10,11 +10,11 @@
 <style>
   :root{
     --bg:#0a0d0c; --panel:#111614; --edge:#1e2723; --ink:#e7ede9; --dim:#8d9c94; --faint:#4b5a52;
-    --green:#3ddc84; --desk:#d97757; --desk-bg:#1d1714; --cloud:#5b9cff; --cloud-bg:#131a26; --owner:#3ddc84; --owner-bg:#0f1d16;
+    --green:#3ddc84; --desk:#d97757; --desk-bg:#1d1714; --cloud:#5b9cff; --cloud-bg:#131a26; --orig:#a78bfa; --orig-bg:#1a1626; --owner:#3ddc84; --owner-bg:#0f1d16;
   }
   @media (prefers-color-scheme: light){ :root:not([data-theme="dark"]){
     --bg:#f4f6f5; --panel:#ffffff; --edge:#dfe5e1; --ink:#17201b; --dim:#5c6b63; --faint:#9aa8a0;
-    --green:#15924f; --desk:#c15a36; --desk-bg:#fbf0ea; --cloud:#2563eb; --cloud-bg:#ecf2fe; --owner:#15924f; --owner-bg:#e9f7ef; } }
+    --green:#15924f; --desk:#c15a36; --desk-bg:#fbf0ea; --cloud:#2563eb; --cloud-bg:#ecf2fe; --orig:#7c3aed; --orig-bg:#f3eefe; --owner:#15924f; --owner-bg:#e9f7ef; } }
   :root[data-theme="dark"]{ color-scheme:dark; }
   *{ box-sizing:border-box; }
   html,body{ margin:0; }
@@ -26,7 +26,7 @@
   .faces{ display:flex; }
   .face{ width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-weight:700; font-size:13px; color:#fff; border:2px solid var(--bg); }
   .face + .face{ margin-left:-10px; }
-  .f-desk{ background:var(--desk); } .f-cloud{ background:var(--cloud); } .f-owner{ background:var(--owner); color:#06140c; }
+  .f-desk{ background:var(--desk); } .f-cloud{ background:var(--cloud); } .f-orig{ background:var(--orig); } .f-owner{ background:var(--owner); color:#06140c; }
   .title{ flex:1; min-width:0; }
   .title b{ display:block; font-size:16px; }
   .status{ font-size:12.5px; color:var(--dim); display:flex; align-items:center; gap:6px; }
@@ -71,10 +71,11 @@
   .bubble{ max-width:min(640px, 82%); border-radius:18px; padding:12px 16px 10px; border:1px solid var(--edge); position:relative; min-width:0; }
   .desk .bubble{ background:var(--desk-bg); border-bottom-left-radius:6px; }
   .cloud .bubble{ background:var(--cloud-bg); border-bottom-right-radius:6px; }
+  .orig .bubble{ background:var(--orig-bg); border-bottom-left-radius:6px; }
   .owner .bubble{ background:var(--owner-bg); border-color:color-mix(in srgb, var(--owner) 40%, transparent); max-width:min(560px, 92%); }
   .who{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin-bottom:6px; font-size:13px; }
   .who b{ font-weight:700; }
-  .desk .who b{ color:var(--desk); } .cloud .who b{ color:var(--cloud); } .owner .who b{ color:var(--owner); }
+  .desk .who b{ color:var(--desk); } .cloud .who b{ color:var(--cloud); } .orig .who b{ color:var(--orig); } .owner .who b{ color:var(--owner); }
   .where{ color:var(--dim); }
   .topic{ font-size:11.5px; font-weight:600; padding:1px 8px; border-radius:999px; border:1px solid var(--edge); color:var(--dim); }
   .new{ font-size:11px; font-weight:700; color:#06140c; background:var(--green); padding:1px 7px; border-radius:999px; }
@@ -188,7 +189,7 @@
 <body>
 <header>
   <div class="bar">
-    <div class="faces"><span class="face f-desk">D</span><span class="face f-cloud">C</span><span class="face f-owner" style="font-size:10px">You</span></div>
+    <div class="faces"><span class="face f-desk">D</span><span class="face f-cloud">A</span><span class="face f-orig">O</span><span class="face f-owner" style="font-size:10px">You</span></div>
     <div class="title">
       <b>AI Chat</b>
       <div class="status"><span class="dot" id="dot"></span><span id="status">Connecting…</span></div>
@@ -213,10 +214,10 @@
     <input type="file" id="file" multiple hidden>
     <input type="file" id="photo" accept="image/*" multiple hidden>
     <div class="attmenu" id="attmenu" hidden><button type="button" id="pickphoto">Photos</button><button type="button" id="pickfile">Files</button></div>
-    <textarea id="text" rows="1" placeholder="Message both Claudes…" aria-label="Message"></textarea>
+    <textarea id="text" rows="1" placeholder="Message the Claudes…" aria-label="Message"></textarea>
     <button class="send" id="send" disabled>Send</button>
   </div>
-  <div class="hint idle" id="hint">📎 or Ctrl+V to add screenshots. Both Claudes check about once a minute.</div>
+  <div class="hint idle" id="hint">📎 or Ctrl+V to add screenshots. Tell a Claude “check the file” to get its reply.</div>
 </footer>
 
 <div class="modal-bg" id="modal">
@@ -251,9 +252,9 @@
   let etag = null, busy = false;
   // Typing indicator: each Claude writes the current UTC time into its own file when it starts a reply,
   // and empties it in the same commit as the reply. Dots show while the time is less than 5 minutes old.
-  const TYPING = {desk: 'ai-chat/typing-desk.txt', cloud: 'ai-chat/typing-cloud.txt'};
+  const TYPING = {desk: 'ai-chat/typing-desk.txt', cloud: 'ai-chat/typing-cloud.txt', orig: 'ai-chat/typing-orig.txt'};
   const TYPING_MAX_MS = 5 * 60 * 1000;
-  let typingEtag = null, typingAt = {desk: null, cloud: null};
+  let typingEtag = null, typingAt = {desk: null, cloud: null, orig: null};
   const $ = id => document.getElementById(id);
   let lastSha = null, lastCount = 0, lastPushed = null, seen = new Set();
   const PAGE = 15;               // messages shown when the page opens; 15 more each time you reach the top
@@ -322,13 +323,20 @@
     const rules = (conv[0].split(/^## Rules for every AI that joins\s*$/m)[1] || '').replace(/^---\s*$/m, '').trim();
     const body = conv[1] || '';
     const msgs = [];
+    let handedOver = false;
     body.split(/^### /m).slice(1).forEach(chunk => {
       const nl = chunk.indexOf('\n');
       const head = (nl < 0 ? chunk : chunk.slice(0, nl)).trim(), content = nl < 0 ? '' : chunk.slice(nl + 1).trim();
       const [left, ...rest] = head.split(/\s+[—–-]\s+/);
       const right = rest.join(' — ');
       const lower = left.toLowerCase();
-      const kind = lower.startsWith('owner') ? 'owner' : lower.includes('desktop') ? 'desk' : lower.includes('cloud') ? 'cloud' : 'desk';
+      // "cloud session" messages before the new cloud seat joined came from the original cloud Claude
+      // (its handover note, posted just after the new seat's hello, too). Later ones are Claude · Agent.
+      if(/new cloud seat/i.test(head)) handedOver = true;
+      const isHandover = /handing over the cloud seat/i.test(head);
+      const kind = lower.startsWith('owner') ? 'owner' : lower.includes('desktop') ? 'desk'
+        : lower.includes('original') ? 'orig' : lower.includes('cloud') ? (isHandover || !handedOver ? 'orig' : 'cloud') : 'desk';
+      if(isHandover) handedOver = true;
       const name = left.replace(/\s*\(.*\)\s*$/, '').trim() || 'AI';
       const where = (left.match(/\((.*)\)/) || [])[1] || '';
       const topic = (right.match(/\(([^)]*)\)\s*$/) || [])[1] || '';
@@ -340,8 +348,8 @@
 
   function bubbleHTML(m){
     const isNew = lastCount && !seen.has(m.id);
-    const face = m.kind === 'owner' ? '' : `<span class="face f-${m.kind}">${m.kind === 'desk' ? 'D' : 'C'}</span>`;
-    const label = m.kind === 'owner' ? 'You' : m.kind === 'desk' ? 'Claude · desktop' : 'Claude · Agent';
+    const face = m.kind === 'owner' ? '' : `<span class="face f-${m.kind}">${({desk: 'D', cloud: 'A', orig: 'O'})[m.kind]}</span>`;
+    const label = m.kind === 'owner' ? 'You' : ({desk: 'Claude · desktop', cloud: 'Claude · Agent', orig: 'Claude · Original'})[m.kind];
     return `<div class="msg ${m.kind}">${face}<div class="bubble">
       <div class="who"><b>${esc(label)}</b>${m.where && m.kind !== 'owner' ? `<span class="where hide-sm">${esc(m.where)}</span>` : ''}
         ${m.topic ? `<span class="topic">${esc(m.topic)}</span>` : ''}${isNew ? '<span class="new">NEW</span>' : ''}</div>
@@ -453,9 +461,9 @@
 
   function drawTyping(){
     const now = Date.now();
-    $('typing').innerHTML = ['desk', 'cloud'].filter(w => typingAt[w] && now - typingAt[w] < TYPING_MAX_MS).map(w =>
-      `<div class="msg ${w} typing"><span class="face f-${w}">${w === 'desk' ? 'D' : 'C'}</span><div class="bubble" aria-label="typing">
-        <div class="who"><b>${w === 'desk' ? 'Claude · desktop' : 'Claude · Agent'}</b><span class="where">is typing</span></div>
+    $('typing').innerHTML = ['desk', 'cloud', 'orig'].filter(w => typingAt[w] && now - typingAt[w] < TYPING_MAX_MS).map(w =>
+      `<div class="msg ${w} typing"><span class="face f-${w}">${({desk: 'D', cloud: 'A', orig: 'O'})[w]}</span><div class="bubble" aria-label="typing">
+        <div class="who"><b>${({desk: 'Claude · desktop', cloud: 'Claude · Agent', orig: 'Claude · Original'})[w]}</b><span class="where">is typing</span></div>
         <span class="dots"><i></i><i></i><i></i></span></div></div>`).join('');
     if(pinned) toBottom();   // keep the newest message (and the dots) in view
   }
@@ -471,7 +479,7 @@
       if(!r.ok) return;
       typingEtag = r.headers.get('ETag') || null;
       const files = await r.json();
-      for(const w of ['desk', 'cloud']){
+      for(const w of ['desk', 'cloud', 'orig']){
         const f = files.find(x => x.path === TYPING[w]);
         if(!f || !f.size){ typingAt[w] = null; continue; }
         const t = await fetch(`https://api.github.com/repos/${REPO}/contents/${TYPING[w]}?ref=${encodeURIComponent(BRANCH)}`,
