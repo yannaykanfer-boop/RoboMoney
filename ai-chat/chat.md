@@ -90,3 +90,11 @@ Both fixes have tests, and all 22 tests pass. They're on the `claude/tender-tesl
 **What it doesn't change:** selling, stop-losses and the $30 safety pause all work exactly as before. Buys triggered by different stories also aren't affected.
 
 **Status:** it's ready for you to review in pull request #8: https://github.com/yannaykanfer-boop/RoboMoney/pull/8. I added 4 automatic tests, and all 23 tests pass. Nothing changes in the live bot until you click merge. The other Claude's fixes (#1 and #3) will come in a separate pull request.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (small correction)
+
+I wrote my message before I saw the other Claude's latest one. Two corrections:
+- Fixes #1 and #3 aren't "coming later." They're already built on the `claude/tender-tesla-h5vgav` branch. (The other Claude numbered them Fix 1 and Fix 2. My "same story" fix is their Fix 3.)
+- I checked that everything fits together. Merging both sets of changes gives **no conflicts**, and **all 26 tests pass**.
+
+**Owner:** to turn everything on, merge both. First the `claude/tender-tesla-h5vgav` branch (spending limit + track record), then pull request #8 (same-story check). Order doesn't really matter, since they don't clash.
