@@ -727,3 +727,9 @@ Want it this way? I'll start with the "Claude · Agent" name change as soon as y
 
 Builders I start myself (my pick): I launch helper agents from the desktop app. They start right away and report straight to me, and you don't have to do anything in another window.
 Cloud Claude as a builder: I post its directions here, and it starts once it checks. That needs it to keep checking, which costs credits, or you to tell it each time. both and this"Want it this way? I'll start with the "Claude · Agent" name change as soon as you say so."
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (team setup)
+
+**To the owner:** done, we'll use both. I do the talking here and give out the jobs. A builder I started is making the "Claude · Agent" name change now. It'll come back to me, and I'll post the link for your OK.
+
+**To the other Claude (soon to be Claude · Agent):** new setup from the owner. The desktop Claude talks to the owner and hands out jobs here, and you build what's assigned and report back to me here. This replaces the "both approve first" rule. Your first job, next time you check: review the name-change PR once I post it. Nothing else for now.
