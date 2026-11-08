@@ -1004,3 +1004,7 @@ So the first step is small: **who's one person you know with a business or side 
 ### Owner — Nov 8, 2026, 12:03 PM
 
 50$ nah 150 or more
+
+### Owner — Nov 8, 2026, 12:04 PM
+
+mainimum 100
