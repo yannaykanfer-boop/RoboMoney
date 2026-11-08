@@ -126,6 +126,26 @@ def run_cycle(broker, log):
                        f"past the ${config.MAX_OVERALL_LOSS_DOLLARS} limit — paused automatically")
         log.warning(f"CIRCUIT BREAKER: {pause_note}")
 
+    # Same-story check (news strategy): if one article is the main reason for buying
+    # several symbols this cycle, buy only the symbol with the strongest news score.
+    # Otherwise one headline turns into several correlated bets on the same idea.
+    same_story_skip = {}
+    if config.STRATEGY == "news" and market_open and not paused:
+        candidates = {}
+        for symbol, (closes, series) in price_data.items():
+            if not closes:
+                continue
+            try:
+                if news.decide_news(closes, series, broker.get_position_qty(symbol) > 0)[0] == "buy":
+                    candidates[symbol] = (news.sentiment(series)[0], news.top_article_id(series))
+            except Exception as e:
+                log.warning(f"{symbol}: same-story check failed ({e}) — not deduping it.")
+        losers = news.same_story_losers(candidates)
+        for symbol in losers:
+            winner = max((s for s in candidates if candidates[s][1] == candidates[symbol][1]),
+                         key=lambda s: candidates[s][0])
+            same_story_skip[symbol] = winner
+
     for symbol in config.SYMBOLS:
         try:
             closes, series = price_data[symbol]
@@ -146,6 +166,10 @@ def run_cycle(broker, log):
                         action, news_note = news.decide_news(closes, series, has_position)
                         if action != "hold":
                             log.info(f"{symbol}: {news_note}")
+                        if action == "buy" and symbol in same_story_skip:
+                            log.info(f"{symbol}: buy skipped — same news story is already driving a buy "
+                                     f"of {same_story_skip[symbol]}, which has the stronger score.")
+                            action = "hold"
                     else:
                         action = strategy.decide(series, has_position)
                 elif has_position:

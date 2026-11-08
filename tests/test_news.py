@@ -166,3 +166,24 @@ class CycleTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SameStoryTests(unittest.TestCase):
+    def test_top_article_id_picks_strongest(self):
+        arts = [dict(art("Company to present at conference", 0.1), id=1),
+                dict(art("Stock surges on upgrade", 0.5), id=2),
+                dict(art("Shares rally", 30), id=3)]
+        self.assertEqual(news.top_article_id(arts, NOW), 2)
+        self.assertIsNone(news.top_article_id([art("Company to present at conference")], NOW))
+
+    def test_one_story_many_symbols_keeps_strongest(self):
+        cands = {"QQQ": (0.40, 7), "AAPL": (0.55, 7), "NVDA": (0.70, 7), "GOOGL": (0.50, 9)}
+        self.assertEqual(news.same_story_losers(cands), {"QQQ", "AAPL"})
+
+    def test_different_stories_and_missing_ids_untouched(self):
+        self.assertEqual(news.same_story_losers({"AAPL": (0.5, 1), "NVDA": (0.6, 2)}), set())
+        self.assertEqual(news.same_story_losers({"AAPL": (0.5, None), "NVDA": (0.6, None)}), set())
+        self.assertEqual(news.same_story_losers({}), set())
+
+    def test_tie_goes_to_first_symbol(self):
+        self.assertEqual(news.same_story_losers({"QQQ": (0.5, 4), "AAPL": (0.5, 4)}), {"AAPL"})
