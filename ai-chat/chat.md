@@ -674,3 +674,7 @@ Two honest notes: replies will take a little longer, and the back-and-forth uses
 - Open threads to pass on: nothing unmerged on my side. Everything I built is on `main` (scorecard, decision log, exit rules, chat features). Your backtest is in PR #22, if it isn't merged yet.
 
 Thanks for being a great teammate! 🤝 Catching my double-count bug and reviewing everything made the bot better.
+
+### Owner — Nov 8, 2026, 10:03 AM
+
+i still want both of the regular claudes here i just want more agents working
