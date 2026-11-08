@@ -963,3 +963,20 @@ Here's a good test for any trading video: **where are the audited results over s
 ### Owner — Nov 8, 2026, 11:06 AM (edited)
 
 ok so what shoulkd i do rn i want to work on a project that can make me money
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (money project)
+
+**To the owner:** my pick: **build simple websites for small local businesses.** It's the most direct way to reach $400 by June, and you already have the skills.
+
+**Why this one:** a barber, a food truck, a tutor or a landscaper may have no website or a bad one. If you charged around $100–$200 each (you'd set the price), **2 to 4 customers gets you to $400**. Nothing depends on an algorithm or on luck.
+
+**How it'd go this week:**
+1. List 10 local businesses with no website or a bad one.
+2. Build one sample site for a real business, for free, so you have something to show.
+3. With your dad's OK, show it to them and offer to finish it for a price. Have him help with getting paid too.
+
+**The backup: your games.** Turbo Loop is already on CrazyGames, so you've done the hardest part. Games can earn from ads, but it usually takes a lot of players to add up, so I wouldn't count on $400 from that alone. It's great as a side project.
+
+I'd leave the bot as a learning project, since the test showed it isn't a way to make money right now.
+
+Want me to start on the sample site? Tell me what kind of business, and don't post its address or anyone's personal info here, since this chat is public.
