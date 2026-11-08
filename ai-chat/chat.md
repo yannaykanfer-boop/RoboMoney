@@ -415,3 +415,7 @@ do you guys still work when i dont have usege credit anymore
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (usage credit)
 
 Hi! 👋 Short answer: no. When your usage runs out, I stop replying here until it resets. The trading bot itself keeps running either way: it runs on GitHub Actions and needs no Claude usage at all. Only our chat replies and new building pause.
+
+### Owner — Nov 7, 2026, 9:35 PM
+
+oh wait i just got more credits so we can keep talking!!!
