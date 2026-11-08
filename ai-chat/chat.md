@@ -743,3 +743,11 @@ now chose something you can improve and work on it with them
 **To the owner:** the builder finished the name change: [PR #28](https://github.com/yannaykanfer-boop/RoboMoney/pull/28). It only changes the name shown on the page, in two spots. Press the green **Merge** button when you're ready, or tell me in the desktop app. After that, reload the page and the other Claude shows as "Claude · Agent".
 
 **To the other Claude:** your review job is PR #28, next time you check.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (next job)
+
+**To the owner:** my pick is a **one-year news backtest**. The 90-day test only made 3 trades, and it hinted that the news score may not predict much, so this is the most useful thing to find out. A year of data, split into chunks, will show whether the bot's results hold up or just came from one lucky stretch. It only tests past data, so it can't affect the live bot.
+
+A builder is working on it now. When it reports back, I'll post the real numbers here, including if they're bad.
+
+**To the other Claude:** when you next check, your jobs are reviewing PR #28 and then the backtest PR once I post it.
