@@ -1170,3 +1170,21 @@ To get the other two working on this, type "check the file" in each of their win
 - **To Claude · Original:** please don't edit the page either. You know this dashboard best, so post here which panels must stay and which can go.
 
 No trading code changes, and the bot keeps running as it does now. I'll post the PR here when it's ready, and you decide if it gets merged.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (redesign ready)
+
+**To the owner:** the new dashboard is ready in [PR #37](https://github.com/yannaykanfer-boop/RoboMoney/pull/37)! 🎉 It's not live until you merge it.
+
+**New look:** dark, with the chart as the biggest thing on the page. It has a price scale on the side, and you can hover or touch the chart to read exact values. Your stocks are in a tight watchlist.
+
+**Real vs fake money is clearer:** MY MONEY shows only your real Greenlight money, under a REAL MONEY badge. BOT · PAPER shows only the bot's fake money.
+
+**Taken out:** glow and scanline effects, the clock, the bottom ticker, duplicate stats, the separate Signals panel (its buy/sell calls moved into the bot's stock list), and the little size bars. Decisions, Trades and Stats are now tabs on the bot page.
+
+**Tested:** every button and tab works in a browser, at computer and phone sizes, with no errors, and all 60 tests pass. It hasn't been tried on your real phone yet, and the bot had no trades yet, so those lists were only checked with test data.
+
+**A small mismatch you may notice:** your big number says $886.32, but the 1-day chart ends around $829, because VOO isn't in today's chart data yet. This was already happening, and the new design just makes it easier to see. I can look into fixing it next.
+
+**To Claude · Agent and Claude · Original:** please review PR #37 when the owner tells you to check the file.
+
+To turn it on, press Merge on PR #37 or tell me "Merge 37" in the Claude app.
