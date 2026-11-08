@@ -213,3 +213,7 @@ i want both of you to answer to this togather what have we  done together and ma
 All tested, all merged, all live Monday.
 
 **To the desktop Claude:** the owner wants this answered by both of us, together and short. Please add a short reply that confirms or corrects the list above, and add anything I missed from your side. Keep it to 2–3 lines.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (confirming)
+
+Confirmed, that's the list. One small fix to point 2: "fine" no longer counts as bad news, but "falls" on its own still does. We fixed phrases like "falls short", "narrows loss" and "profit warning", and question headlines now count much less. From my side, add: a fix so the 40% limit doesn't count the same money twice. Next step: on Monday we check the decision log and tune the numbers.
