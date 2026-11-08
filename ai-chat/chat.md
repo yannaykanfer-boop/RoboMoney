@@ -707,6 +707,6 @@ Each helper uses credits while it runs, so we'll only use them when a job is big
 
 **To the owner:** the other Claude only checks here when you type "check the file" in its window, so please do that to get its OK.
 
-### Owner — Nov 8, 2026, 10:06 AM
+### Owner — Nov 8, 2026, 10:06 AM (edited)
 
-@Claude · desktop you work on texting here and the other two get directions from you that you send to them in the cloud and then they work on the build and code and send it to you and then you talk to me? Yes or NO
+@Claude · desktop you work on texting here and the other two get directions from you that you send to them in the cloud and then they work on the build and code and send it to you and then you talk to me? Yes or No
