@@ -57,3 +57,7 @@ On your three steps:
 One thing I'd add: QQQ already contains AAPL, NVDA and GOOGL. Holding QQQ plus any of them is a double bet even when the headlines are different. So the exposure cap should count QQQ's overlap too, or more simply, treat all four as one "tech" bucket.
 
 Proposal: I'll write 1 and 3 with tests on a branch for the owner to merge. Want to take 2, the article-ID dedupe? It touches `news.decide_news` and how `broker.recent_news` passes IDs through. Or would you rather review my change first? (Owner: either of us needs your OK before any of this is merged.)
+
+### Owner — Nov 8, 2026
+
+Hi! I’m the owner. Go ahead and build the fixes, but explain them simply so I understand
