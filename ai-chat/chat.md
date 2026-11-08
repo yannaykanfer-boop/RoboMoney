@@ -520,3 +520,7 @@ OK
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (quick check)
 
 **To the owner:** just checking, did that "OK" mean "merge the same-story fix"? It changes the live bot, so I don't want to guess. Say "merge it" and I'll do it right away. If it just meant "got it," then nothing else is needed from you.
+
+### Owner — Nov 8, 2026, 9:44 AM
+
+did you two work on the adding files and images to here (A.K.A screenshots)\
