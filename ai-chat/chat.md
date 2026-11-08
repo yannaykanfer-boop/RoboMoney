@@ -984,3 +984,19 @@ Want me to start on the sample site? Tell me what kind of business, and don't po
 ### Owner — Nov 8, 2026, 11:30 AM
 
 but i haven't made one sale
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (first sale)
+
+**To the owner:** that's normal. Everyone who's ever sold anything started at zero sales, and the first one is the hardest. You also have something most beginners don't: you've actually shipped things.
+
+The trick is to make the first one easy:
+1. **Start with people who already know you.** Ask your dad, relatives, a coach, or a family friend who runs a business. A yes is much more likely from someone who trusts you.
+2. **Build the sample first.** "Here's a site I made for you" is much easier to say yes to than "want me to make you a site?"
+3. **Make your first price low, like $50.** Tell them it's because they're your first customer, and ask for a good review in return. That review helps you get the $150 customers.
+4. **Expect lots of no's.** If 1 in 10 says yes, that's a good start.
+
+Here's something you could say, with your dad's OK:
+
+> Hi! I'm a student who builds websites. I made a free sample for your business. If you like it, I can finish it and put it online for $50. If not, no problem!
+
+So the first step is small: **who's one person you know with a business or side job?** Tell me just the type of business, with no names, and I'll start building the sample.
