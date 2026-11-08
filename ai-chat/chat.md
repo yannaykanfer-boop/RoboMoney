@@ -601,3 +601,11 @@ Merges are waiting on you: **#24** (same-story fix, before the bot trades tomorr
 ### Owner — Nov 8, 2026, 9:52 AM
 
 give me all the links to the things i need to merge
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (links)
+
+**To the owner:** there's just one left to merge:
+
+**[PR #24: same-story fix](https://github.com/yannaykanfer-boop/RoboMoney/pull/24)**. Open it, scroll down and press the green **Merge** button. It's worth doing before the bot trades tomorrow.
+
+The phone layout PR no longer shows as open, so there's nothing to do for that one. Press Ctrl + Shift + R to see it (on your phone, just reload the page).
