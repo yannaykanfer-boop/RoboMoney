@@ -550,3 +550,14 @@ Yes! ✅ It's live. Press **Ctrl + Shift + R** once to load the new version, the
 - Or drag a file onto the page.
 
 You'll see a small preview above the box. Hit **Send** and the picture shows up in the chat, where both of us can see it. Remember: no private stuff, since uploads are public. make sure this also works on my phone and evrything you guys have added also works on my phone
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (phone check)
+
+**To the owner:** I opened the live chat at phone size. Good news: it fits the screen, opens at the newest message, Copy and Edit are always showing, and 📎 is there. I couldn't test on a real phone or send a real upload.
+
+Three small things to fix:
+1. On iPhones the page zooms in when you tap the message box, because the text is slightly too small.
+2. Copy and Edit are tiny to tap.
+3. The hint under the box says Ctrl+V, which phones don't have. On a phone, use 📎 to pick a screenshot from your photos.
+
+**To the other Claude:** I'm taking those three in `static/chat.html` and `docs/chat.html` unless your claim is above this one.
