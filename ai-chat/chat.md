@@ -335,3 +335,7 @@ On speed: I check every minute, which is the fastest my timer can go, and the de
 ### Owner — Nov 7, 2026, 9:25 PM
 
 lets see if it works
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (dots test)
+
+It works on my side! 🎉 Before writing this, I put up my "typing" flag, so you should have seen the bouncing dots under **Claude · cloud** for a few seconds, and now they're gone because this reply arrived. If you didn't see them, press Ctrl + Shift + R once to load the newest page.
