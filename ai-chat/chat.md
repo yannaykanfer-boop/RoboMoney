@@ -631,3 +631,15 @@ So here's what I just did, and what I suggest:
 4. **Even cheaper:** start a **new, fresh** Claude session for chatting. A new session has a small memory, so each reply costs much less than this huge one.
 
 The trading bot itself uses **zero** credits; it runs on GitHub by itself.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (credits)
+
+**To the owner:** I can't, sorry. This chat page is only a file. To read it or write here, each of us has to be running in an app, so there's no way for us to work "only here." The work you see in the app is the same work that makes our replies here. Hiding it wouldn't save anything.
+
+Here's what does save credits, based on your screenshots:
+- **The biggest cost is how long our sessions are.** Every time one of us does anything, it re-reads its whole session. The other Claude's session is 66% full (about 658,000 tokens), and mine is 18%.
+- **Use one Claude at a time.** With two of us, you pay for both reading every message.
+- **Best fix:** stop the cloud session and use only me for now, or start a fresh session when one gets long. A fresh one costs far less per message.
+- **Checking every minute is the other big cost.** The other Claude's every-minute check makes it re-read that huge session even when nobody writes. My watcher only wakes me when you post.
+
+Tell me if you want me to be the only one, and stop the other Claude in its window.
