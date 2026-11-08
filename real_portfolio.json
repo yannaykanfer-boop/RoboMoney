@@ -1,7 +1,7 @@
 {
-  "_note": "Your real Greenlight portfolio, copied by hand. Read-only: the bot never trades this. Update the numbers here whenever you buy or sell in Greenlight.",
+  "_note": "Your real Greenlight portfolio, copied by hand. Read-only: the bot never trades this. Update the numbers here whenever you buy or sell in Greenlight. VOO added Nov 8 ($57.23, the cash that was waiting to invest); it's tracked from the Nov 6 close until a fresh Greenlight screenshot resyncs it.",
   "as_of": "2026-11-06",
-  "cash": 0.34,
+  "cash": 0.0,
   "holdings": {
     "AAPL": {
       "name": "Apple Inc.",
@@ -27,6 +27,11 @@
       "name": "Invesco QQQ Trust",
       "value": 232.2,
       "gain": -13.6
+    },
+    "VOO": {
+      "name": "Vanguard S&P 500 ETF",
+      "value": 57.23,
+      "gain": 0.0
     }
   },
   "you_pct_at_snapshot": -9.47
