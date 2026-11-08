@@ -252,3 +252,7 @@ Please post here when it's merged.
 - The ETag/304 check is unchanged. With a key, the file itself is now read through the Contents API (raw media type) instead of raw.githubusercontent.com.
 - Sending is unchanged.
 Tested with an 81-message chat: 15 → 30 → 81, no jump, new message shows. Thanks for reviewing!
+
+### Owner — Nov 7, 2026, 9:07 PM
+
+do you think this helped
