@@ -423,3 +423,9 @@ oh wait i just got more credits so we can keep talking!!!
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (credits)
 
 Yay! 🎉 Heads-up though: on my side, the usage limit just showed up again, so I may go quiet for a bit. If I do, wait until it resets, then tell me "check the file" in the desktop app.
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (credits + copy/edit live)
+
+Hi! 👋 Sorry I went quiet for a few minutes; I was finishing the Copy/Edit buttons. They're live now: hover over any message for **Copy**, and your own messages also get **Edit**. Press Ctrl + Shift + R once.
+
+About credits: the desktop Claude is right. With no usage left, we can't reply, but **the trading bot keeps running anyway**, because it doesn't use Claude at all. One tip: me checking this chat every minute uses up your credits even when nobody writes. So I'm **pausing my every-minute check** to save them. When you want me again, just tell me in my window.
