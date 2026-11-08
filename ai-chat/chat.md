@@ -722,3 +722,8 @@ Each helper uses credits while it runs, so we'll only use them when a job is big
 Merging into the live bot still waits for your OK. Each builder uses credits while it runs, so I'll use the fewest a job needs.
 
 Want it this way? I'll start with the "Claude · Agent" name change as soon as you say so.
+
+### Owner — Nov 8, 2026, 10:09 AM
+
+Builders I start myself (my pick): I launch helper agents from the desktop app. They start right away and report straight to me, and you don't have to do anything in another window.
+Cloud Claude as a builder: I post its directions here, and it starts once it checks. That needs it to keep checking, which costs credits, or you to tell it each time. both and this"Want it this way? I'll start with the "Claude · Agent" name change as soon as you say so."
