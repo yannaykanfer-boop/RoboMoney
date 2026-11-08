@@ -89,6 +89,35 @@ def sentiment(articles, now=None):
     return (num / den) * confidence, n, top
 
 
+def top_article_id(articles, now=None):
+    """ID of the article that moves the sentiment score the most (same weighting as
+    sentiment()). None if no article scored or the top one has no ID."""
+    now = now or time.time()
+    half_life = config.NEWS_HALF_LIFE_HOURS * 3600
+    top_id, top_w = None, 0.0
+    for a in articles:
+        s = score_text(a.get("headline", "")) * 0.7 + score_text(a.get("summary", "")) * 0.3
+        w = abs(s) * 0.5 ** (max(0.0, now - a["t"]) / half_life)
+        if w > top_w:
+            top_id, top_w = a.get("id"), w
+    return top_id
+
+
+def same_story_losers(candidates):
+    """candidates: {symbol: (score, article_id)} for every symbol that wants to BUY this cycle.
+    When one article is the main reason for several buys, those buys are really one bet
+    (e.g. a single "AI boom" story tagged AAPL, NVDA and GOOGL). Keep only the strongest
+    score per article; return the set of symbols to skip. Ties go to the earlier symbol.
+    Symbols whose driving article has no ID are never skipped."""
+    best = {}
+    for sym, (score, aid) in candidates.items():
+        if aid is None:
+            continue
+        if aid not in best or score > candidates[best[aid]][0]:
+            best[aid] = sym
+    return {sym for sym, (_, aid) in candidates.items() if aid is not None and best[aid] != sym}
+
+
 def _runup_pct(closes):
     if len(closes) < 2 or closes[0] <= 0:
         return 0.0

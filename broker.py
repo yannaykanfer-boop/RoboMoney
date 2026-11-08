@@ -30,7 +30,9 @@ class Broker:
             sort=Sort.DESC,
         )
         articles = self.news.get_news(req).data.get("news", [])
-        out = [{"t": a.created_at.timestamp(), "headline": a.headline or "",
+        # "id" is Alpaca's article ID. One article that mentions several tickers comes
+        # back with the same ID for each of them, which is how the bot spots "same story".
+        out = [{"id": getattr(a, "id", None), "t": a.created_at.timestamp(), "headline": a.headline or "",
                 "summary": a.summary or "", "source": a.source} for a in articles]
         return sorted(out, key=lambda a: a["t"])
 
