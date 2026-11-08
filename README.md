@@ -59,7 +59,11 @@ API — same keys, no extra signup) and trades on them:
    *and* price hasn't already moved more than `NEWS_MAX_RUNUP_PCT` (1.5%)
    over the last `NEWS_PRICE_WINDOW_BARS` minute bars. If the price already
    ran, it skips.
-4. **Exits** when news turns negative (`NEWS_SELL_THRESHOLD`), or on the normal stop-loss.
+4. **Exits** when news turns negative (`NEWS_SELL_THRESHOLD`), on the normal stop-loss, or on
+   two rules in `exits.py`. **Time limit:** sell after `NEWS_MAX_HOLD_DAYS` (3) trading days,
+   unless the news is still strong. **Trailing stop:** once a position is up `TRAIL_ACTIVATE_PCT`
+   (3%), sell if it falls `TRAIL_PCT` (3%) from its high since the buy.
+   Every run's decisions and reasons are shown in the dashboard's Execution Log.
 5. **Sizes with fractional Kelly**: win rate and payoff come from the bot's
    *own* closed trades, blended with a conservative prior (55% / 1:1, worth 20
    trades) until real history builds up. Default is quarter-Kelly

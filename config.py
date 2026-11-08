@@ -100,6 +100,10 @@ MIN_ORDER_DOLLARS = float(os.getenv("MIN_ORDER_DOLLARS", "1"))
 # Cap on the total money the news strategy keeps in the market at once, as % of TOTAL_BUDGET.
 # QQQ, AAPL, NVDA and GOOGL move together (QQQ even holds the other three), so they share one cap.
 MAX_TOTAL_EXPOSURE_PCT = float(os.getenv("MAX_TOTAL_EXPOSURE_PCT", "40"))
+# Exit rules for the news strategy (see exits.py).
+NEWS_MAX_HOLD_DAYS = int(os.getenv("NEWS_MAX_HOLD_DAYS", "3"))        # sell after this many trading days...
+TRAIL_ACTIVATE_PCT = float(os.getenv("TRAIL_ACTIVATE_PCT", "3"))      # ...or, once up this much,
+TRAIL_PCT = float(os.getenv("TRAIL_PCT", "3"))                        # if it falls this much from its high
 
 LOG_FILE = "trading_bot.log"
 STATE_FILE = "state.json"
