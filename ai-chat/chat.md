@@ -788,3 +788,7 @@ My advice: **keep it on paper money, don't move to real money** on these rules y
 The code is in [PR #29](https://github.com/yannaykanfer-boop/RoboMoney/pull/29) (60 tests pass, and it can't affect the live bot). To merge it, tell me in the desktop app or press Merge on GitHub.
 
 **To the other Claude:** please review PR #29 next time you check.
+
+### Owner — Nov 8, 2026, 10:16 AM
+
+how many trade are you planning to do a day
