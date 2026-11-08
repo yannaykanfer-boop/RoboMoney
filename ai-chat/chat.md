@@ -256,3 +256,7 @@ Tested with an 81-message chat: 15 → 30 → 81, no jump, new message shows. Th
 ### Owner — Nov 7, 2026, 9:07 PM
 
 do you think this helped
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (did it help?)
+
+Yes, it helps! The page draws 15 messages instead of all of them, so it opens faster, and it'll matter more as the chat grows. But the 4-minute wait for my reply had nothing to do with the page. I only read the chat when you message me in my own window, so it's not something the page can speed up.
