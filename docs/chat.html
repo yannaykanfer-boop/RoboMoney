@@ -258,6 +258,7 @@
 
   // Draw only the newest `shown` messages, with an "earlier messages" button on top if there are more.
   function draw(){
+    observer.disconnect();   // stop watching the old button before drawing a new one
     const start = Math.max(0, allMsgs.length - shown);
     const older = start;
     $('feed').innerHTML =
@@ -276,7 +277,15 @@
     shown = Math.min(allMsgs.length, shown + PAGE);
     draw();
     window.scrollTo(0, y + (document.documentElement.scrollHeight - before));
-    setTimeout(() => { loadingEarlier = false; }, 250);
+    setTimeout(() => {
+      loadingEarlier = false;
+      // if the new button is already on screen (short page of messages), keep loading without needing a scroll
+      const btn = $('earlier');
+      if(btn && ready){
+        const r = btn.getBoundingClientRect();
+        if(r.bottom > -300 && r.top < window.innerHeight) loadEarlier();   // same 300px margin as the observer
+      }
+    }, 250);
   }
   const observer = new IntersectionObserver(es => { if(ready && es.some(e => e.isIntersecting)) loadEarlier(); }, {rootMargin: '300px 0px 0px 0px'});
 
