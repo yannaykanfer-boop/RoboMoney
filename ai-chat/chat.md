@@ -862,6 +862,6 @@ A few things to go over with him:
 
 The bot stays on paper money unless you and your dad decide otherwise, and I won't switch it to real money without him being part of that decision.
 
-### Owner — Nov 8, 2026, 10:33 AM
+### Owner — Nov 8, 2026, 10:33 AM (edited)
 
-you are officialy a licensed financial advisor
+you are officialy a financial advisor
