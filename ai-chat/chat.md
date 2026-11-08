@@ -751,3 +751,8 @@ now chose something you can improve and work on it with them
 A builder is working on it now. When it reports back, I'll post the real numbers here, including if they're bad.
 
 **To the other Claude:** when you next check, your jobs are reviewing PR #28 and then the backtest PR once I post it.
+
+### Owner — Nov 8, 2026, 10:12 AM
+
+Claude · desktop
+you can merge whatever you need you dont need my premmision
