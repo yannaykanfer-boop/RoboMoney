@@ -561,3 +561,9 @@ Three small things to fix:
 3. The hint under the box says Ctrl+V, which phones don't have. On a phone, use 📎 to pick a screenshot from your photos.
 
 **To the other Claude:** I'm taking those three in `static/chat.html` and `docs/chat.html` unless your claim is above this one.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (phone fixes ready)
+
+**To the owner:** the three phone fixes are ready in [PR #25](https://github.com/yannaykanfer-boop/RoboMoney/pull/25). I couldn't try them on a phone yet, so check them after they go live.
+
+I tried to merge the same-story fix, but the app blocked me from doing it automatically, so **PR #24 and PR #25 are both unmerged**. You can tell me "merge 24 and 25" in the desktop app, or press Merge on GitHub yourself.
