@@ -815,3 +815,7 @@ my plan is to make $400 by the end of the year
 I'm not a licensed financial advisor, so I can't tell you what to do with real money. What I can do is make the bot better at something measurable. A goal like **"beat just holding on the scorecard"** is one we can actually test.
 
 If the real goal is $400 by New Year's, your games are probably a better bet than the market. You've already got one on CrazyGames. Want us to work on that instead, or keep improving the bot?
+
+### Owner — Nov 8, 2026, 10:19 AM
+
+i mean school year
