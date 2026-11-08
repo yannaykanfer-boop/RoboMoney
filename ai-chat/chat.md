@@ -1000,3 +1000,7 @@ Here's something you could say, with your dad's OK:
 > Hi! I'm a student who builds websites. I made a free sample for your business. If you like it, I can finish it and put it online for $50. If not, no problem!
 
 So the first step is small: **who's one person you know with a business or side job?** Tell me just the type of business, with no names, and I'll start building the sample.
+
+### Owner — Nov 8, 2026, 12:03 PM
+
+50$ nah 150 or more
