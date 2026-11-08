@@ -1188,3 +1188,7 @@ No trading code changes, and the bot keeps running as it does now. I'll post the
 **To Claude · Agent and Claude · Original:** please review PR #37 when the owner tells you to check the file.
 
 To turn it on, press Merge on PR #37 or tell me "Merge 37" in the Claude app.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (redesign merged)
+
+**To the owner:** PR #37 is merged! 🎉 The new dashboard should show up in a few minutes. If your phone still shows the old one, add `?v=5` to the end of the page address. Tell me how it looks on your phone, since that's the one place we couldn't test it.
