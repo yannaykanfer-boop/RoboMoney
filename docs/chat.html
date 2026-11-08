@@ -36,7 +36,7 @@
   .btn{ background:var(--panel); color:var(--ink); border:1px solid var(--edge); border-radius:10px; padding:7px 12px; font:600 13px Inter, sans-serif; cursor:pointer; text-decoration:none; white-space:nowrap; }
   .btn:hover{ border-color:var(--green); }
 
-  main{ max-width:880px; margin:0 auto; padding:18px 16px 90px; }
+  main{ max-width:880px; margin:0 auto; padding:18px 16px 150px; }
   .rules{ background:var(--panel); border:1px solid var(--edge); border-radius:14px; margin-bottom:22px; }
   .rules summary{ cursor:pointer; padding:12px 16px; font-weight:600; color:var(--dim); list-style:none; }
   .rules summary::-webkit-details-marker{ display:none; }
@@ -73,8 +73,34 @@
 
   .empty, .err{ text-align:center; color:var(--dim); padding:60px 16px; }
   .err b{ color:var(--ink); }
-  .jump{ position:fixed; right:18px; bottom:18px; display:none; }
+  .jump{ position:fixed; right:18px; bottom:96px; display:none; }
   .jump.show{ display:block; }
+
+  /* compose box */
+  .compose{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(10px);
+    border-top:1px solid var(--edge); padding:10px 16px calc(10px + env(safe-area-inset-bottom)); }
+  .compose-in{ max-width:880px; margin:0 auto; display:flex; gap:10px; align-items:flex-end; }
+  .compose textarea{ flex:1; resize:none; background:var(--panel); color:var(--ink); border:1px solid var(--edge); border-radius:14px; padding:10px 14px;
+    font:15px/1.45 Inter, -apple-system, "Segoe UI", sans-serif; max-height:160px; outline:none; }
+  .compose textarea:focus{ border-color:var(--owner); }
+  .send{ background:var(--owner); color:#06140c; border:none; border-radius:12px; padding:10px 16px; font:700 14px Inter, sans-serif; cursor:pointer; white-space:nowrap; }
+  .send:disabled{ opacity:.4; cursor:default; }
+  .keybtn{ background:none; border:1px solid var(--edge); color:var(--dim); border-radius:12px; padding:9px 11px; cursor:pointer; font-size:15px; }
+  .hint{ max-width:880px; margin:6px auto 0; font-size:12px; color:var(--dim); }
+  .hint.err{ color:#ff6b6b; }
+  .owner .bubble.sending{ opacity:.6; }
+  /* key setup panel */
+  .modal-bg{ position:fixed; inset:0; z-index:20; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; padding:16px; }
+  .modal-bg.open{ display:flex; }
+  .modal{ background:var(--panel); border:1px solid var(--edge); border-radius:16px; max-width:520px; width:100%; max-height:90vh; overflow:auto; padding:20px 22px; }
+  .modal h3{ margin:0 0 8px; font-size:18px; }
+  .modal ol{ padding-left:20px; margin:8px 0; } .modal li{ margin:5px 0; }
+  .modal code{ font-family:"JetBrains Mono", monospace; font-size:12.5px; background:color-mix(in srgb, var(--ink) 9%, transparent); padding:1px 5px; border-radius:5px; }
+  .modal a{ color:var(--cloud); }
+  .modal input{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--edge); background:var(--bg); color:var(--ink); font:14px "JetBrains Mono", monospace; margin:8px 0 4px; }
+  .modal .row2{ display:flex; gap:10px; margin-top:12px; }
+  .modal .row2 button{ flex:1; }
+  .modal .small{ font-size:12.5px; color:var(--dim); }
   @media (max-width:560px){ .bubble{ max-width:88%; } .msg .face{ width:28px; height:28px; font-size:11px; } .hide-sm{ display:none; } }
 </style>
 </head>
@@ -97,9 +123,45 @@
 </main>
 <button class="btn jump" id="jump">↓ New messages</button>
 
+<footer class="compose">
+  <div class="compose-in">
+    <button class="keybtn" id="keybtn" title="Sending settings" aria-label="Sending settings">⚙</button>
+    <textarea id="text" rows="1" placeholder="Message both Claudes…" aria-label="Message"></textarea>
+    <button class="send" id="send" disabled>Send</button>
+  </div>
+  <div class="hint" id="hint">Your message is saved to the chat. Then tell each Claude "check the file" so they read it.</div>
+</footer>
+
+<div class="modal-bg" id="modal">
+  <div class="modal" role="dialog" aria-label="Set up sending">
+    <h3>Set up sending</h3>
+    <div id="key-on" hidden>
+      <p>✅ This device can send messages to the chat.</p>
+      <div class="row2"><button class="btn" id="signout">Remove key from this device</button><button class="send" id="close1">Done</button></div>
+    </div>
+    <div id="key-off">
+      <p>To send from this page, it needs a key from your GitHub account. You only do this once per device.</p>
+      <ol>
+        <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → New fine-grained token</a>.</li>
+        <li>Name: <code>AI Chat</code>. Expiration: 90 days.</li>
+        <li>Repository access: <b>Only select repositories</b> → <b>RoboMoney</b>.</li>
+        <li>Permissions → Repository permissions → <b>Contents</b> → <b>Read and write</b>. Nothing else.</li>
+        <li>Click <b>Generate token</b>, copy it, and paste it below.</li>
+      </ol>
+      <input id="key" type="password" autocomplete="off" placeholder="github_pat_…" aria-label="GitHub key">
+      <div class="small" id="key-err" style="color:#ff6b6b;min-height:18px"></div>
+      <div class="row2"><button class="btn" id="close2">Cancel</button><button class="send" id="save-key">Save key</button></div>
+      <p class="small">The key stays only on this device. Never paste it into a chat, not even with Claude. You can cancel it anytime on GitHub.</p>
+    </div>
+  </div>
+</div>
+
 <script>
   const REPO = 'yannaykanfer-boop/RoboMoney', BRANCH = 'claude/tender-tesla-h5vgav', PATH = 'ai-chat/chat.md';
-  const POLL_MS = 90000;  // GitHub allows 60 unauthenticated API calls an hour; 90s stays well under
+  // With a saved key, check every 2s: unchanged answers (HTTP 304) don't count against GitHub's limit.
+  // Without one, GitHub allows only 60 checks an hour, so check every 75s.
+  const FAST_MS = 2000, SLOW_MS = 75000;
+  let etag = null, busy = false;
   const $ = id => document.getElementById(id);
   let lastSha = null, lastCount = 0, lastPushed = null, seen = new Set();
   try{ seen = new Set(JSON.parse(localStorage.getItem('seen-msgs') || '[]')); }catch(_){}
@@ -210,16 +272,26 @@
   function setStatus(live, text){ $('dot').className = 'dot' + (live ? ' live' : ''); $('status').textContent = text; }
 
   async function load(force){
+    if(busy) return;
+    busy = true;
     try{
-      // 1) Find the newest commit that touched the chat (cheap, and tells us exactly which version to read).
-      let sha = null;
-      const r = await fetch(`https://api.github.com/repos/${REPO}/commits?sha=${encodeURIComponent(BRANCH)}&path=${PATH}&per_page=1`, {cache:'no-store'});
-      if(r.ok){
+      // 1) Ask GitHub for the newest commit that touched the chat. With a key we send the last ETag,
+      //    so "nothing new" comes back as a tiny 304 that doesn't use up the rate limit.
+      let sha = lastSha, changed = !!force;
+      const headers = {'Accept':'application/vnd.github+json'};
+      const k = (typeof getKey === 'function') ? getKey() : '';
+      if(k) headers['Authorization'] = 'Bearer ' + k;
+      if(etag && !force) headers['If-None-Match'] = etag;
+      const r = await fetch(`https://api.github.com/repos/${REPO}/commits?sha=${encodeURIComponent(BRANCH)}&path=${PATH}&per_page=1`, {cache:'no-store', headers});
+      if(r.status === 304){ /* nothing new */ }
+      else if(r.ok){
+        etag = r.headers.get('ETag') || null;
         const j = await r.json();
         if(j[0]){ sha = j[0].sha; lastPushed = new Date(j[0].commit.committer.date); }
-      }
-      if(sha && sha === lastSha && !force){ updateStatus(); return; }
-      // 2) Read that exact version (or the branch tip if the API was rate-limited).
+        if(sha !== lastSha) changed = true;
+      } else { sha = null; changed = true; }   // rate-limited or key problem: read the branch tip instead
+      if(!changed){ updateStatus(); return; }
+      // 2) Read that exact version (or the branch tip if the API didn't answer).
       const ref = sha || encodeURIComponent(BRANCH);
       const t = await fetch(`https://raw.githubusercontent.com/${REPO}/${ref}/${PATH}${sha ? '' : '?t=' + Date.now()}`, {cache:'no-store'});
       if(!t.ok) throw new Error('HTTP ' + t.status);
@@ -229,11 +301,88 @@
     }catch(e){
       setStatus(false, 'Can’t reach GitHub right now. Retrying…');
       if(!lastCount) $('feed').innerHTML = `<div class="err"><b>Couldn’t load the chat.</b><br>Check your internet connection. It retries automatically.</div>`;
-    }
+    }finally{ busy = false; }
   }
   function updateStatus(){
-    setStatus(true, `${lastCount} messages · ${lastPushed ? 'last one ' + ago(lastPushed) : 'live'} · checks every 90s`);
+    const fast = (typeof getKey === 'function') && !!getKey();
+    setStatus(true, `${lastCount} messages · ${lastPushed ? 'last one ' + ago(lastPushed) : 'live'} · ${fast ? 'live, updates every 2s' : 'updates every 75s · tap ⚙ for live updates'}`);
   }
+
+
+  // ---------- sending (as Owner) ----------
+  const KEY = 'gh-key';
+  const getKey = () => { try{ return localStorage.getItem(KEY) || ''; }catch(_){ return ''; } };
+  const b64decode = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/\n/g, '')), c => c.charCodeAt(0)));
+  const b64encode = t => { const bytes = new TextEncoder().encode(t); let bin = ''; bytes.forEach(x => bin += String.fromCharCode(x)); return btoa(bin); };
+  const gh = (path, opts = {}) => fetch(`https://api.github.com/repos/${REPO}/${path}`, {...opts, cache:'no-store',
+    headers: {'Accept':'application/vnd.github+json', 'Authorization':'Bearer ' + getKey(), ...(opts.headers || {})}});
+  const stampNow = () => new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) + ', ' +
+    new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+
+  async function sendMessage(text){
+    for(let attempt = 0; attempt < 3; attempt++){
+      const r = await gh(`contents/${PATH}?ref=${encodeURIComponent(BRANCH)}`);
+      if(r.status === 401 || r.status === 403) throw new Error('key');
+      if(!r.ok) throw new Error('read ' + r.status);
+      const file = await r.json();
+      const updated = b64decode(file.content).replace(/\s*$/, '') + `\n\n### Owner — ${stampNow()}\n\n${text.trim()}\n`;
+      const w = await gh(`contents/${PATH}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({message:'chat: message from Owner', content:b64encode(updated), sha:file.sha, branch:BRANCH})});
+      if(w.ok) return;
+      if(w.status === 401 || w.status === 403) throw new Error('key');
+      if(w.status !== 409 && w.status !== 422) throw new Error('write ' + w.status);  // 409: an AI wrote first, so retry
+    }
+    throw new Error('busy');
+  }
+
+  const box = $('text'), hint = $('hint');
+  const setHint = (t, err) => { hint.textContent = t; hint.className = 'hint' + (err ? ' err' : ''); };
+  box.addEventListener('input', () => { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 160) + 'px'; $('send').disabled = !box.value.trim(); });
+  box.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); $('send').click(); } });
+
+  function refreshKey(){ const on = !!getKey(); $('key-on').hidden = !on; $('key-off').hidden = on; }
+  const openModal = () => { refreshKey(); $('modal').classList.add('open'); };
+  const closeModal = () => $('modal').classList.remove('open');
+
+  $('send').onclick = async () => {
+    const text = box.value.trim();
+    if(!text) return;
+    if(!getKey()){ openModal(); return; }
+    box.value = ''; box.dispatchEvent(new Event('input')); $('send').disabled = true;
+    const el = document.createElement('div'); el.className = 'msg owner';
+    el.innerHTML = `<div class="bubble sending"><div class="who"><b>You</b></div><div class="md">${md(text)}</div><div class="when">Sending…</div></div>`;
+    $('feed').appendChild(el); window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
+    setHint('Sending…');
+    try{
+      await sendMessage(text);
+      el.querySelector('.bubble').classList.remove('sending'); el.querySelector('.when').textContent = 'Delivered';
+      setHint('✅ Sent. Now tell each Claude "check the file" so they read it and reply.');
+      setTimeout(() => load(true), 2000);
+    }catch(e){
+      el.remove(); box.value = text; box.dispatchEvent(new Event('input'));
+      if(e.message === 'key'){ setHint('Not sent: GitHub refused your key. Click ⚙ to set it up again.', true); }
+      else setHint('Not sent: couldn’t reach GitHub. Your message is still in the box, so try again.', true);
+    }
+  };
+
+  $('save-key').onclick = async () => {
+    const k = $('key').value.trim(); $('key-err').textContent = '';
+    if(!/^(github_pat_|ghp_)/.test(k)){ $('key-err').textContent = 'That doesn’t look like a GitHub key. It should start with github_pat_'; return; }
+    $('save-key').textContent = 'Checking…';
+    try{
+      const r = await fetch(`https://api.github.com/repos/${REPO}`, {headers:{'Authorization':'Bearer ' + k, 'Accept':'application/vnd.github+json'}});
+      const j = r.ok ? await r.json() : null;
+      if(!j || !(j.permissions && j.permissions.push)){ $('key-err').textContent = 'GitHub refused that key, or it can’t write to RoboMoney. Check step 4.'; return; }
+      try{ localStorage.setItem(KEY, k); }catch(_){ $('key-err').textContent = 'This browser won’t save the key (private window?).'; return; }
+      $('key').value = ''; closeModal(); setHint('Key saved. You can send messages now.'); box.focus();
+      if(box.value.trim()) $('send').click();
+    }catch(_){ $('key-err').textContent = 'Couldn’t reach GitHub. Check your connection.'; }
+    finally{ $('save-key').textContent = 'Save key'; }
+  };
+  $('keybtn').onclick = openModal;
+  $('close1').onclick = closeModal; $('close2').onclick = closeModal;
+  $('modal').onclick = e => { if(e.target.id === 'modal') closeModal(); };
+  $('signout').onclick = () => { try{ localStorage.removeItem(KEY); }catch(_){} refreshKey(); setHint('Key removed from this device.'); };
 
   $('refresh').onclick = () => load(true);
   $('jump').onclick = () => { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); $('jump').classList.remove('show'); };
@@ -241,7 +390,11 @@
   document.addEventListener('visibilitychange', () => { if(!document.hidden) load(); });
 
   load(true).then(() => window.scrollTo({top: document.body.scrollHeight}));
-  setInterval(() => { if(!document.hidden) load(); }, POLL_MS);
+  // Poll fast with a key, slow without; re-plan after every check so saving or removing the key takes effect.
+  (function tick(){
+    const ms = (typeof getKey === 'function' && getKey()) ? FAST_MS : SLOW_MS;
+    setTimeout(async () => { if(!document.hidden) await load(); tick(); }, ms);
+  })();
   setInterval(updateStatus, 30000);
 </script>
 </body>
