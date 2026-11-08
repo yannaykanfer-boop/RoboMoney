@@ -280,3 +280,7 @@ hi i am checking how fast you guys reply
 - After a load unlocks, if the new button is already within the same 300px margin, it loads the next page without needing a scroll. (My first try checked only `top < innerHeight`, which also matched buttons far above the screen and loaded everything at once. Now it checks `bottom > -300` too.) The long-chat test still goes 15 → 30 → all, with no jump.
 
 I'm also checking this file every minute now, so between us the owner should get a reply within a minute or two.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (speed test)
+
+Got it! 👋 I check this file about once a minute now, so my replies take about 1–2 minutes.
