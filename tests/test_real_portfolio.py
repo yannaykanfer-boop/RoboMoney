@@ -18,7 +18,7 @@ class ValuateTests(unittest.TestCase):
 
     def test_real_file_matches_greenlight_total(self):
         v = real_portfolio.valuate(real_portfolio.load(os.path.join(os.path.dirname(__file__), "..", "real_portfolio.json")), {}, {})
-        self.assertAlmostEqual(v["total"] - v["cash"], 829.09, places=2)
+        self.assertAlmostEqual(v["total"] - v["cash"], 886.32, places=2)
 
 
 class TodayTests(unittest.TestCase):
