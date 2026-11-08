@@ -52,7 +52,34 @@ def has_strong_signal(closes):
     return abs((fast - slow) / slow * 100) > config.PAUSE_RESUME_BUFFER_PCT
 
 
+class _SymbolNotes(logging.Handler):
+    """Collects this run's log messages that start with 'SYMBOL:' so the dashboard can show why
+    the bot did (or didn't) trade each stock."""
+    def __init__(self, symbols):
+        super().__init__(level=logging.INFO)
+        self.symbols, self.notes = set(symbols), {}
+
+    def emit(self, record):
+        msg = record.getMessage()
+        sym, sep, rest = msg.partition(": ")
+        if sep and sym in self.symbols:
+            self.notes.setdefault(sym, []).append(rest.strip())
+
+
 def run_cycle(broker, log):
+    notes = _SymbolNotes(config.SYMBOLS)
+    old_level = log.level
+    if log.getEffectiveLevel() > logging.INFO:
+        log.setLevel(logging.INFO)  # the reasons are logged at INFO; make sure they reach the recorder
+    log.addHandler(notes)
+    try:
+        _run_cycle(broker, log, notes)
+    finally:
+        log.removeHandler(notes)
+        log.setLevel(old_level)
+
+
+def _run_cycle(broker, log, notes):
     market_open = broker.is_market_open()
     if not market_open:
         log.info("Market closed — skipping trading, updating dashboard only.")
@@ -261,8 +288,12 @@ def run_cycle(broker, log):
     real, real_refs = real_portfolio.update(broker, prior, log)
     if real:
         log.info(f"Real portfolio (read-only): ${real['total']:.2f} ({real['since_snapshot']:+.2f} since {real['as_of']})")
+    decisions = None
+    if market_open:
+        decisions = state.decisions_for_cycle(time.time(), config.SYMBOLS, notes.notes, new_trades,
+                                              {s: p.get("signal") for s, p in positions.items()})
     state.save(acct, market_open, positions, new_trades, paused=paused, pause_note=pause_note,
-               real=real, real_ref_prices=real_refs)
+               real=real, real_ref_prices=real_refs, decisions=decisions)
 
 
 def main():

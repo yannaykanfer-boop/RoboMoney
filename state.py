@@ -10,6 +10,21 @@ import config
 
 MAX_HISTORY = 500
 MAX_TRADES = 100
+MAX_DECISIONS = 120
+
+
+def decisions_for_cycle(t, symbols, notes, new_trades, signals):
+    """Pure: one entry per symbol saying what the bot did this run and why.
+    notes: {symbol: [log messages about it this run]}; signals: {symbol: signal description}."""
+    acted = {}
+    for tr in new_trades:
+        acted[tr["symbol"]] = tr["side"].lower()
+    out = []
+    for sym in symbols:
+        msgs = [m for m in notes.get(sym, []) if not m.startswith("hold (price")]
+        why = " · ".join(msgs) if msgs else (signals.get(sym) or "no signal")
+        out.append({"t": t, "symbol": sym, "action": acted.get(sym, "hold"), "why": why[:400]})
+    return out
 
 
 def load():
@@ -22,8 +37,12 @@ def load():
         return {"history": [], "trades": []}
 
 
-def save(acct, market_open, positions, new_trades, paused=None, pause_note=None, real=None, real_ref_prices=None):
+def save(acct, market_open, positions, new_trades, paused=None, pause_note=None, real=None, real_ref_prices=None,
+         decisions=None):
     data = load()
+
+    if decisions:
+        data["decisions"] = (data.get("decisions", []) + decisions)[-MAX_DECISIONS:]
 
     if real is not None:
         data["real_portfolio"] = real

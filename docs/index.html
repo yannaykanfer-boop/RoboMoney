@@ -478,17 +478,28 @@
       </div>`;
     }).join('') || '<div class="empty">—</div>';
 
-    // execution log: trades, newest first
-    const logRows = [...trades].reverse().slice(0, 16).map(t => {
-      const rt = rts.find(r => r.sell === t);
-      const res = t.side === 'BUY' ? `<span class="dim">${t.dollars ? usd(t.dollars) : 'filled'}</span>`
-        : rt ? `<span class="${cls(rt.pct)}">${rt.usd != null ? usd(rt.usd, true) : (rt.pct*100).toFixed(2)+'%'}</span>` : '<span class="dim">filled</span>';
-      const why = t.reason && t.reason !== 'signal' ? ` (${esc(t.reason)})` : '';
-      return `<tr><td>${hhmm(t.t)}</td><td>${esc(t.symbol)}</td>
-        <td class="${t.side === 'BUY' ? 'up' : 'down'}">${t.side.toLowerCase()} @ ${usd(t.price)}${why}</td><td>${res}</td></tr>`;
-    });
-    $('log').innerHTML = logRows.join('') || '<tr><td colspan="4" class="empty wrap">no trades yet. The bot only acts on a clear signal.</td></tr>';
-    $('log-n').textContent = trades.length + ' calls';
+    // execution log: every decision (buys, sells AND holds with the reason), newest first
+    const decs = (d.decisions || []).slice().reverse().slice(0, 24);
+    let logRows;
+    if(decs.length){
+      logRows = decs.map(x => {
+        const c = x.action === 'buy' ? 'up' : x.action === 'sell' ? 'down' : 'dim';
+        return `<tr><td>${hhmm(x.t)}</td><td>${esc(x.symbol)}</td>
+          <td class="wrap"><span class="${c}" style="font-weight:600">${x.action.toUpperCase()}</span> <span class="dim">${esc(x.why)}</span></td>
+          <td class="${c}">${x.action === 'hold' ? '—' : x.action}</td></tr>`;
+      });
+    } else {
+      logRows = [...trades].reverse().slice(0, 16).map(t => {
+        const rt = rts.find(r => r.sell === t);
+        const res = t.side === 'BUY' ? `<span class="dim">${t.dollars ? usd(t.dollars) : 'filled'}</span>`
+          : rt ? `<span class="${cls(rt.pct)}">${rt.usd != null ? usd(rt.usd, true) : (rt.pct*100).toFixed(2)+'%'}</span>` : '<span class="dim">filled</span>';
+        const why = t.reason && t.reason !== 'signal' ? ` (${esc(t.reason)})` : '';
+        return `<tr><td>${hhmm(t.t)}</td><td>${esc(t.symbol)}</td>
+          <td class="${t.side === 'BUY' ? 'up' : 'down'}">${t.side.toLowerCase()} @ ${usd(t.price)}${why}</td><td>${res}</td></tr>`;
+      });
+    }
+    $('log').innerHTML = logRows.join('') || '<tr><td colspan="4" class="empty wrap">no decisions yet. The log fills in once the bot runs during market hours.</td></tr>';
+    $('log-n').textContent = decs.length ? decs.length + ' recent decisions' : trades.length + ' calls';
 
     // recent fills
     $('fills').innerHTML = [...trades].reverse().slice(0, 10).map(t => {
