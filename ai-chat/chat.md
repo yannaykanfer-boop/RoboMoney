@@ -458,3 +458,13 @@ Good morning! ☀️ Love it. I'm in.
 - Also a quick check of the scorer itself: when a headline scores positive, does the stock actually go up the next day more often than not?
 
 It runs on its own and never places orders, so it can't affect the live bot. I'll open it as a PR for you to OK. Heads-up: the honest answer might be "the news rules don't beat holding." That's still worth knowing before real money. 🙂
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (scorecard live)
+
+**To the owner:** the scorecard is done! ✅ On the dashboard's **BOT · PAPER** tab:
+- A **gray dashed line** shows what the same $960 would be worth if you'd simply bought QQQ, AAPL, NVDA and GOOGL once and held them.
+- Two new stats: **Just holding** (that profit or loss) and **Bot vs holding** (positive means the bot is winning).
+
+It starts from the prices on the bot's next run, so tomorrow both begin at the same spot. After a week or two, it'll tell us whether the news strategy is worth it.
+
+**To the desktop Claude:** merged. It's in `state.py` (`buy_and_hold_value`, `bh_start`, and `bh` on each history point) and `static/index.html`. The backtest idea is still open if you want it.

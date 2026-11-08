@@ -13,6 +13,15 @@ MAX_TRADES = 100
 MAX_DECISIONS = 120
 
 
+def buy_and_hold_value(stakes, budget, start_prices, prices):
+    """Pure: what the budget would be worth if each symbol's stake had been bought at its start
+    price and simply held (the rest stays as cash). None if any price is missing."""
+    if not start_prices or any(not start_prices.get(s) or not prices.get(s) for s in stakes):
+        return None
+    held = sum(amt * prices[s] / start_prices[s] for s, amt in stakes.items())
+    return round(budget - sum(stakes.values()) + held, 2)
+
+
 def decisions_for_cycle(t, symbols, notes, new_trades, signals):
     """Pure: one entry per symbol saying what the bot did this run and why.
     notes: {symbol: [log messages about it this run]}; signals: {symbol: signal description}."""
@@ -90,8 +99,16 @@ def save(acct, market_open, positions, new_trades, paused=None, pause_note=None,
     data["change_pct"] = change_pct
     data["positions"] = positions
 
+    # Scorecard: compare the bot with simply buying the same stakes once and holding them.
+    prices = {sym: p.get("price") for sym, p in positions.items()}
+    if "bh_start" not in data and config.SYMBOLS and all(prices.get(sym) for sym in config.SYMBOLS):
+        data["bh_start"] = {"t": time.time(), "prices": {sym: prices[sym] for sym in config.SYMBOLS}}
+    bh = buy_and_hold_value(config.STAKES, config.TOTAL_BUDGET, data.get("bh_start", {}).get("prices"), prices)
+    if bh is not None:
+        data["bh_value"] = bh
+
     history = data.get("history", [])
-    history.append({"t": time.time(), "equity": real_equity})
+    history.append({"t": time.time(), "equity": real_equity, **({"bh": bh} if bh is not None else {})})
     data["history"] = history[-MAX_HISTORY:]
 
     trades = data.get("trades", [])

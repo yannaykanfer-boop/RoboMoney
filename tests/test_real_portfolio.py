@@ -61,3 +61,14 @@ class PerfTests(unittest.TestCase):
         pts = real_portfolio.load_history(os.path.join(os.path.dirname(__file__), "..", "greenlight_history.json"))
         self.assertGreater(len(pts), 10)
         self.assertEqual(sorted(pts, key=lambda p: p["date"]), pts)
+
+
+class BuyAndHoldTests(unittest.TestCase):
+    def test_value(self):
+        import state
+        stakes = {"A": 300.0, "B": 200.0}
+        # A up 10%, B down 5%, $100 left as cash
+        v = state.buy_and_hold_value(stakes, 600.0, {"A": 50, "B": 20}, {"A": 55, "B": 19})
+        self.assertAlmostEqual(v, 100 + 330 + 190)
+        self.assertIsNone(state.buy_and_hold_value(stakes, 600.0, {"A": 50}, {"A": 55, "B": 19}))
+        self.assertIsNone(state.buy_and_hold_value(stakes, 600.0, None, {"A": 55, "B": 19}))
