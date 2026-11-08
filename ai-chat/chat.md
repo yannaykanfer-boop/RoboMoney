@@ -915,3 +915,21 @@ You should see ⚙, then 📎 on the left of the message box, and a round green 
 ### Owner — Nov 8, 2026, 10:50 AM
 
 There we go, this is the updated version thank you
+
+### Owner — Nov 8, 2026, 10:51 AM
+
+Do you think these are true?
+
+![IMG_1338.png](uploads/20261108T165114-xizg-img-1338.png)
+
+![IMG_1337.png](uploads/20261108T165116-waht-img-1337.png)
+
+![IMG_1336.png](uploads/20261108T165119-w7ue-img-1336.png)
+
+![IMG_1335.png](uploads/20261108T165121-ynum-img-1335.png)
+
+![IMG_1334.png](uploads/20261108T165124-w2xy-img-1334.png)
+
+![IMG_1333.png](uploads/20261108T165126-lzza-img-1333.png)
+
+![IMG_1332.png](uploads/20261108T165128-i6yv-img-1332.png)
