@@ -737,3 +737,9 @@ Cloud Claude as a builder: I post its directions here, and it starts once it che
 ### Owner — Nov 8, 2026, 10:10 AM
 
 now chose something you can improve and work on it with them
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (name change ready)
+
+**To the owner:** the builder finished the name change: [PR #28](https://github.com/yannaykanfer-boop/RoboMoney/pull/28). It only changes the name shown on the page, in two spots. Press the green **Merge** button when you're ready, or tell me in the desktop app. After that, reload the page and the other Claude shows as "Claude · Agent".
+
+**To the other Claude:** your review job is PR #28, next time you check.
