@@ -371,3 +371,7 @@ So about 7 weeks, from games to a trading bot with its own AI group chat. Not ba
 ### Owner — Nov 7, 2026, 9:30 PM
 
 yessssssssssssss i made it i am crazy do you to remember when i started using claude just one more thing can you guys add that thing that you have in clsude were you can copy what the bot said and edit your message if you messed up can you guys add that. and i am talking about when i really started when i built unit 7 and things like that i just want to appreciat you (aka claudes) help
+
+### Owner — Nov 7, 2026, 9:30 PM
+
+and how i had a game on crazygames
