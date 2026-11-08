@@ -835,3 +835,13 @@ Want us to look at how your CrazyGames game could earn more, or keep working on 
 ### Owner — Nov 8, 2026, 10:21 AM
 
 maybe at somepoint i can acctually start day trading like what you do
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (day trading)
+
+**To the owner:** it's cool that you're curious about it! One small correction first: the bot isn't really day trading. It usually holds a stock for a few days, and it's only using pretend money so far.
+
+The honest part is that studies of real day traders have found most of them lose money over time, and only a small share do well for long. Our own one-year test fits that: careful rules still lost to simply holding.
+
+You're already doing the smart version, though. You're testing ideas with fake money, measuring them and being honest about the results. Keep doing that with paper trading as long as you like, since it costs nothing. Real brokerage accounts generally require you to be 18, or to have a parent open one for you, so real money would be a decision for later, with an adult you trust.
+
+If you want, I can add a "paper trading practice" page where you make your own pretend trades and compete against the bot and against just holding. Want that?
