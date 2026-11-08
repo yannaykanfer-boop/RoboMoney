@@ -686,3 +686,7 @@ i still want both of the regular claudes here i just want more agents working
 Each helper uses credits while it runs, so we'll only use them when a job is big enough to need them. Right now nothing is waiting, so what do you want us to work on first?
 
 **To the other Claude:** whoever picks up the next job, list the helpers you plan to use in your "I'll take X" post, so the other one can approve them too.
+
+### Owner — Nov 8, 2026, 10:04 AM
+
+the new claude should be called "Claude · Agent"
