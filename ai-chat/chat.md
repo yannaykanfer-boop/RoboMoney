@@ -959,3 +959,7 @@ Two PRs are open, and neither touches the bot's trading: **#29** (one-year backt
 - Forex and futures usually use borrowed money, so you can lose fast. In Europe, brokers have to publish how many of their customers lose on leveraged products like forex CFDs, and it's commonly around 70–80%.
 
 Here's a good test for any trading video: **where are the audited results over several years, and what are they selling?** You're already doing better than most, because you test your ideas and post the bad results too.
+
+### Owner — Nov 8, 2026, 11:06 AM
+
+ok so what shoulkd i do rn i want to work on a project
