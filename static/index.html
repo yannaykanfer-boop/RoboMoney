@@ -182,6 +182,7 @@
       <div class="big" id="big">$0.00</div>
       <div class="sub" id="big-sub">—</div>
       <div id="chart-box"></div>
+      <div class="sub" style="margin-top:6px"><span style="color:var(--green)">━</span> bot &nbsp; <span style="color:#8b958f">╍</span> just holding the same stocks</div>
       <div class="ranges" id="ranges">
         <button data-r="1D">1D</button><button data-r="1W">1W</button><button data-r="1M">1M</button>
         <button data-r="3M">3M</button><button data-r="All" class="on">ALL</button>
@@ -244,7 +245,7 @@
   // History is in real-budget dollars; drop leftover pre-setup points (impossible moves > whole budget).
   function series(d){
     const b = d.total_budget || 0;
-    return (d.history || []).filter(p => !b || Math.abs(p.equity - b) < b).map(p => ({t:p.t, v:p.equity}));
+    return (d.history || []).filter(p => !b || Math.abs(p.equity - b) < b).map(p => ({t:p.t, v:p.equity, bh:p.bh}));
   }
 
   // Pair BUY -> SELL per symbol to get realized round trips.
@@ -269,7 +270,9 @@
     if(pts.length > 300){ const s = pts.length/300; pts = Array.from({length:300}, (_, i) => pts[Math.floor(i*s)]).concat([pts.at(-1)]); }
     const W = 800, H = 300, P = 12;
     const vals = pts.map(p => p.v - budget);
-    let min = Math.min(0, ...vals), max = Math.max(0, ...vals);
+    const bhIdx = pts.map((p, i) => p.bh != null ? i : -1).filter(i => i >= 0);
+    const bhVals = bhIdx.map(i => pts[i].bh - budget);
+    let min = Math.min(0, ...vals, ...bhVals), max = Math.max(0, ...vals, ...bhVals);
     if(max - min < 1){ min -= 1; max += 1; }
     const x = i => P + i*(W - 2*P)/(pts.length - 1), y = v => P + (1 - (v - min)/(max - min))*(H - 2*P);
     const line = vals.map((v, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(v).toFixed(1)).join(' ');
@@ -285,6 +288,7 @@
         ${gridLines}
         <line x1="0" x2="${W}" y1="${y(0)}" y2="${y(0)}" stroke="#34453b" stroke-dasharray="4 5" vector-effect="non-scaling-stroke"/>
         <path d="${line} L${x(pts.length-1)},${H} L${x(0)},${H} Z" fill="url(#g)"/>
+        ${bhIdx.length >= 2 ? `<path d="${bhIdx.map((i, k) => (k ? 'L' : 'M') + x(i).toFixed(1) + ',' + y(pts[i].bh - budget).toFixed(1)).join(' ')}" fill="none" stroke="#8b958f" stroke-width="1.5" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>` : ''}
         <path d="${line}" fill="none" stroke="${col}" stroke-width="2" vector-effect="non-scaling-stroke" filter="url(#glow)"/>
         <circle cx="${x(pts.length-1)}" cy="${y(vals.at(-1))}" r="4" fill="${col}" filter="url(#glow)"/>
       </svg>`;
@@ -457,6 +461,8 @@
     const realized = rts.reduce((s, r) => s + (r.usd || 0), 0);
     const stats = [
       ['Total P&L', `<span class="${cls(pnl)}">${usd(pnl, true)}</span>`],
+      ['Just holding', d.bh_value != null ? `<span class="${cls(d.bh_value - budget)}">${usd(d.bh_value - budget, true)}</span>` : '<span class="dim">starts with the first run</span>'],
+      ['Bot vs holding', d.bh_value != null ? `<span class="${cls(equity - d.bh_value)}">${usd(equity - d.bh_value, true)}</span>` : '—'],
       ['Seed capital', usd(budget)],
       ['Return', `<span class="${cls(pnl)}">${budget ? (pnl/budget*100 >= 0 ? '+' : '') + (pnl/budget*100).toFixed(2) + '%' : '—'}</span>`],
       ['Total trades', trades.length],
