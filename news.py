@@ -36,16 +36,31 @@ _LEXICON = {
     "downgrade": -0.8, "downgraded": -0.8, "lawsuit": -0.6, "sued": -0.6, "investigation": -0.7,
     "probe": -0.6, "recall": -0.6, "plunges": -0.8, "plunge": -0.8, "tumbles": -0.7, "sinks": -0.6,
     "falls": -0.4, "drops": -0.4, "layoffs": -0.4, "bankruptcy": -1.0, "fraud": -1.0,
-    "antitrust": -0.5, "fine": -0.4, "fined": -0.5, "delay": -0.4, "delays": -0.4, "halts": -0.6,
+    "antitrust": -0.5, "delay": -0.4, "delays": -0.4, "halts": -0.6,
     "weak demand": -0.7, "price target cut": -0.7, "cuts price target": -0.7, "underperform": -0.6,
     "misses": -0.7, "bearish": -0.6, "warning": -0.5, "warns": -0.6, "loss": -0.3, "decline": -0.4,
+    # Phrases where the single words above would get it wrong (longer phrases win).
+    "narrows loss": 0.5, "narrowed loss": 0.5, "narrower loss": 0.5, "smaller loss": 0.4,
+    "widens loss": -0.6, "widened loss": -0.6, "wider loss": -0.6, "bigger loss": -0.5,
+    "profit warning": -1.0, "growth slows": -0.6, "slowing growth": -0.6, "sales slow": -0.5,
+    "falls short": -0.7, "fell short": -0.7, "fails to lift": -0.5,
+    "wins appeal": 0.6, "won appeal": 0.6, "loses appeal": -0.6, "lost appeal": -0.6,
+    "raise dividend": 0.6, "record high": 0.5,
+    # "fine" alone is usually "fine-tune" or "doing fine"; only count clear penalty phrases.
+    "fined": -0.5, "billion fine": -0.6, "million fine": -0.5, "eu fine": -0.6, "fine over": -0.5,
+    # Common price-move words that were missing.
+    "climbs": 0.4, "gains": 0.4, "rises": 0.4, "slides": -0.4, "slide": -0.4,
+    "slumps": -0.6, "slump": -0.6, "selloff": -0.6, "sell off": -0.6, "weak": -0.4,
 }
-_NEGATORS = ("not ", "no ", "fails to ", "failed to ")
+_NEGATORS = ("not ", "no ", "fails to ", "failed to ", "not expected to ", "unlikely to ")
+# Headlines phrased as questions ("Is X about to plunge?") are speculation, not news.
+QUESTION_DAMPING = 0.3
 _PHRASES = sorted(_LEXICON, key=len, reverse=True)
 
 
 def score_text(text):
     """Score one headline/summary in [-1, 1]. 0 = neutral / no known keywords."""
+    damping = QUESTION_DAMPING if "?" in (text or "") else 1.0
     t = " " + re.sub(r"[^a-z0-9 ]+", " ", (text or "").lower()) + " "
     total, hits = 0.0, 0
     for phrase in _PHRASES:
@@ -61,7 +76,7 @@ def score_text(text):
             t = t[:idx] + " " * len(needle) + t[idx + len(needle):]
     if hits == 0:
         return 0.0
-    return max(-1.0, min(1.0, total / math.sqrt(hits)))
+    return max(-1.0, min(1.0, total / math.sqrt(hits))) * damping
 
 
 def sentiment(articles, now=None):
