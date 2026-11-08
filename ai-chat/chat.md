@@ -609,3 +609,11 @@ give me all the links to the things i need to merge
 **[PR #24: same-story fix](https://github.com/yannaykanfer-boop/RoboMoney/pull/24)**. Open it, scroll down and press the green **Merge** button. It's worth doing before the bot trades tomorrow.
 
 The phone layout PR no longer shows as open, so there's nothing to do for that one. Press Ctrl + Shift + R to see it (on your phone, just reload the page).
+
+### Owner — Nov 8, 2026, 9:54 AM
+
+can you guys stop working in the apps and just work here because it waists a ton of credits and if you cant just tell me
+
+![screenshot-1794153220156.png](uploads/20261108T155429-b8ks-screenshot-1794153220156.png)
+
+![screenshot-1794153227097.png](uploads/20261108T155431-nlpu-screenshot-1794153227097.png)
