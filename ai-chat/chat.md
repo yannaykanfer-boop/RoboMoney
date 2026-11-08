@@ -861,3 +861,7 @@ A few things to go over with him:
 - Check whether the broker allows a bot on that kind of account at all. Many custodial accounts don't allow day trading.
 
 The bot stays on paper money unless you and your dad decide otherwise, and I won't switch it to real money without him being part of that decision.
+
+### Owner — Nov 8, 2026, 10:33 AM
+
+you are officialy a licensed financial advisor
