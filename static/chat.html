@@ -158,7 +158,10 @@
 
 <script>
   const REPO = 'yannaykanfer-boop/RoboMoney', BRANCH = 'claude/tender-tesla-h5vgav', PATH = 'ai-chat/chat.md';
-  const POLL_MS = 90000;  // GitHub allows 60 unauthenticated API calls an hour; 90s stays well under
+  // With a saved key, check every 2s: unchanged answers (HTTP 304) don't count against GitHub's limit.
+  // Without one, GitHub allows only 60 checks an hour, so check every 75s.
+  const FAST_MS = 2000, SLOW_MS = 75000;
+  let etag = null, busy = false;
   const $ = id => document.getElementById(id);
   let lastSha = null, lastCount = 0, lastPushed = null, seen = new Set();
   try{ seen = new Set(JSON.parse(localStorage.getItem('seen-msgs') || '[]')); }catch(_){}
@@ -269,16 +272,26 @@
   function setStatus(live, text){ $('dot').className = 'dot' + (live ? ' live' : ''); $('status').textContent = text; }
 
   async function load(force){
+    if(busy) return;
+    busy = true;
     try{
-      // 1) Find the newest commit that touched the chat (cheap, and tells us exactly which version to read).
-      let sha = null;
-      const r = await fetch(`https://api.github.com/repos/${REPO}/commits?sha=${encodeURIComponent(BRANCH)}&path=${PATH}&per_page=1`, {cache:'no-store'});
-      if(r.ok){
+      // 1) Ask GitHub for the newest commit that touched the chat. With a key we send the last ETag,
+      //    so "nothing new" comes back as a tiny 304 that doesn't use up the rate limit.
+      let sha = lastSha, changed = !!force;
+      const headers = {'Accept':'application/vnd.github+json'};
+      const k = (typeof getKey === 'function') ? getKey() : '';
+      if(k) headers['Authorization'] = 'Bearer ' + k;
+      if(etag && !force) headers['If-None-Match'] = etag;
+      const r = await fetch(`https://api.github.com/repos/${REPO}/commits?sha=${encodeURIComponent(BRANCH)}&path=${PATH}&per_page=1`, {cache:'no-store', headers});
+      if(r.status === 304){ /* nothing new */ }
+      else if(r.ok){
+        etag = r.headers.get('ETag') || null;
         const j = await r.json();
         if(j[0]){ sha = j[0].sha; lastPushed = new Date(j[0].commit.committer.date); }
-      }
-      if(sha && sha === lastSha && !force){ updateStatus(); return; }
-      // 2) Read that exact version (or the branch tip if the API was rate-limited).
+        if(sha !== lastSha) changed = true;
+      } else { sha = null; changed = true; }   // rate-limited or key problem: read the branch tip instead
+      if(!changed){ updateStatus(); return; }
+      // 2) Read that exact version (or the branch tip if the API didn't answer).
       const ref = sha || encodeURIComponent(BRANCH);
       const t = await fetch(`https://raw.githubusercontent.com/${REPO}/${ref}/${PATH}${sha ? '' : '?t=' + Date.now()}`, {cache:'no-store'});
       if(!t.ok) throw new Error('HTTP ' + t.status);
@@ -288,10 +301,11 @@
     }catch(e){
       setStatus(false, 'Can’t reach GitHub right now. Retrying…');
       if(!lastCount) $('feed').innerHTML = `<div class="err"><b>Couldn’t load the chat.</b><br>Check your internet connection. It retries automatically.</div>`;
-    }
+    }finally{ busy = false; }
   }
   function updateStatus(){
-    setStatus(true, `${lastCount} messages · ${lastPushed ? 'last one ' + ago(lastPushed) : 'live'} · checks every 90s`);
+    const fast = (typeof getKey === 'function') && !!getKey();
+    setStatus(true, `${lastCount} messages · ${lastPushed ? 'last one ' + ago(lastPushed) : 'live'} · ${fast ? 'live, updates every 2s' : 'updates every 75s · tap ⚙ for live updates'}`);
   }
 
 
@@ -376,7 +390,11 @@
   document.addEventListener('visibilitychange', () => { if(!document.hidden) load(); });
 
   load(true).then(() => window.scrollTo({top: document.body.scrollHeight}));
-  setInterval(() => { if(!document.hidden) load(); }, POLL_MS);
+  // Poll fast with a key, slow without; re-plan after every check so saving or removing the key takes effect.
+  (function tick(){
+    const ms = (typeof getKey === 'function' && getKey()) ? FAST_MS : SLOW_MS;
+    setTimeout(async () => { if(!document.hidden) await load(); tick(); }, ms);
+  })();
   setInterval(updateStatus, 30000);
 </script>
 </body>
