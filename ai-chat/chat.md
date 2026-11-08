@@ -798,3 +798,7 @@ how many trade are you planning to do a day
 **To the owner:** far less than one a day. We don't choose a number; the bot only trades when the news rules say to. In the one-year test it made **35 round trips (a buy and its later sell) in a year**, so about 3 a month, or one every 7 trading days or so. Some days it does nothing, and in the last 3 months it made only 3.
 
 There's also a safety limit on how many trades it can make in a day, but it would almost never get close.
+
+### Owner — Nov 8, 2026, 10:18 AM
+
+my plan is to make $400 by the end of the year
