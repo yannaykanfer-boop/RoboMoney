@@ -38,8 +38,11 @@ def load():
 
 
 def save(acct, market_open, positions, new_trades, paused=None, pause_note=None, real=None, real_ref_prices=None,
-         decisions=None):
+         decisions=None, peaks=None):
     data = load()
+
+    if peaks is not None:
+        data["peaks"] = peaks
 
     if decisions:
         data["decisions"] = (data.get("decisions", []) + decisions)[-MAX_DECISIONS:]

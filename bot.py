@@ -18,6 +18,7 @@ from broker import Broker
 import strategy
 import state
 import news
+import exits
 import real_portfolio
 
 LIVE_CONFIRM_PHRASE = "trade real money"
@@ -94,6 +95,7 @@ def _run_cycle(broker, log, notes):
     acct = broker.account_summary()
     positions = {}
     new_trades = []
+    peaks = {}  # highest price since each open position was bought (filled in below)
     cycle_id = int(time.time())  # tags trades opened in this run, so Kelly can count them as one bet
     spent_this_cycle = 0.0
     bought_this_cycle = set()
@@ -101,6 +103,7 @@ def _run_cycle(broker, log, notes):
     today = datetime.now(NY).date()
     trades_today = 0
     prior = state.load()
+    peaks.update(prior.get("peaks", {}))
     for t in prior.get("trades", []):
         last_trade[t["symbol"]] = max(last_trade.get(t["symbol"], 0), t["t"])
         if datetime.fromtimestamp(t["t"], NY).date() == today:
@@ -216,8 +219,16 @@ def _run_cycle(broker, log, notes):
                         buf = config.TREND_BUFFER_PCT / 100
                         if fast is not None and slow is not None and fast < slow * (1 - buf):
                             action, reason = "sell", "downtrend-stop"
+                    if reason == "signal" and action != "sell" and config.STRATEGY == "news":
+                        exit_reason, peaks[symbol] = exits.check(
+                            entry, price, peaks.get(symbol), exits.opened_at(prior.get("trades", []), symbol),
+                            time.time(), news.sentiment(series)[0])
+                        if exit_reason:
+                            action, reason = "sell", exit_reason
+                            log.info(f"{symbol}: {exit_reason} — high ${peaks[symbol]:.2f}, now ${price:.2f}, "
+                                     f"bought ${entry:.2f}" if entry else f"{symbol}: {exit_reason}")
 
-                is_override = reason in ("stop-loss", "downtrend-stop")
+                is_override = reason in ("stop-loss", "downtrend-stop", "trailing-stop", "time-limit")
 
                 if action != "hold" and not is_override and not in_act_window:
                     window_desc = (f"first {config.ICT_WINDOW_MINUTES} min after open" if config.STRATEGY == "ict"
@@ -266,6 +277,7 @@ def _run_cycle(broker, log, notes):
                     last_trade[symbol] = time.time()
                     trades_today += 1
                     qty = 0
+                    peaks.pop(symbol, None)
                 else:
                     log.info(f"{symbol}: hold (price {price:.2f}, position {qty})")
 
@@ -293,7 +305,8 @@ def _run_cycle(broker, log, notes):
         decisions = state.decisions_for_cycle(time.time(), config.SYMBOLS, notes.notes, new_trades,
                                               {s: p.get("signal") for s, p in positions.items()})
     state.save(acct, market_open, positions, new_trades, paused=paused, pause_note=pause_note,
-               real=real, real_ref_prices=real_refs, decisions=decisions)
+               real=real, real_ref_prices=real_refs, decisions=decisions,
+               peaks={k: v for k, v in peaks.items() if positions.get(k, {}).get("qty", 0) > 0})
 
 
 def main():
