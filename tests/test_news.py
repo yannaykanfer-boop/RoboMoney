@@ -202,3 +202,32 @@ class HeldExposureTests(unittest.TestCase):
         held = news.held_exposure(values, {"AAPL"})
         stake, _ = news.cap_to_exposure(30.0, held, 50.0, budget)
         self.assertEqual(stake, 30.0)  # 300 + 50 + 30 = 380, under 384
+
+
+class ScorerFixTests(unittest.TestCase):
+    """Headlines the old word list got wrong."""
+    def test_fine_is_not_bad_news(self):
+        self.assertEqual(news.score_text("Apple to fine-tune Siri with new AI model"), 0.0)
+        self.assertEqual(news.score_text("Nvidia stock is doing just fine"), 0.0)
+        self.assertLess(news.score_text("Google faces $2 billion EU fine over ad tech"), -0.3)
+        self.assertLess(news.score_text("Apple fined by regulators"), -0.3)
+
+    def test_phrases_beat_single_words(self):
+        self.assertGreater(news.score_text("Alphabet narrows loss in cloud unit"), 0.3)
+        self.assertLess(news.score_text("Apple issues profit warning"), -0.8)
+        self.assertLess(news.score_text("Alphabet growth slows in search"), -0.3)
+        self.assertLess(news.score_text("Nvidia falls short of expectations"), -0.5)
+
+    def test_missing_move_words(self):
+        self.assertGreater(news.score_text("Nvidia climbs on AI demand"), 0.3)
+        self.assertLess(news.score_text("Apple shares slide after weak China sales"), -0.3)
+        self.assertLess(news.score_text("Tech selloff deepens"), -0.3)
+
+    def test_more_negators(self):
+        self.assertLess(news.score_text("Apple not expected to raise dividend"), 0)
+
+    def test_questions_are_damped(self):
+        q = news.score_text("Is Nvidia about to plunge? Analysts weigh in")
+        self.assertLess(q, 0)
+        self.assertGreater(q, -0.3)
+        self.assertLess(abs(news.score_text("Should you buy Apple before it surges?")), 0.3)
