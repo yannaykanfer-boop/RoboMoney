@@ -95,6 +95,20 @@
   .jump{ position:fixed; right:18px; bottom:96px; display:none; }
   .jump.show{ display:block; }
 
+
+  /* attachments */
+  .attbtn{ background:none; border:1px solid var(--edge); color:var(--dim); border-radius:12px; padding:8px 11px; cursor:pointer; font-size:16px; line-height:1; }
+  .attbtn:hover{ color:var(--ink); border-color:var(--dim); }
+  .chips{ max-width:880px; margin:0 auto 8px; display:flex; gap:8px; flex-wrap:wrap; }
+  .chips:empty{ display:none; }
+  .chip{ position:relative; display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--edge); border-radius:10px; padding:4px 26px 4px 4px;
+    font-size:12.5px; color:var(--dim); max-width:240px; }
+  .chip img{ width:44px; height:44px; object-fit:cover; border-radius:7px; display:block; }
+  .chip .fi{ width:44px; height:44px; border-radius:7px; display:grid; place-items:center; background:var(--bg); font-size:20px; }
+  .chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chip button{ position:absolute; top:3px; right:3px; width:20px; height:20px; border-radius:50%; border:none; background:var(--edge); color:var(--ink); cursor:pointer; font-size:12px; line-height:20px; padding:0; }
+  .md img.att{ display:block; max-width:100%; max-height:380px; border-radius:12px; margin:6px 0; border:1px solid var(--edge); cursor:zoom-in; }
+  body.dragging main{ outline:2px dashed var(--owner); outline-offset:-8px; border-radius:16px; }
   /* compose box */
   .compose{ position:fixed; left:0; right:0; bottom:0; z-index:6; background:color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter:blur(10px);
     border-top:1px solid var(--edge); padding:10px 16px calc(10px + env(safe-area-inset-bottom)); }
@@ -144,12 +158,15 @@
 <button class="btn jump" id="jump">↓ New messages</button>
 
 <footer class="compose">
+  <div class="chips" id="chips"></div>
   <div class="compose-in">
     <button class="keybtn" id="keybtn" title="Sending settings" aria-label="Sending settings">⚙</button>
+    <button class="attbtn" id="attbtn" title="Attach files or pictures" aria-label="Attach files">📎</button>
+    <input type="file" id="file" multiple hidden>
     <textarea id="text" rows="1" placeholder="Message both Claudes…" aria-label="Message"></textarea>
     <button class="send" id="send" disabled>Send</button>
   </div>
-  <div class="hint" id="hint">Both Claudes check the chat about once a minute. You’ll see dots while one is typing.</div>
+  <div class="hint" id="hint">📎 or Ctrl+V to add screenshots. Both Claudes check about once a minute.</div>
 </footer>
 
 <div class="modal-bg" id="modal">
@@ -199,8 +216,12 @@
     t = esc(t);
     const codes = [];
     t = t.replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+    const fileUrl = u => /^https?:\/\//.test(u) ? u : `https://raw.githubusercontent.com/${REPO}/${encodeURIComponent(BRANCH)}/ai-chat/${u}`;
+    t = t.replace(/!\[([^\]]*)\]\(((?:uploads\/[\w.\-]+)|(?:https?:\/\/[^)\s]+))\)/g,
+      (_, alt, u) => `<a href="${fileUrl(u)}" target="_blank" rel="noopener"><img class="att" src="${fileUrl(u)}" alt="${alt}" loading="lazy"></a>`);
+    t = t.replace(/\[([^\]]+)\]\((uploads\/[\w.\-]+)\)/g, (_, name, u) => `<a href="${fileUrl(u)}" target="_blank" rel="noopener">${name}</a>`);
     t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-    t = t.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
+    t = t.replace(/(^|[\s(])(https?:\/\/[^\s<)"]+)(?![^<]*>)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
     t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     t = t.replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\w)/g, '$1<em>$2</em>');
     return t.replace(/\u0000(\d+)\u0000/g, (_, i) => `<code>${codes[i]}</code>`);
@@ -444,31 +465,80 @@
 
   const box = $('text'), hint = $('hint');
   const setHint = (t, err) => { hint.textContent = t; hint.className = 'hint' + (err ? ' err' : ''); };
-  box.addEventListener('input', () => { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 160) + 'px'; $('send').disabled = !box.value.trim(); });
+  box.addEventListener('input', () => { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 160) + 'px'; $('send').disabled = !box.value.trim() && !(typeof pending !== 'undefined' && pending.length); });
   box.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); $('send').click(); } });
 
   function refreshKey(){ const on = !!getKey(); $('key-on').hidden = !on; $('key-off').hidden = on; }
   const openModal = () => { refreshKey(); $('modal').classList.add('open'); };
   const closeModal = () => $('modal').classList.remove('open');
 
+  // ---------- attachments (📎, paste, drag & drop) ----------
+  const MAX_MB = 10;
+  let pending = [];   // {file, url}
+  function drawChips(){
+    $('chips').innerHTML = pending.map((a, i) => `<div class="chip">${a.file.type.startsWith('image/') ? `<img src="${a.url}" alt="">` : '<span class="fi">📄</span>'}
+      <span>${esc(a.file.name)}</span><button data-rm="${i}" aria-label="Remove">✕</button></div>`).join('');
+    $('send').disabled = !box.value.trim() && !pending.length;
+  }
+  function addFiles(files){
+    for(const f of files){
+      if(f.size > MAX_MB * 1024 * 1024){ setHint(`“${f.name}” is over ${MAX_MB} MB, so it can't be attached.`, true); continue; }
+      const name = f.name && f.name !== 'image.png' ? f.name : `screenshot-${Date.now()}.png`;
+      const file = new File([f], name, {type: f.type || 'application/octet-stream'});
+      pending.push({file, url: URL.createObjectURL(file)});
+    }
+    drawChips();
+    if(pending.length && !getKey()) openModal();
+  }
+  $('attbtn').onclick = () => $('file').click();
+  $('file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+  $('chips').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if(!b) return; const [a] = pending.splice(+b.dataset.rm, 1); URL.revokeObjectURL(a.url); drawChips(); });
+  box.addEventListener('paste', e => { const fs = [...(e.clipboardData?.files || [])]; if(fs.length){ e.preventDefault(); addFiles(fs); } });
+  box.addEventListener('input', drawChips);
+  let dragDepth = 0;
+  window.addEventListener('dragenter', e => { if([...e.dataTransfer.types].includes('Files')){ dragDepth++; document.body.classList.add('dragging'); } });
+  window.addEventListener('dragleave', () => { if(--dragDepth <= 0){ dragDepth = 0; document.body.classList.remove('dragging'); } });
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; document.body.classList.remove('dragging'); if(e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+
+  async function uploadFile(file){
+    const safe = file.name.toLowerCase().replace(/[^a-z0-9.\-]+/g, '-').replace(/^-+|-+$/g, '').slice(-60) || 'file';
+    const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '');
+    const path = `uploads/${stamp}-${Math.random().toString(36).slice(2, 6)}-${safe}`;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let bin = ''; for(let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    const r = await gh(`contents/ai-chat/${path}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:'chat: owner uploaded ' + safe, content: btoa(bin), branch: BRANCH})});
+    if(r.status === 401 || r.status === 403) throw new Error('key');
+    if(!r.ok) throw new Error('upload');
+    return path;
+  }
+
   $('send').onclick = async () => {
-    const text = box.value.trim();
-    if(!text) return;
+    const text = box.value.trim(), atts = pending.slice();
+    if(!text && !atts.length) return;
     if(!getKey()){ openModal(); return; }
-    box.value = ''; box.dispatchEvent(new Event('input')); $('send').disabled = true;
+    box.value = ''; pending = []; box.dispatchEvent(new Event('input')); drawChips(); $('send').disabled = true;
+    const preview = atts.map(a => a.file.type.startsWith('image/') ? `<img class="att" src="${a.url}" alt="">` : `<p>📎 ${esc(a.file.name)}</p>`).join('');
     const el = document.createElement('div'); el.className = 'msg owner';
-    el.innerHTML = `<div class="bubble sending"><div class="who"><b>You</b></div><div class="md">${md(text)}</div><div class="when">Sending…</div></div>`;
+    el.innerHTML = `<div class="bubble sending"><div class="who"><b>You</b></div><div class="md">${text ? md(text) : ''}${preview}</div><div class="when">${atts.length ? 'Uploading…' : 'Sending…'}</div></div>`;
     $('feed').appendChild(el); window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'});
-    setHint('Sending…');
+    setHint(atts.length ? `Uploading ${atts.length} file${atts.length > 1 ? 's' : ''}…` : 'Sending…');
     try{
-      await sendMessage(text);
+      const lines = [];
+      for(const a of atts){
+        const path = await uploadFile(a.file);
+        lines.push(a.file.type.startsWith('image/') ? `![${a.file.name.replace(/[\[\]]/g, '')}](${path})` : `📎 [${a.file.name.replace(/[\[\]]/g, '')}](${path})`);
+      }
+      el.querySelector('.when').textContent = 'Sending…';
+      await sendMessage([text, ...lines].filter(Boolean).join('\n\n'));
       el.querySelector('.bubble').classList.remove('sending'); el.querySelector('.when').textContent = 'Delivered';
       setHint('✅ Sent. Both Claudes will reply within a minute or two.');
       setTimeout(() => load(true), 2000);
     }catch(e){
-      el.remove(); box.value = text; box.dispatchEvent(new Event('input'));
+      el.remove(); box.value = text; pending = atts; box.dispatchEvent(new Event('input')); drawChips();
       if(e.message === 'key'){ setHint('Not sent: GitHub refused your key. Click ⚙ to set it up again.', true); }
-      else setHint('Not sent: couldn’t reach GitHub. Your message is still in the box, so try again.', true);
+      else setHint('Not sent: couldn’t reach GitHub. Your message and files are still here, so try again.', true);
     }
   };
 
@@ -549,7 +619,18 @@
   window.addEventListener('scroll', () => { if(window.innerHeight + window.scrollY > document.body.scrollHeight - 200){ $('jump').classList.remove('show'); document.title = 'AI Chat · RoboMoney'; } });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) load(); });
 
-  load(true).then(() => { window.scrollTo({top: document.body.scrollHeight}); setTimeout(() => { ready = true; }, 400); });
+  // Open at the newest message, and stay pinned there while pictures and fonts finish loading
+  // (they make the page taller after the first scroll), unless you scroll up yourself.
+  if('scrollRestoration' in history) history.scrollRestoration = 'manual';
+  let pinned = true;
+  const toBottom = () => window.scrollTo({top: document.documentElement.scrollHeight});
+  window.addEventListener('scroll', () => { if(ready) pinned = window.innerHeight + window.scrollY > document.documentElement.scrollHeight - 150; }, {passive:true});
+  document.addEventListener('load', e => { if(e.target.tagName === 'IMG' && pinned) toBottom(); }, true);
+  load(true).then(() => {
+    toBottom(); requestAnimationFrame(toBottom);
+    if(document.fonts) document.fonts.ready.then(() => { if(pinned) toBottom(); });
+    setTimeout(() => { if(pinned) toBottom(); ready = true; }, 500);
+  });
   // Poll fast with a key, slow without; re-plan after every check so saving or removing the key takes effect.
   (function tick(){
     const ms = (typeof getKey === 'function' && getKey()) ? FAST_MS : SLOW_MS;
