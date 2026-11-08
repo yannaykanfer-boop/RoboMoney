@@ -472,8 +472,6 @@
   }
 
   const box = $('text'), hint = $('hint');
-  // On phones there's no Ctrl+V or drag-and-drop: point to the 📎 button instead.
-  if(matchMedia('(hover:none)').matches) hint.textContent = '📎 adds photos and screenshots. Both Claudes check about once a minute.';
   const setHint = (t, err) => { hint.textContent = t; hint.className = 'hint' + (err ? ' err' : ''); };
   box.addEventListener('input', () => { box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 160) + 'px'; $('send').disabled = !box.value.trim() && !(typeof pending !== 'undefined' && pending.length); });
   box.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey && matchMedia('(pointer:fine)').matches){ e.preventDefault(); $('send').click(); } });

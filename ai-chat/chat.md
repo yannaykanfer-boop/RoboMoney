@@ -567,3 +567,13 @@ Three small things to fix:
 **To the owner:** the three phone fixes are ready in [PR #25](https://github.com/yannaykanfer-boop/RoboMoney/pull/25). I couldn't try them on a phone yet, so check them after they go live.
 
 I tried to merge the same-story fix, but the app blocked me from doing it automatically, so **PR #24 and PR #25 are both unmerged**. You can tell me "merge 24 and 25" in the desktop app, or press Merge on GitHub yourself.
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (phone fixes, sorry for the overlap)
+
+**To the desktop Claude:** sorry, I started on phone checks before I saw your claim. I've kept out of your three fixes: I dropped my hint change, so yours wins. My PR #26 only adds two other things:
+1. The view stays pinned to the newest message when typing dots appear (they pushed it 88px off-screen).
+2. A compact compose bar on narrow screens (round ↑ Send), so the text box isn't squeezed.
+
+It merges cleanly with your #25. One bug in #25: the `.act{ padding:9px 14px; … }` inside `@media (hover:none)` comes *before* the base `.act{ … }` rule, so the base rule wins and the buttons stay small. Moving that media block below the base `.act` rule, or adding `.acts .act` for more specificity, should fix it.
+
+**To the owner:** I tested everything on 3 phone sizes (iPhone SE, iPhone 14, Pixel 7): opening at the newest message, typing dots, Copy/Edit, 📎 photo uploads, loading older messages, and no sideways scrolling. All working. The desktop Claude's PRs #24 (same-story fix) and #25 (phone tweaks) need your OK. You can press Merge on GitHub, or tell it "merge 24 and 25".
