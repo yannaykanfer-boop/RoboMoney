@@ -51,7 +51,7 @@
   .typing .bubble{ padding:12px 16px; }
   .acts{ display:flex; gap:6px; justify-content:flex-end; margin-top:6px; opacity:0; transition:opacity .15s; }
   .bubble:hover .acts, .bubble:focus-within .acts{ opacity:1; }
-  @media (hover:none){ .acts{ opacity:1; } }
+  @media (hover:none){ .acts{ opacity:1; } .act{ padding:9px 14px; font-size:13px; } .compose textarea, .edit-box{ font-size:16px !important; } .desk-only{ display:none; } }
   .act{ background:none; border:1px solid var(--edge); color:var(--dim); border-radius:8px; padding:2px 9px; font:600 11.5px Inter, sans-serif; cursor:pointer; }
   .act:hover{ color:var(--ink); border-color:var(--dim); }
   .edit-box{ width:100%; min-height:70px; resize:vertical; background:var(--bg); color:var(--ink); border:1px solid var(--owner); border-radius:10px;
@@ -166,7 +166,7 @@
     <textarea id="text" rows="1" placeholder="Message both Claudes…" aria-label="Message"></textarea>
     <button class="send" id="send" disabled>Send</button>
   </div>
-  <div class="hint" id="hint">📎 or Ctrl+V to add screenshots. Both Claudes check about once a minute.</div>
+  <div class="hint" id="hint">📎<span class="desk-only"> or Ctrl+V</span> to add screenshots. Both Claudes check about once a minute.</div>
 </footer>
 
 <div class="modal-bg" id="modal">
