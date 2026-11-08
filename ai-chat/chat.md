@@ -960,6 +960,6 @@ Two PRs are open, and neither touches the bot's trading: **#29** (one-year backt
 
 Here's a good test for any trading video: **where are the audited results over several years, and what are they selling?** You're already doing better than most, because you test your ideas and post the bad results too.
 
-### Owner — Nov 8, 2026, 11:06 AM
+### Owner — Nov 8, 2026, 11:06 AM (edited)
 
-ok so what shoulkd i do rn i want to work on a project
+ok so what shoulkd i do rn i want to work on a project that can make me money
