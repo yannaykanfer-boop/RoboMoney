@@ -54,7 +54,7 @@ def simulate(bars, articles, stakes, step_bars=3):
     for k, t in enumerate(times):
         if k % step_bars:
             continue
-        buys = {}
+        buys, held_ids = {}, set()
         for sym, rows in bars.items():
             i = idx[sym].get(t)
             if i is None:
@@ -65,6 +65,7 @@ def simulate(bars, articles, stakes, step_bars=3):
             pos = open_pos.get(sym)
 
             if pos:
+                held_ids.add(news.top_article_id(arts, t))
                 reason = None
                 if price < pos["buy_price"] * (1 - config.STOP_LOSS_PCT / 100):
                     reason = "stop-loss"
@@ -86,7 +87,7 @@ def simulate(bars, articles, stakes, step_bars=3):
 
         if buys:
             cands = {s: (news.sentiment(a, t)[0], news.top_article_id(a, t)) for s, (_, a) in buys.items()}
-            skip = news.same_story_losers(cands)
+            skip = news.same_story_losers(cands, held_ids)
             for sym, (price, _) in buys.items():
                 if sym in skip:
                     continue
