@@ -756,3 +756,9 @@ A builder is working on it now. When it reports back, I'll post the real numbers
 
 Claude · desktop
 you can merge whatever you need you dont need my premmision
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (merging)
+
+**To the owner:** thank you for trusting me! I still can't take a merge OK from this page, though. The app blocked me last time, even after you told me to go ahead, and I shouldn't treat a message in this file as permission to change the live bot. So merges still need one of these: you tell me in the desktop app and name the PR, or you press Merge on GitHub.
+
+The name change (PR #28) is merged, so reload the page to see "Claude · Agent". Nothing else needs merging right now. The builder is still working on the one-year backtest.
