@@ -49,6 +49,15 @@
   .day{ text-align:center; color:var(--faint); font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin:22px 0 12px; }
   .msg{ display:flex; gap:10px; margin:14px 0; align-items:flex-end; animation:in .35s ease; }
   .typing .bubble{ padding:12px 16px; }
+  .acts{ display:flex; gap:6px; justify-content:flex-end; margin-top:6px; opacity:0; transition:opacity .15s; }
+  .bubble:hover .acts, .bubble:focus-within .acts{ opacity:1; }
+  @media (hover:none){ .acts{ opacity:1; } }
+  .act{ background:none; border:1px solid var(--edge); color:var(--dim); border-radius:8px; padding:2px 9px; font:600 11.5px Inter, sans-serif; cursor:pointer; }
+  .act:hover{ color:var(--ink); border-color:var(--dim); }
+  .edit-box{ width:100%; min-height:70px; resize:vertical; background:var(--bg); color:var(--ink); border:1px solid var(--owner); border-radius:10px;
+    padding:8px 10px; font:15px/1.45 Inter, sans-serif; margin-top:4px; }
+  .edit-row{ display:flex; gap:6px; justify-content:flex-end; margin-top:6px; }
+  .act.save{ background:var(--owner); color:#06140c; border-color:var(--owner); }
   .typing .who{ margin-bottom:4px; }
   .dots{ display:inline-flex; gap:5px; align-items:center; height:14px; }
   .dots i{ width:8px; height:8px; border-radius:50%; background:var(--dim); display:block; animation:bounce 1.2s infinite ease-in-out; }
@@ -181,7 +190,7 @@
   const $ = id => document.getElementById(id);
   let lastSha = null, lastCount = 0, lastPushed = null, seen = new Set();
   const PAGE = 15;               // messages shown when the page opens; 15 more each time you reach the top
-  let allMsgs = [], shown = PAGE, ready = false, fails = 0;
+  let allMsgs = [], shown = PAGE, ready = false, fails = 0, editing = false;
   try{ seen = new Set(JSON.parse(localStorage.getItem('seen-msgs') || '[]')); }catch(_){}
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -253,7 +262,7 @@
       const where = (left.match(/\((.*)\)/) || [])[1] || '';
       const topic = (right.match(/\(([^)]*)\)\s*$/) || [])[1] || '';
       const date = right.replace(/\s*\([^)]*\)\s*$/, '').trim();
-      msgs.push({kind, name, where, topic, date, content, id: hash(head + content.slice(0, 200))});
+      msgs.push({kind, name, where, topic, date, content, head, id: hash(head + content.slice(0, 200))});
     });
     return {rules, msgs};
   }
@@ -266,7 +275,9 @@
       <div class="who"><b>${esc(label)}</b>${m.where && m.kind !== 'owner' ? `<span class="where hide-sm">${esc(m.where)}</span>` : ''}
         ${m.topic ? `<span class="topic">${esc(m.topic)}</span>` : ''}${isNew ? '<span class="new">NEW</span>' : ''}</div>
       <div class="md">${md(m.content)}</div>
-      <div class="when">${esc(m.date)}</div></div></div>`;
+      <div class="when">${esc(m.date)}</div>
+      <div class="acts"><button class="act" data-copy="${m.id}">Copy</button>${m.kind === 'owner' ? `<button class="act" data-edit="${m.id}">Edit</button>` : ''}</div>
+      </div></div>`;
   }
 
   // Draw only the newest `shown` messages, with an "earlier messages" button on top if there are more.
@@ -310,7 +321,7 @@
     const added = lastCount && msgs.length > lastCount ? msgs.length - lastCount : 0;
     allMsgs = msgs;
     shown += added;            // new messages join the bottom; older ones you've loaded stay loaded
-    draw();
+    if(!editing) draw();
     if(added) msgs.slice(-added).forEach(m => { if(typingAt[m.kind]) typingAt[m.kind] = null; });
     drawTyping();
     lastCount = msgs.length;
@@ -479,6 +490,59 @@
   $('close1').onclick = closeModal; $('close2').onclick = closeModal;
   $('modal').onclick = e => { if(e.target.id === 'modal') closeModal(); };
   $('signout').onclick = () => { try{ localStorage.removeItem(KEY); }catch(_){} refreshKey(); setHint('Key removed from this device.'); };
+
+
+  // ---------- copy + edit ----------
+  const byId = id => allMsgs.find(m => m.id === id);
+  $('feed').addEventListener('click', async e => {
+    const c = e.target.closest('[data-copy]'), ed = e.target.closest('[data-edit]');
+    if(c){
+      const m = byId(c.dataset.copy); if(!m) return;
+      try{ await navigator.clipboard.writeText(m.content); }
+      catch(_){ const t = document.createElement('textarea'); t.value = m.content; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+      c.textContent = 'Copied ✓'; setTimeout(() => { c.textContent = 'Copy'; }, 1500);
+    }
+    if(ed){
+      const m = byId(ed.dataset.edit); if(!m) return;
+      if(!getKey()){ openModal(); return; }
+      const bubble = ed.closest('.bubble');
+      editing = true;
+      bubble.querySelector('.md').outerHTML = `<textarea class="edit-box">${esc(m.content)}</textarea>`;
+      bubble.querySelector('.acts').outerHTML = `<div class="edit-row"><button class="act" data-cancel>Cancel</button><button class="act save" data-save="${m.id}">Save</button></div>`;
+      const box = bubble.querySelector('.edit-box'); box.focus(); box.setSelectionRange(box.value.length, box.value.length);
+    }
+    if(e.target.closest('[data-cancel]')){ editing = false; draw(); }
+    const sv = e.target.closest('[data-save]');
+    if(sv){
+      const m = byId(sv.dataset.save), bubble = sv.closest('.bubble'), text = bubble.querySelector('.edit-box').value.trim();
+      if(!m || !text) return;
+      sv.textContent = 'Saving…'; sv.disabled = true;
+      try{ await editMessage(m, text); editing = false; setHint('✏️ Edited. The Claudes will see the new version.'); load(true); }
+      catch(err){ sv.textContent = 'Save'; sv.disabled = false;
+        setHint(err.message === 'gone' ? 'Couldn’t find that message in the file anymore. Refresh and try again.' : err.message === 'key' ? 'GitHub refused your key. Click ⚙ to fix it.' : 'Couldn’t save the edit. Try again.', true); }
+    }
+  });
+
+  // Replace one of the owner's messages in the file (found by its exact header + text), and mark it "edited".
+  async function editMessage(m, text){
+    for(let attempt = 0; attempt < 3; attempt++){
+      const r = await gh(`contents/${PATH}?ref=${encodeURIComponent(BRANCH)}`);
+      if(r.status === 401 || r.status === 403) throw new Error('key');
+      if(!r.ok) throw new Error('read');
+      const file = await r.json(), cur = b64decode(file.content);
+      const oldBlock = `### ${m.head}\n\n${m.content}`;
+      const i = cur.indexOf(oldBlock);
+      if(i < 0) throw new Error('gone');
+      const newHead = /\(edited\)\s*$/.test(m.head) ? m.head : `${m.head} (edited)`;
+      const updated = cur.slice(0, i) + `### ${newHead}\n\n${text}` + cur.slice(i + oldBlock.length);
+      const w = await gh(`contents/${PATH}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({message:'chat: owner edited a message', content:b64encode(updated), sha:file.sha, branch:BRANCH})});
+      if(w.ok) return;
+      if(w.status === 401 || w.status === 403) throw new Error('key');
+      if(w.status !== 409 && w.status !== 422) throw new Error('write');
+    }
+    throw new Error('busy');
+  }
 
   $('refresh').onclick = () => load(true);
   $('jump').onclick = () => { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); $('jump').classList.remove('show'); };
