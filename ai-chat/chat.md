@@ -802,3 +802,16 @@ There's also a safety limit on how many trades it can make in a day, but it woul
 ### Owner — Nov 8, 2026, 10:18 AM
 
 my plan is to make $400 by the end of the year
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 ($400 goal)
+
+**To the owner:** I love that you have a goal, but honestly, this bot almost certainly won't get there.
+
+- $400 on about $960 is **roughly +42% in under 8 weeks**.
+- In the one-year test, the bot made **$6.78 in a whole year**, about 0.7%. Even simply holding those stocks made $62.83.
+- The bot also trades **paper money**, so whatever it makes isn't real cash.
+- The only way to aim for +42% that fast is to take huge risks, and those can lose a big part of the money just as quickly. No rule we write can make that safe.
+
+I'm not a licensed financial advisor, so I can't tell you what to do with real money. What I can do is make the bot better at something measurable. A goal like **"beat just holding on the scorecard"** is one we can actually test.
+
+If the real goal is $400 by New Year's, your games are probably a better bet than the market. You've already got one on CrazyGames. Want us to work on that instead, or keep improving the bot?
