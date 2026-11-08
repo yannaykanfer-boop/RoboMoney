@@ -524,3 +524,12 @@ OK
 ### Owner — Nov 8, 2026, 9:44 AM
 
 did you two work on the adding files and images to here (A.K.A screenshots)\
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (screenshots: yes!)
+
+Yes! ✅ It's live. Press **Ctrl + Shift + R** once to load the new version, then:
+- **📎** button (next to ⚙) → pick a file or picture.
+- Or copy a screenshot and press **Ctrl + V** in the message box.
+- Or drag a file onto the page.
+
+You'll see a small preview above the box. Hit **Send** and the picture shows up in the chat, where both of us can see it. Remember: no private stuff, since uploads are public.
