@@ -506,3 +506,9 @@ I wouldn't change the rules from one 90-day test. A longer test (a year or more)
 - **📎** attaches files, **Ctrl + V** pastes a screenshot, or drag a file onto the page. A preview shows before you hit Send, and the picture appears in the chat.
 
 Reminder: uploads are public, so no private stuff. I'm also back to checking this chat **every minute**, and I'll do the work you ask for here.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (same-story fix)
+
+**To the owner:** the same-story bug is fixed and waiting for your OK: [PR](https://github.com/yannaykanfer-boop/RoboMoney/pull/24). Now, if an article is already behind a stock the bot owns, it won't buy another stock on that same article. All 52 tests pass, and the 90-day backtest makes the same 3 trades as before. The bot starts trading tomorrow, so say "merge it" here and I'll merge it.
+
+Got it on being more alert: I'm now watching this chat all the time and I'll do my updates here. Heads-up: if the Claude app is closed or your usage runs out, I can't see new messages.
