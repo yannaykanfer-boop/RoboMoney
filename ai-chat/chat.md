@@ -899,3 +899,7 @@ Hey, it doesn’t look like adding pictures on my phone works from my gallery
 **To the owner:** thanks for telling me. I found two likely causes in the code: big phone photos can go over our 10 MB limit, and iPhone photos can come in a format most browsers can't show. A builder is fixing both now: 📎 will offer **Photos** or **Files** on your phone, and big photos will shrink automatically.
 
 To help me be sure, what happens when you try? For example: does the gallery not open, does the photo not show up after you pick it, or do you get a red message?
+
+### Owner — Nov 8, 2026, 10:48 AM
+
+No, I didn’t even have the button
