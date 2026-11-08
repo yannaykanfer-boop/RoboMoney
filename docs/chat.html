@@ -43,6 +43,9 @@
   .rules summary::before{ content:"▸ "; } .rules[open] summary::before{ content:"▾ "; }
   .rules .md{ padding:0 18px 12px; color:var(--dim); font-size:14px; }
 
+  .earlier{ display:block; margin:4px auto 14px; background:none; border:1px solid var(--edge); color:var(--dim); border-radius:999px;
+    padding:6px 14px; font:600 12.5px Inter, sans-serif; cursor:pointer; }
+  .earlier:hover{ border-color:var(--green); color:var(--ink); }
   .day{ text-align:center; color:var(--faint); font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin:22px 0 12px; }
   .msg{ display:flex; gap:10px; margin:14px 0; align-items:flex-end; animation:in .35s ease; }
   @keyframes in{ from{ opacity:0; transform:translateY(8px); } }
@@ -164,6 +167,8 @@
   let etag = null, busy = false;
   const $ = id => document.getElementById(id);
   let lastSha = null, lastCount = 0, lastPushed = null, seen = new Set();
+  const PAGE = 15;               // messages shown when the page opens; 15 more each time you reach the top
+  let allMsgs = [], shown = PAGE, ready = false, fails = 0;
   try{ seen = new Set(JSON.parse(localStorage.getItem('seen-msgs') || '[]')); }catch(_){}
 
   const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -240,25 +245,50 @@
     return {rules, msgs};
   }
 
+  function bubbleHTML(m){
+    const isNew = lastCount && !seen.has(m.id);
+    const face = m.kind === 'owner' ? '' : `<span class="face f-${m.kind}">${m.kind === 'desk' ? 'D' : 'C'}</span>`;
+    const label = m.kind === 'owner' ? 'You' : m.kind === 'desk' ? 'Claude · desktop' : 'Claude · cloud';
+    return `<div class="msg ${m.kind}">${face}<div class="bubble">
+      <div class="who"><b>${esc(label)}</b>${m.where && m.kind !== 'owner' ? `<span class="where hide-sm">${esc(m.where)}</span>` : ''}
+        ${m.topic ? `<span class="topic">${esc(m.topic)}</span>` : ''}${isNew ? '<span class="new">NEW</span>' : ''}</div>
+      <div class="md">${md(m.content)}</div>
+      <div class="when">${esc(m.date)}</div></div></div>`;
+  }
+
+  // Draw only the newest `shown` messages, with an "earlier messages" button on top if there are more.
+  function draw(){
+    const start = Math.max(0, allMsgs.length - shown);
+    const older = start;
+    $('feed').innerHTML =
+      (older ? `<button class="earlier" id="earlier">↑ ${older} earlier message${older === 1 ? '' : 's'}</button>` : '') +
+      allMsgs.slice(start).map(bubbleHTML).join('');
+    const btn = $('earlier');
+    if(btn){ btn.onclick = loadEarlier; observer.observe(btn); }
+  }
+
+  // Load 15 older messages and keep what you were reading in the same place on screen.
+  let loadingEarlier = false;
+  function loadEarlier(){
+    if(loadingEarlier || shown >= allMsgs.length) return;
+    loadingEarlier = true;
+    const before = document.documentElement.scrollHeight, y = window.scrollY;
+    shown = Math.min(allMsgs.length, shown + PAGE);
+    draw();
+    window.scrollTo(0, y + (document.documentElement.scrollHeight - before));
+    setTimeout(() => { loadingEarlier = false; }, 250);
+  }
+  const observer = new IntersectionObserver(es => { if(ready && es.some(e => e.isIntersecting)) loadEarlier(); }, {rootMargin: '300px 0px 0px 0px'});
+
   function render(text){
     const {rules, msgs} = parse(text);
     if(rules){ $('rules').innerHTML = md(rules); $('rules-box').hidden = false; }
     if(!msgs.length){ $('feed').innerHTML = '<div class="empty">No messages yet.</div>'; return; }
     const nearBottom = window.innerHeight + window.scrollY > document.body.scrollHeight - 300;
-    let out = '', lastDay = null;
-    msgs.forEach(m => {
-      const day = (m.date.match(/[A-Z][a-z]{2} \d{1,2}, \d{4}/) || [m.date])[0];
-      const isNew = lastCount && !seen.has(m.id);
-      const face = m.kind === 'owner' ? '' : `<span class="face f-${m.kind}">${m.kind === 'desk' ? 'D' : 'C'}</span>`;
-      const label = m.kind === 'owner' ? 'You' : m.kind === 'desk' ? 'Claude · desktop' : 'Claude · cloud';
-      out += `<div class="msg ${m.kind}">${face}<div class="bubble">
-        <div class="who"><b>${esc(label)}</b>${m.where && m.kind !== 'owner' ? `<span class="where hide-sm">${esc(m.where)}</span>` : ''}
-          ${m.topic ? `<span class="topic">${esc(m.topic)}</span>` : ''}${isNew ? '<span class="new">NEW</span>' : ''}</div>
-        <div class="md">${md(m.content)}</div>
-        <div class="when">${esc(m.date)}</div></div></div>`;
-    });
-    $('feed').innerHTML = out;
-    const added = lastCount && msgs.length > lastCount;
+    const added = lastCount && msgs.length > lastCount ? msgs.length - lastCount : 0;
+    allMsgs = msgs;
+    shown += added;            // new messages join the bottom; older ones you've loaded stay loaded
+    draw();
     lastCount = msgs.length;
     msgs.forEach(m => seen.add(m.id));
     try{ localStorage.setItem('seen-msgs', JSON.stringify([...seen].slice(-500))); }catch(_){}
@@ -292,15 +322,26 @@
       } else { sha = null; changed = true; }   // rate-limited or key problem: read the branch tip instead
       if(!changed){ updateStatus(); return; }
       // 2) Read that exact version (or the branch tip if the API didn't answer).
-      const ref = sha || encodeURIComponent(BRANCH);
-      const t = await fetch(`https://raw.githubusercontent.com/${REPO}/${ref}/${PATH}${sha ? '' : '?t=' + Date.now()}`, {cache:'no-store'});
-      if(!t.ok) throw new Error('HTTP ' + t.status);
-      render(await t.text());
-      lastSha = sha;
+      const ref = sha || BRANCH;
+      let text = null;
+      if(k){   // with a key: read through the API (5,000 requests an hour, more reliable than the raw-file host)
+        const a = await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${encodeURIComponent(ref)}`,
+          {cache:'no-store', headers:{'Accept':'application/vnd.github.raw+json', 'Authorization':'Bearer ' + k}});
+        if(a.ok) text = await a.text();
+      }
+      if(text === null){
+        const t = await fetch(`https://raw.githubusercontent.com/${REPO}/${sha || encodeURIComponent(BRANCH)}/${PATH}${sha ? '' : '?t=' + Date.now()}`, {cache:'no-store'});
+        if(!t.ok) throw new Error('HTTP ' + t.status);
+        text = await t.text();
+      }
+      render(text);
+      lastSha = sha; fails = 0;
       updateStatus();
     }catch(e){
-      setStatus(false, 'Can’t reach GitHub right now. Retrying…');
-      if(!lastCount) $('feed').innerHTML = `<div class="err"><b>Couldn’t load the chat.</b><br>Check your internet connection. It retries automatically.</div>`;
+      fails++;
+      // A single hiccup is normal; only say something if it keeps failing.
+      if(fails >= 3) setStatus(false, 'Can’t reach GitHub right now. Retrying…');
+      if(!lastCount && fails >= 2) $('feed').innerHTML = `<div class="err"><b>Couldn’t load the chat.</b><br>Check your internet connection. It retries automatically.</div>`;
     }finally{ busy = false; }
   }
   function updateStatus(){
@@ -389,7 +430,7 @@
   window.addEventListener('scroll', () => { if(window.innerHeight + window.scrollY > document.body.scrollHeight - 200){ $('jump').classList.remove('show'); document.title = 'AI Chat · RoboMoney'; } });
   document.addEventListener('visibilitychange', () => { if(!document.hidden) load(); });
 
-  load(true).then(() => window.scrollTo({top: document.body.scrollHeight}));
+  load(true).then(() => { window.scrollTo({top: document.body.scrollHeight}); setTimeout(() => { ready = true; }, 400); });
   // Poll fast with a key, slow without; re-plan after every check so saving or removing the key takes effect.
   (function tick(){
     const ms = (typeof getKey === 'function' && getKey()) ? FAST_MS : SLOW_MS;
