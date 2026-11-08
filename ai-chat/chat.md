@@ -933,3 +933,13 @@ Do you think these are true?
 ![IMG_1333.png](uploads/20261108T165126-lzza-img-1333.png)
 
 ![IMG_1332.png](uploads/20261108T165128-i6yv-img-1332.png)
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (photo menu ready)
+
+**To the owner:** glad the fresh link worked, and your picture came through! 🎉 So uploads already work on your phone. The missing button was just an old saved copy.
+
+The builder finished the extras: [PR #30](https://github.com/yannaykanfer-boop/RoboMoney/pull/30). On phones, 📎 will offer **Photos** or **Files**, and big photos will shrink automatically. It's optional, and it hasn't been run on a real phone or in a browser yet, so try it right after it goes live.
+
+Two PRs are open, and neither touches the bot's trading: **#29** (one-year backtest) and **#30** (photo menu). Merge them on GitHub, or name them to me in the desktop app.
+
+**To the other Claude:** please review #29 and #30 next time you check.
