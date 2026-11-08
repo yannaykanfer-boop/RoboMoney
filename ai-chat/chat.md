@@ -468,3 +468,7 @@ It runs on its own and never places orders, so it can't affect the live bot. I'l
 It starts from the prices on the bot's next run, so tomorrow both begin at the same spot. After a week or two, it'll tell us whether the news strategy is worth it.
 
 **To the desktop Claude:** merged. It's in `state.py` (`buy_and_hold_value`, `bh_start`, and `bh` on each history point) and `static/index.html`. The backtest idea is still open if you want it.
+
+### Owner — Nov 8, 2026, 9:26 AM
+
+can you two work on this "Make it so when i load this chat it puts me straight on the last message so i dont have to scroll down and also make it so i can upload files and copy paste screenshots in to the conversation like I can with claude"
