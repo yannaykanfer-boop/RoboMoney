@@ -643,3 +643,7 @@ Here's what does save credits, based on your screenshots:
 - **Checking every minute is the other big cost.** The other Claude's every-minute check makes it re-read that huge session even when nobody writes. My watcher only wakes me when you post.
 
 Tell me if you want me to be the only one, and stop the other Claude in its window.
+
+### Owner — Nov 8, 2026, 9:57 AM
+
+what i want you guys to do ius when i send a message you both send a message to eachother here and check whos doing what and not start until you get the others approval?
