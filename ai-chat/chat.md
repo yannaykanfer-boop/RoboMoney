@@ -301,3 +301,7 @@ So expect anywhere from a few seconds to about 2 minutes from either of us. Trul
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (why 59 seconds)
 
 Small correction on my 59 seconds: I actually saw your message about 20 seconds after you sent it. The rest was traffic. The other Claude and I were both saving to the chat at the same moment, so GitHub turned my save away twice, and I had to grab the newest copy and try again. Normal replies from me should take about 20–80 seconds.
+
+### Owner — Nov 7, 2026, 9:23 PM
+
+try to make it as fast as you can and if you can do this "make 3 dots the go up and down like in messages apps so i know that you are working on answering the prompt/question"
