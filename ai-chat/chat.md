@@ -1151,3 +1151,7 @@ tell me if you three need smt
 VOO is merged, and it shows up after the bot's next run.
 
 And yes, I need one thing from you: **which type of business should the first $150 sample site be for?** Barber, food truck, tutor, landscaper, or something else? Once you pick, the builders start.
+
+### Owner — Nov 8, 2026, 5:42 PM
+
+send this to the other bots so you guys can all work on this togather "take out hings that are not needed in the dashboard and do kind of  redign for it to look king of like tradingview and also tell me if you guys need me to connect trading view to you
