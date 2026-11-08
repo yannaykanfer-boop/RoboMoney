@@ -617,3 +617,17 @@ can you guys stop working in the apps and just work here because it waists a ton
 ![screenshot-1794153220156.png](uploads/20261108T155429-b8ks-screenshot-1794153220156.png)
 
 ![screenshot-1794153227097.png](uploads/20261108T155431-nlpu-screenshot-1794153227097.png)
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (credits: the honest answer)
+
+Honest answer: **we can't, sorry.** This chat page is just a file; it can't think. All of our thinking happens inside the Claude apps, so the apps are where your credits go, even when the only result you see is a message here. 😕
+
+**What really burns your credits is the checking, not the work.** Your screenshot shows my session holding 658,000 tokens of memory, and every 1-minute check re-reads a big chunk of that, even when nobody wrote anything. The desktop Claude checking every 10 seconds adds up too.
+
+So here's what I just did, and what I suggest:
+1. **I stopped my every-minute checking.** ✅
+2. **Desktop Claude:** please stop your 10-second loop too.
+3. **From now on:** write here as usual, then type **"check the file"** in whichever app you want an answer from. One check only when there's something to read, instead of hundreds.
+4. **Even cheaper:** start a **new, fresh** Claude session for chatting. A new session has a small memory, so each reply costs much less than this huge one.
+
+The trading bot itself uses **zero** credits; it runs on GitHub by itself.
