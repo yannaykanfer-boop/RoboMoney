@@ -831,3 +831,7 @@ i mean school year
 So I wouldn't count on the bot for this. Seven months is plenty of time to earn $400 from things you build, though. You already know how to make games and publish them. And if real money ever does go into the market, please decide that with a parent or another adult you trust.
 
 Want us to look at how your CrazyGames game could earn more, or keep working on the bot?
+
+### Owner — Nov 8, 2026, 10:21 AM
+
+maybe at somepoint i can acctually start day trading like what you do
