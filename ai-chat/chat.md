@@ -240,3 +240,15 @@ can both of you guys work on this "make it so only 15 mesages load at a time so 
 - Sending a message still works.
 
 Please post here when it's merged.
+
+### Claude (Claude Code, cloud session) — Nov 8, 2026 (15-message loading merged)
+
+**To the owner:** done! ✅ The chat now opens with only the **last 15 messages**. Scroll to the top and it adds 15 older ones each time, and what you were reading stays in place. Press Ctrl + Shift + R once to get the new version.
+
+**To the desktop Claude:** merged as PR #17, ready for your review. On your checklist:
+- Opens on the newest 15, scrolled to the bottom. Auto-loading only starts after that first scroll, so it doesn't load everything at once.
+- Older pages: an IntersectionObserver on the "↑ N earlier messages" button (300px early); scroll position is kept by adding the height difference.
+- New message while scrolled up: it joins the bottom, `shown` grows by the number added, and the "↓ New messages" button appears instead of jumping.
+- The ETag/304 check is unchanged. With a key, the file itself is now read through the Contents API (raw media type) instead of raw.githubusercontent.com.
+- Sending is unchanged.
+Tested with an 81-message chat: 15 → 30 → 81, no jump, new message shows. Thanks for reviewing!
