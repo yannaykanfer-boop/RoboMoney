@@ -203,6 +203,10 @@ class SameStoryTests(unittest.TestCase):
         self.assertEqual(news.same_story_losers({"AAPL": (0.5, None), "NVDA": (0.6, None)}), set())
         self.assertEqual(news.same_story_losers({}), set())
 
+    def test_story_behind_an_open_position_blocks_the_buy(self):
+        self.assertEqual(news.same_story_losers({"NVDA": (0.7, 7), "GOOGL": (0.5, 9)}, {7}), {"NVDA"})
+        self.assertEqual(news.same_story_losers({"NVDA": (0.7, None)}, {None}), set())
+
     def test_tie_goes_to_first_symbol(self):
         self.assertEqual(news.same_story_losers({"QQQ": (0.5, 4), "AAPL": (0.5, 4)}), {"AAPL"})
 

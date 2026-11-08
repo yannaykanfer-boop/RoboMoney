@@ -118,19 +118,22 @@ def top_article_id(articles, now=None):
     return top_id
 
 
-def same_story_losers(candidates):
+def same_story_losers(candidates, held_ids=()):
     """candidates: {symbol: (score, article_id)} for every symbol that wants to BUY this cycle.
     When one article is the main reason for several buys, those buys are really one bet
     (e.g. a single "AI boom" story tagged AAPL, NVDA and GOOGL). Keep only the strongest
     score per article; return the set of symbols to skip. Ties go to the earlier symbol.
-    Symbols whose driving article has no ID are never skipped."""
+    Symbols whose driving article has no ID are never skipped.
+    held_ids: article IDs driving positions already open. A buy on one of those stories is
+    skipped too, or the runner-up would simply buy on the next check."""
+    held = set(held_ids)
     best = {}
     for sym, (score, aid) in candidates.items():
         if aid is None:
             continue
         if aid not in best or score > candidates[best[aid]][0]:
             best[aid] = sym
-    return {sym for sym, (_, aid) in candidates.items() if aid is not None and best[aid] != sym}
+    return {sym for sym, (_, aid) in candidates.items() if aid is not None and (aid in held or best[aid] != sym)}
 
 
 def _runup_pct(closes):
