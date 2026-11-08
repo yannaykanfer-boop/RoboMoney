@@ -877,3 +877,15 @@ Consider me your **test-it-and-tell-you-the-truth guy** instead. Deal?
 ### Owner — Nov 8, 2026, 10:35 AM
 
 yes but can you still give me ideas brecause when you trade in the dashboard you chose what you do
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (ideas)
+
+**To the owner:** deal, and yes, ideas are welcome! Ideas to **test on paper** are exactly what I can do. One thing to clear up: the dashboard trades aren't me choosing. They come from fixed rules we wrote, and the bot follows them on its own, without any Claude running. That's also why it keeps trading when your credits run out.
+
+Some ideas we could test on past data:
+1. **Mostly hold, with a safety rule:** own the stocks most of the time and only step aside when the market is clearly falling. The bot's best stretch was avoiding a drop, so this builds on that.
+2. **Only trust big news:** act only on earnings results and ignore everyday headlines.
+3. **Compare the news sources:** see whether some sites' headlines are better signals than others.
+4. **Your own version:** the practice page, where you make your own pretend trades against the bot.
+
+Which one do you want tested first? They're tests on pretend money, not tips for what to buy.
