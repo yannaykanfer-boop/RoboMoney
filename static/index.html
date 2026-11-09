@@ -58,6 +58,9 @@
   .why-d summary{ cursor:pointer; color:var(--faint); font-size:11px; list-style:none; padding:0 12px; min-height:32px; display:flex; align-items:center; }
   .why-d summary::-webkit-details-marker{ display:none; }
   .why-d summary::before{ content:"▸ "; } .why-d[open] summary::before{ content:"▾ "; }
+  /* phones: the top bar has no room for "Updated", so it gets its own slim line */
+  .upd-m{ display:none; padding:5px 14px; font-size:12px; color:var(--dim); border-bottom:1px solid var(--line); }
+  .upd-m:empty{ display:none !important; }
   .strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .strip div{ background:var(--panel); padding:5px 12px; font-size:11px; color:var(--dim); }
   .strip b{ display:block; font:500 13px/1.35 var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); }
@@ -135,6 +138,7 @@
     .views button{ flex:1; height:40px; padding:0 6px; }
     .views button:last-child{ border-right:none; }
     .status .upd{ display:none; }
+    .upd-m{ display:block; }
     .value{ font-size:26px; }
     .ranges{ flex:1 1 100%; border-bottom:1px solid var(--line); }
     .ranges button{ flex:1; min-width:0; height:40px; padding:0; }
@@ -154,6 +158,7 @@
   <div class="status"><span>Market <b id="k-market">—</b></span><span class="upd">Updated <b id="k-updated">—</b></span></div>
   <a class="chat" href="chat.html">AI Chat</a>
 </header>
+<div class="upd-m" id="upd-m"></div>
 
 <main class="term">
   <section class="panel">
@@ -494,6 +499,7 @@
     $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
     const runsToday = (d.history || []).filter(h => new Date(h.t * 1000).toDateString() === new Date().toDateString()).length;
     $('k-updated').textContent = (d.updated_at ? ago(d.updated_at) : '—') + (d.updated_at ? ` · ${runsToday} run${runsToday === 1 ? '' : 's'} today` : '');
+    $('upd-m').textContent = d.updated_at ? 'Updated ' + $('k-updated').textContent : '';
 
     renderReal(d);
 
