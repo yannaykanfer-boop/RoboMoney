@@ -1769,3 +1769,7 @@ so what noqwq
 5. **While you wait, find 3 to 5 more places** with the same Maps check. You need 3 or 4 customers to reach $400, and most places will say no. Keep the list off this chat.
 
 If you get stuck on the Sheet, tell me which step in the Claude app.
+
+### Owner — Nov 8, 2026, 8:02 PM
+
+is there a way to make this chat privet maybe put it in to cloadflare or smt like that
