@@ -228,11 +228,11 @@
       <div class="row2"><button class="btn" id="signout">Remove key from this device</button><button class="send" id="close1">Done</button></div>
     </div>
     <div id="key-off">
-      <p>To send from this page, it needs a key from your GitHub account. You only do this once per device.</p>
+      <p>This chat is private. To read and send here, this page needs a key from your GitHub account. You only do this once per device.</p>
       <ol>
         <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → New fine-grained token</a>.</li>
         <li>Name: <code>AI Chat</code>. Expiration: 90 days.</li>
-        <li>Repository access: <b>Only select repositories</b> → <b>RoboMoney</b>.</li>
+        <li>Repository access: <b>Only select repositories</b> → <b>RoboMoney-chat</b>.</li>
         <li>Permissions → Repository permissions → <b>Contents</b> → <b>Read and write</b>. Nothing else.</li>
         <li>Click <b>Generate token</b>, copy it, and paste it below.</li>
       </ol>
@@ -245,7 +245,7 @@
 </div>
 
 <script>
-  const REPO = 'yannaykanfer-boop/RoboMoney', BRANCH = 'claude/tender-tesla-h5vgav', PATH = 'ai-chat/chat.md';
+  const REPO = 'yannaykanfer-boop/RoboMoney-chat', BRANCH = 'main', PATH = 'ai-chat/chat.md';
   // With a saved key, check every 2s: unchanged answers (HTTP 304) don't count against GitHub's limit.
   // Without one, GitHub allows only 60 checks an hour, so check every 75s.
   const FAST_MS = 2000, SLOW_MS = 75000;
@@ -267,10 +267,13 @@
     t = esc(t);
     const codes = [];
     t = t.replace(/`([^`]+)`/g, (_, c) => { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
-    const fileUrl = u => /^https?:\/\//.test(u) ? u : `https://raw.githubusercontent.com/${REPO}/${encodeURIComponent(BRANCH)}/ai-chat/${u}`;
+    // Uploads live in the private repo, so hydrateFiles() loads them with the saved key.
+    const isUpload = u => !/^https?:\/\//.test(u);
     t = t.replace(/!\[([^\]]*)\]\(((?:uploads\/[\w.\-]+)|(?:https?:\/\/[^)\s]+))\)/g,
-      (_, alt, u) => `<a href="${fileUrl(u)}" target="_blank" rel="noopener"><img class="att" src="${fileUrl(u)}" alt="${alt}" loading="lazy"></a>`);
-    t = t.replace(/\[([^\]]+)\]\((uploads\/[\w.\-]+)\)/g, (_, name, u) => `<a href="${fileUrl(u)}" target="_blank" rel="noopener">${name}</a>`);
+      (_, alt, u) => isUpload(u)
+        ? `<a href="#" data-file="${u}" target="_blank" rel="noopener"><img class="att" data-file="${u}" alt="${alt}"></a>`
+        : `<a href="${u}" target="_blank" rel="noopener"><img class="att" src="${u}" alt="${alt}" loading="lazy"></a>`);
+    t = t.replace(/\[([^\]]+)\]\((uploads\/[\w.\-]+)\)/g, (_, name, u) => `<a href="#" data-file="${u}" download="${name}">${name}</a>`);
     t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
     t = t.replace(/(^|[\s(])(https?:\/\/[^\s<)"]+)(?![^<]*>)/g, '$1<a href="$2" target="_blank" rel="noopener">$2</a>');
     t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -424,7 +427,8 @@
       let sha = lastSha, changed = !!force;
       const headers = {'Accept':'application/vnd.github+json'};
       const k = (typeof getKey === 'function') ? getKey() : '';
-      if(k) headers['Authorization'] = 'Bearer ' + k;
+      if(!k){ showLocked('This chat is private. Tap ⚙ and add your GitHub key to read it.'); return; }
+      headers['Authorization'] = 'Bearer ' + k;
       if(etag && !force) headers['If-None-Match'] = etag;
       const r = await fetch(`https://api.github.com/repos/${REPO}/commits?sha=${encodeURIComponent(BRANCH)}&path=${PATH}&per_page=1`, {cache:'no-store', headers});
       if(r.status === 304){ /* nothing new */ }
@@ -433,21 +437,15 @@
         const j = await r.json();
         if(j[0]){ sha = j[0].sha; lastPushed = new Date(j[0].commit.committer.date); }
         if(sha !== lastSha) changed = true;
-      } else { sha = null; changed = true; }   // rate-limited or key problem: read the branch tip instead
+      } else if(r.status === 401 || r.status === 404){ showLocked('Your GitHub key can’t open the private chat. Tap ⚙, sign out, and add a key for RoboMoney-chat.'); return; }
+      else { sha = null; changed = true; }   // rate-limited: read the branch tip instead
       if(!changed){ updateStatus(); return; }
       // 2) Read that exact version (or the branch tip if the API didn't answer).
       const ref = sha || BRANCH;
-      let text = null;
-      if(k){   // with a key: read through the API (5,000 requests an hour, more reliable than the raw-file host)
-        const a = await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${encodeURIComponent(ref)}`,
-          {cache:'no-store', headers:{'Accept':'application/vnd.github.raw+json', 'Authorization':'Bearer ' + k}});
-        if(a.ok) text = await a.text();
-      }
-      if(text === null){
-        const t = await fetch(`https://raw.githubusercontent.com/${REPO}/${sha || encodeURIComponent(BRANCH)}/${PATH}${sha ? '' : '?t=' + Date.now()}`, {cache:'no-store'});
-        if(!t.ok) throw new Error('HTTP ' + t.status);
-        text = await t.text();
-      }
+      const a = await fetch(`https://api.github.com/repos/${REPO}/contents/${PATH}?ref=${encodeURIComponent(ref)}`,
+        {cache:'no-store', headers:{'Accept':'application/vnd.github.raw+json', 'Authorization':'Bearer ' + k}});
+      if(!a.ok) throw new Error('HTTP ' + a.status);
+      const text = await a.text();
       render(text);
       lastSha = sha; fails = 0;
       updateStatus();
@@ -458,6 +456,30 @@
       if(!lastCount && fails >= 2) $('feed').innerHTML = `<div class="err"><b>Couldn’t load the chat.</b><br>Check your internet connection. It retries automatically.</div>`;
     }finally{ busy = false; }
   }
+
+  function showLocked(msg){
+    lastSha = null; etag = null; lastCount = 0;
+    $('feed').innerHTML = `<div class="err"><b>Private chat.</b><br>${msg}</div>`;
+    setStatus(false, 'Needs your GitHub key');
+  }
+  // Load private uploads with the saved key and show them as local blob links.
+  const fileBlobs = new Map();
+  function fileBlob(u){
+    if(!fileBlobs.has(u)) fileBlobs.set(u, fetch(`https://api.github.com/repos/${REPO}/contents/ai-chat/${u}?ref=${encodeURIComponent(BRANCH)}`,
+      {headers:{'Accept':'application/vnd.github.raw+json', 'Authorization':'Bearer ' + getKey()}})
+      .then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.blob(); })
+      .then(b => URL.createObjectURL(b))
+      .catch(e => { fileBlobs.delete(u); throw e; }));
+    return fileBlobs.get(u);
+  }
+  function hydrateFiles(){
+    document.querySelectorAll('[data-file]:not([data-ready])').forEach(el => {
+      el.dataset.ready = '1';
+      fileBlob(el.dataset.file).then(url => { if(el.tagName === 'IMG') el.src = url; else el.href = url; })
+        .catch(() => { delete el.dataset.ready; });
+    });
+  }
+  new MutationObserver(hydrateFiles).observe($('feed'), {childList:true, subtree:true});
 
   function drawTyping(){
     const now = Date.now();
@@ -663,9 +685,9 @@
     try{
       const r = await fetch(`https://api.github.com/repos/${REPO}`, {headers:{'Authorization':'Bearer ' + k, 'Accept':'application/vnd.github+json'}});
       const j = r.ok ? await r.json() : null;
-      if(!j || !(j.permissions && j.permissions.push)){ $('key-err').textContent = 'GitHub refused that key, or it can’t write to RoboMoney. Check step 4.'; return; }
+      if(!j || !(j.permissions && j.permissions.push)){ $('key-err').textContent = 'GitHub refused that key, or it can’t write to RoboMoney-chat. Check steps 3 and 4.'; return; }
       try{ localStorage.setItem(KEY, k); }catch(_){ $('key-err').textContent = 'This browser won’t save the key (private window?).'; return; }
-      $('key').value = ''; closeModal(); setHint('Key saved. You can send messages now.'); box.focus();
+      $('key').value = ''; closeModal(); setHint('Key saved. You can send messages now.'); box.focus(); etag = null; load(true);
       if(box.value.trim()) $('send').click();
     }catch(_){ $('key-err').textContent = 'Couldn’t reach GitHub. Check your connection.'; }
     finally{ $('save-key').textContent = 'Save key'; }
@@ -673,7 +695,7 @@
   $('keybtn').onclick = openModal;
   $('close1').onclick = closeModal; $('close2').onclick = closeModal;
   $('modal').onclick = e => { if(e.target.id === 'modal') closeModal(); };
-  $('signout').onclick = () => { try{ localStorage.removeItem(KEY); }catch(_){} refreshKey(); setHint('Key removed from this device.'); };
+  $('signout').onclick = () => { try{ localStorage.removeItem(KEY); }catch(_){} refreshKey(); setHint('Key removed from this device.'); load(true); };
 
 
   // ---------- copy + edit ----------
