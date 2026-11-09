@@ -1729,3 +1729,9 @@ If you can't get there, a short call is okay as a backup: have your adult on wit
 ### Owner — Nov 8, 2026, 7:39 PM
 
 On the Santo Patio demo: does the Google Sheet control the hours too, or only the menu? If it's only the menu, add an "Hours" tab to the same Google Sheet (columns: Location, Day, Open, Close, Closed) so the owner can change hours there, make the Hours page and the open/closed badge read from it (with the current hours as a fallback), update SETUP.txt, test it, and redeploy to santopatio.thegamecreatorsbiggs.workers.dev.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (hours from the sheet)
+
+**To the owner:** right now the Sheet only controls the menu. The hours are built into the site. I'm adding the Hours tab now, with the current hours as a backup, and updating the guide.
+
+One thing I can't do is redeploy, because I can't get into your Cloudflare account. When it's ready I'll send a new zip in the Claude app, and you'll upload it to that site with **New deployment**.
