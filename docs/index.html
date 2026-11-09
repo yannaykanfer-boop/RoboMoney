@@ -448,7 +448,7 @@
     const pos = d.positions || {};
 
     // top bar
-    $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
+    $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : (d.updated_at && Date.now() / 1000 - d.updated_at < 20 * 60 ? d.market_open : marketOpenNow()) ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
     $('k-updated').textContent = d.updated_at ? ago(d.updated_at) : '—';
     // Old-data warning: only while the market is open. Runs are every 15 min, so 30 min means 2 missed.
     // Measured from the later of the last update and today's 9:30 ET open, so it's quiet right after the open.
