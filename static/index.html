@@ -411,16 +411,23 @@
   }
 
 
+  // NYSE full-day closures (update yearly): skipped like weekends.
+  const HOLIDAYS = ['2026-11-26','2026-12-25','2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31',
+                    '2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24'];
+  const ymd = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  const nyTime = (now = new Date()) => new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+  // Worked out in the browser, because state.json's market_open is stale when the bot hasn't run.
+  function marketOpenNow(now = new Date()){
+    const ny = nyTime(now), mins = ny.getHours() * 60 + ny.getMinutes();
+    return ny.getDay() > 0 && ny.getDay() < 6 && !HOLIDAYS.includes(ymd(ny)) && mins >= 9 * 60 + 30 && mins < 16 * 60;
+  }
+
   // "· opens in 6h 12m": next regular session start (9:30 AM New York, Mon–Fri, skipping NYSE holidays).
   function nextOpen(){
     const now = new Date();
-    const ny = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+    const ny = nyTime(now);
     const t = new Date(ny); t.setHours(9, 30, 0, 0);
     if(ny >= t) t.setDate(t.getDate() + 1);
-    // NYSE full-day closures (update yearly): skip these like weekends.
-    const HOLIDAYS = ['2026-11-26','2026-12-25','2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31',
-                      '2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24'];
-    const ymd = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
     while(t.getDay() === 0 || t.getDay() === 6 || HOLIDAYS.includes(ymd(t))) t.setDate(t.getDate() + 1);
     const mins = Math.round((t - ny) / 60000);
     if(mins <= 0 || mins > 4 * 24 * 60) return '';
@@ -443,6 +450,12 @@
     // top bar
     $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
     $('k-updated').textContent = d.updated_at ? ago(d.updated_at) : '—';
+    // Old-data warning: only while the market is open. Runs are every 15 min, so 30 min means 2 missed.
+    // Measured from the later of the last update and today's 9:30 ET open, so it's quiet right after the open.
+    const nyNow = nyTime(), sinceOpen = nyNow.getHours() * 60 + nyNow.getMinutes() - (9 * 60 + 30);
+    const staleMin = d.updated_at ? Math.min((Date.now() / 1000 - d.updated_at) / 60, sinceOpen) : 0;
+    if(!offline && marketOpenNow() && staleMin > 30)
+      $('k-updated').innerHTML = `<span class="${staleMin > 120 ? 'down' : 'amber'}">⚠ ${ago(d.updated_at)} · bot hasn’t run</span>`;
 
     renderReal(d);
 
