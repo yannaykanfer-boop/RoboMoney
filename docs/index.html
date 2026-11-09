@@ -53,6 +53,8 @@
   .cd-short{ display:none; }
   @media (max-width:600px){ .cd-long{ display:none; } .cd-short{ display:inline; } }
   @media (max-width:380px){ .cd-short{ display:none; } }
+  .summary{ padding:10px 14px; font-size:13px; line-height:1.5; color:var(--fg, inherit); border-top:1px solid var(--line); }
+  .summary:empty{ display:none; }
   .strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .strip div{ background:var(--panel); padding:5px 12px; font-size:11px; color:var(--dim); }
   .strip b{ display:block; font:500 13px/1.35 var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); }
@@ -174,6 +176,7 @@
         <div class="value" id="big">$0.00</div>
         <div class="change" id="bot-return"></div>
       </div>
+      <div class="summary" id="bot-summary"></div>
       <div class="strip" id="bot-strip"></div>
       <div class="plot" id="chart-box"></div>
       <div class="tools">
@@ -433,6 +436,30 @@
     return `<span class="cd-long"> · ${long}</span><span class="cd-short"> · ${short}</span>`;
   }
 
+  // One or two plain-English sentences about what the bot is doing right now.
+  function botSummary(d, trades){
+    const pos = d.positions || {};
+    const held = Object.entries(pos).filter(([, p]) => p.qty > 0);
+    const parts = [];
+    if(d.paused) parts.push(`Paused: not buying anything new${d.pause_note ? ' (' + esc(d.pause_note) + ')' : ''}.`);
+    if(held.length){
+      const tot = held.reduce((a, [, p]) => a + (p.value || 0), 0), pl = held.reduce((a, [, p]) => a + (p.pnl || 0), 0);
+      parts.push(`Holding ${held.map(([t]) => esc(t)).join(', ')}: ${usd(tot)} in the market, ${pl >= 0 ? 'up' : 'down'} ${usd(Math.abs(pl))}.`);
+    } else parts.push('Holding nothing right now. All of its money is in cash.');
+    const today = new Date().toDateString();
+    const nToday = trades.filter(t => new Date(t.t * 1000).toDateString() === today).length;
+    const buys = Object.entries(pos).filter(([, p]) => /not yet priced in, buy/.test(p.signal || '')).map(([t]) => esc(t));
+    if(buys.length) parts.push(`Good news it hasn't acted on yet: ${buys.join(', ')}.`);
+    else if(!d.market_open) parts.push(`The market is closed, so it's waiting${typeof nextOpen === 'function' ? nextOpen().replace(' · ', ' until it ') : ''}.`);
+    else parts.push('No strong news on its stocks, so it\'s waiting.');
+    parts.push(nToday ? `${nToday} trade${nToday === 1 ? '' : 's'} today.` : 'No trades today.');
+    if(d.bh_value != null){
+      const equity = d.real_equity ?? d.total_budget, diff = equity - d.bh_value;
+      parts.push(Math.abs(diff) < 0.5 ? 'So far it\'s even with just holding the same stocks.'
+        : `So far it's ${diff > 0 ? 'ahead of' : 'behind'} just holding the same stocks by ${usd(Math.abs(diff))}.`);
+    }
+    return parts.join(' ');
+  }
   function render(d){
     last = d;
     const budget = d.total_budget || 0, equity = d.real_equity ?? budget, pnl = equity - budget;
@@ -454,6 +481,7 @@
     $('big').className = 'value ' + (pnl > 0 ? 'up' : pnl < 0 ? 'down' : '');
     $('bot-return').innerHTML = budget ? `<span class="${cls(pnl)}">${pctS(pnl/budget*100)}</span><span class="when">All time</span>` : '';
     $('bot-strip').innerHTML = `<div>Started<b>${usd(budget)}</b></div><div>Now<b>${usd(equity)}</b></div><div>Trades<b>${trades.length}</b></div>`;
+    $('bot-summary').innerHTML = botSummary(d, trades);
     drawBot(d);
 
     // bot stocks: price, P&L and what the bot reads for each one
