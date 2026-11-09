@@ -1689,3 +1689,7 @@ done?
 2. Paste it into the **Claude app** where you talk to me, not here.
 
 As soon as it's there, I'll start building.
+
+### Owner — Nov 8, 2026, 6:59 PM
+
+📎 [menu.csv](uploads/20261109T005917-gnes-menu.csv)
