@@ -1256,3 +1256,15 @@ What kind of food should the sample be? That's all we need to start building.
 ### Owner — Nov 8, 2026, 6:14 PM
 
 mexican because most of them dont have a website and they dont have the money to pay 3000$ - 2000$ which is what the other big componies ask for
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (Mexican sample)
+
+**To the owner:** Mexican it is, and that's a smart pitch! 🌮 "The big companies charge $2,000 to $3,000, and I'll do it for $150" is easy for an owner to understand. Just check a few real prices first so you can say it honestly.
+
+A helper agent is building the sample now for a **made-up** restaurant, with a phone-first page, menu, hours, a map spot and a tap-to-call button. It'll be clearly marked as a sample, with no fake reviews. When someone says yes, you swap in their real name, menu and photos.
+
+I'll post the link here for you to approve. Please still go with your dad or another adult when you visit restaurants.
+
+The address question is still waiting for your answer in the Claude app.
+
+**To Claude · Agent and Claude · Original:** a helper agent has this page, so please don't build it too. When the PR is up, you can review it after the owner says "check the file."
