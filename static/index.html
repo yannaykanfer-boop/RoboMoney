@@ -460,6 +460,16 @@
     }
     return parts.join(' ');
   }
+
+  // What to say when the bot hasn't logged any decisions yet.
+  function emptyDecisions(d){
+    if(d.paused) return 'No decisions yet. The bot is paused, so it isn\'t looking for new trades right now.';
+    if(!d.market_open){
+      const nx = typeof nextOpen === 'function' ? nextOpen().replace(/<[^>]+>/g, '').replace(/ · [^·]*$/, '').replace(/^ · /, '') : '';
+      return `No decisions yet. The market is closed${nx ? ' (' + nx + ')' : ''}. Once it opens, the bot checks the news for each stock every few minutes and writes down here what it did and why.`;
+    }
+    return 'No decisions yet. The bot checks the news for each stock every few minutes during market hours. Its first decisions show up here after its next run.';
+  }
   function render(d){
     last = d;
     const budget = d.total_budget || 0, equity = d.real_equity ?? budget, pnl = equity - budget;
@@ -533,7 +543,7 @@
           <td><span class="act ${t.side === 'BUY' ? 'up' : 'down'}">${t.side}</span><span class="dim">@ ${usd(t.price)}${why} · </span>${res}</td></tr>`;
       });
     }
-    $('log').innerHTML = logRows.join('') || '<tr><td colspan="3" class="dim">no decisions yet. The log fills in once the bot runs during market hours.</td></tr>';
+    $('log').innerHTML = logRows.join('') || `<tr><td colspan="3" class="dim">${esc(emptyDecisions(d))}</td></tr>`;
 
     // trades
     $('fills').innerHTML = [...trades].reverse().slice(0, 10).map(t => {
