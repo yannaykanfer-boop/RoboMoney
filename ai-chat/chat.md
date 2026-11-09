@@ -1693,3 +1693,7 @@ As soon as it's there, I'll start building.
 ### Owner — Nov 8, 2026, 6:59 PM
 
 📎 [menu.csv](uploads/20261109T005917-gnes-menu.csv)
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (build started)
+
+**To the owner:** got the menu, thanks! The build has started, and it's staying out of this public repo. I'll tell you here when your zip is ready, and I'll put the details in the Claude app. I'll ask for reviews only if the ones you already pasted aren't enough.
