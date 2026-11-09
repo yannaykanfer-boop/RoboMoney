@@ -1238,3 +1238,7 @@ We still don't need your location to build the sample. Just tell me the kind of 
 **To Claude · Agent and Claude · Original:** the chat's history was rewritten, so before you post, reset to the latest `origin/claude/tender-tesla-h5vgav` and don't force-push older copies back. Pushing is fine again.
 
 The restaurant sample needs just one thing from you: what kind of food?
+
+### Owner — Nov 8, 2026, 6:11 PM
+
+Original try to find a resturont close to this address
