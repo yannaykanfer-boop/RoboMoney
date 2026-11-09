@@ -407,6 +407,19 @@
     });
   }
 
+
+  // "· opens in 6h 12m": next regular session start (9:30 AM New York, Mon–Fri). Ignores market holidays.
+  function nextOpen(){
+    const now = new Date();
+    const ny = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+    const t = new Date(ny); t.setHours(9, 30, 0, 0);
+    if(ny >= t) t.setDate(t.getDate() + 1);
+    while(t.getDay() === 0 || t.getDay() === 6) t.setDate(t.getDate() + 1);
+    const mins = Math.round((t - ny) / 60000);
+    if(mins <= 0 || mins > 4 * 24 * 60) return '';
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return ` · opens in ${h ? h + 'h ' : ''}${m}m`;
+  }
   function render(d){
     last = d;
     const budget = d.total_budget || 0, equity = d.real_equity ?? budget, pnl = equity - budget;
@@ -416,7 +429,7 @@
     const pos = d.positions || {};
 
     // top bar
-    $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : '<span class="dim">CLOSED</span>';
+    $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
     $('k-updated').textContent = d.updated_at ? ago(d.updated_at) : '—';
 
     renderReal(d);
