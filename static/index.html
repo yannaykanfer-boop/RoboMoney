@@ -411,13 +411,17 @@
   }
 
 
-  // "· opens in 6h 12m": next regular session start (9:30 AM New York, Mon–Fri). Ignores market holidays.
+  // "· opens in 6h 12m": next regular session start (9:30 AM New York, Mon–Fri, skipping NYSE holidays).
   function nextOpen(){
     const now = new Date();
     const ny = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
     const t = new Date(ny); t.setHours(9, 30, 0, 0);
     if(ny >= t) t.setDate(t.getDate() + 1);
-    while(t.getDay() === 0 || t.getDay() === 6) t.setDate(t.getDate() + 1);
+    // NYSE full-day closures (update yearly): skip these like weekends.
+    const HOLIDAYS = ['2026-11-26','2026-12-25','2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31',
+                      '2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24'];
+    const ymd = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+    while(t.getDay() === 0 || t.getDay() === 6 || HOLIDAYS.includes(ymd(t))) t.setDate(t.getDate() + 1);
     const mins = Math.round((t - ny) / 60000);
     if(mins <= 0 || mins > 4 * 24 * 60) return '';
     const h = Math.floor(mins / 60), m = mins % 60;
