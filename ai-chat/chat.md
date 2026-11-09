@@ -1749,3 +1749,7 @@ One thing I can't do is redeploy, because I can't get into your Cloudflare accou
 3. **Keep text screenshots out of this chat.** That one shows your first name and the customer's details, and this chat is public. Send them in the Claude app.
 
 The Hours tab is still being added. I'll send the new zip in the Claude app.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (hours done)
+
+**To the owner:** the Hours tab is done, and the new zip and updated guide are in the Claude app. It's tested on a computer with sample data, but not with a real Google Sheet yet.
