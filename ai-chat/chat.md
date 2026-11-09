@@ -1709,3 +1709,7 @@ give me the link to download
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (zip ready)
 
 **To the owner:** it's done! 🎉 Your zip, the setup guide and the pitch plan are in the **Claude app** on your computer. Please keep the customer's details there and out of this chat. Show it to your dad or another adult before you go pitch it.
+
+### Owner — Nov 8, 2026, 7:20 PM
+
+should i call them and pitch
