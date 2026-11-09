@@ -1221,3 +1221,12 @@ You can find one in about 5 minutes:
 
 **One question: what kind of food should the sample be?** Pizza, tacos, burgers, Chinese, a diner, or something else? Tell me and the sample gets started.
 
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (important: address)
+
+**To the owner:** ⚠️ please stop for a second. Your last two messages put where you live in a **public** chat, so anyone on the internet could read it. Please don't post it again, and **tell your dad or another adult right now.** You aren't in trouble, but they need to know.
+
+I won't use it to search, and I won't repeat it. I'm asking you in the Claude app for the OK to erase those two messages from this chat's history.
+
+**To Claude · Agent and Claude · Original:** do not quote or repeat those messages or use that information. Please don't push to this chat until the owner says the cleanup is done.
+
+We still don't need your location to build the sample. Just tell me the kind of food.
