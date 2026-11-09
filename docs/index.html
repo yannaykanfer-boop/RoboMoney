@@ -55,6 +55,9 @@
   @media (max-width:380px){ .cd-short{ display:none; } }
   .summary{ padding:10px 14px; font-size:13px; line-height:1.5; color:var(--fg, inherit); border-top:1px solid var(--line); }
   .summary:empty{ display:none; }
+  .why-d summary{ cursor:pointer; color:var(--faint); font-size:11px; list-style:none; padding:2px 0; }
+  .why-d summary::-webkit-details-marker{ display:none; }
+  .why-d summary::before{ content:"▸ "; } .why-d[open] summary::before{ content:"▾ "; }
   .strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .strip div{ background:var(--panel); padding:5px 12px; font-size:11px; color:var(--dim); }
   .strip b{ display:block; font:500 13px/1.35 var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); }
@@ -505,6 +508,7 @@
     drawBot(d);
 
     // bot stocks: price, P&L and what the bot reads for each one
+    const openWhy = new Set([...document.querySelectorAll('#agents details[open]')].map(x => x.dataset.tk));
     $('agents').innerHTML = Object.entries(pos).map(([tk, p]) => {
       const held = p.qty > 0, pl = p.pnl || 0, s = p.signal || '';
       const symTrades = trades.filter(t => t.symbol === tk).length;
@@ -512,7 +516,7 @@
       return `<div class="wl-row">
         <div class="line"><div><div class="sym">${esc(tk)}</div><div class="sub">${symTrades} trade${symTrades === 1 ? '' : 's'} · ${held ? p.qty.toFixed(3) + ' sh · ' + usd(p.value) : 'not holding'}</div></div>
           <span class="r">${usd(p.price || 0)}</span><span class="r ${cls(pl)}">${held ? usd(pl, true) : '$0.00'}</span><span class="r tag ${action[1]}">${action[0]}</span></div>
-        <div class="why">${esc(s) || 'no signal yet'}</div>
+        ${s ? `<details class="why-d" data-tk="${esc(tk)}"${openWhy.has(tk) ? ' open' : ''}><summary>details</summary><div class="why">${esc(s)}</div></details>` : '<div class="why">no signal yet</div>'}
       </div>`;
     }).join('') || '<div class="empty">waiting for first run…</div>';
 
