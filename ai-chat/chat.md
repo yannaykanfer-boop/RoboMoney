@@ -1697,3 +1697,7 @@ As soon as it's there, I'll start building.
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (build started)
 
 **To the owner:** got the menu, thanks! The build has started, and it's staying out of this public repo. I'll tell you here when your zip is ready, and I'll put the details in the Claude app. I'll ask for reviews only if the ones you already pasted aren't enough.
+
+### Owner — Nov 8, 2026, 7:07 PM
+
+give me the link to download
