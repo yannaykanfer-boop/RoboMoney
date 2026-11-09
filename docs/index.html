@@ -50,6 +50,9 @@
   .value{ font:700 28px/1.1 var(--mono); font-variant-numeric:tabular-nums; }
   .change{ display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 12px; padding-bottom:3px; font:500 14px/1.3 var(--mono); }
   .change .when{ font:12px var(--sans); color:var(--dim); }
+  .cd-short{ display:none; }
+  @media (max-width:600px){ .cd-long{ display:none; } .cd-short{ display:inline; } }
+  @media (max-width:380px){ .cd-short{ display:none; } }
   .strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .strip div{ background:var(--panel); padding:5px 12px; font-size:11px; color:var(--dim); }
   .strip b{ display:block; font:500 13px/1.35 var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); }
@@ -418,8 +421,13 @@
     const mins = Math.round((t - ny) / 60000);
     if(mins <= 0 || mins > 4 * 24 * 60) return '';
     const h = Math.floor(mins / 60), m = mins % 60;
-    return ` · opens in ${h ? h + 'h ' : ''}${m}m`;
+    // Under a day: "opens in 1h 23m" (short: "1h 23m"). Longer: "opens Mon 9:30 ET" (short: "Mon").
+    const day = t.toLocaleDateString('en-US', {weekday: 'short'});
+    const long = mins < 24 * 60 ? `opens in ${h ? h + 'h ' : ''}${m}m` : `opens ${day} 9:30 ET`;
+    const short = mins < 24 * 60 ? `${h ? h + 'h ' : ''}${m}m` : day;
+    return `<span class="cd-long"> · ${long}</span><span class="cd-short"> · ${short}</span>`;
   }
+
   function render(d){
     last = d;
     const budget = d.total_budget || 0, equity = d.real_equity ?? budget, pnl = equity - budget;
