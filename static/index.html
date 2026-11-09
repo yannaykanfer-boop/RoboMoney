@@ -372,7 +372,9 @@
       const session = rp.today && rp.today.session ? new Date(rp.today.session + 'T12:00:00') : null;
       const isToday = session && session.toDateString() === new Date().toDateString();
       const when = session && !isToday ? 'Last trading day · ' + session.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}) : 'Today';
-      $('hero-change').innerHTML = (pts.length >= 2 ? `<span class="${chg >= 0 ? 'up' : 'down'}">${usd(chg, true)} (${pctS(pct)})</span>` : '') + `<span class="when">${when}</span>`;
+      // After a holding is added, the day's chart is older than the total until the next market-hours run.
+      const stale = pts.length && Math.abs(rp.total - pts.at(-1).v) > 1;
+      $('hero-change').innerHTML = (pts.length >= 2 ? `<span class="${chg >= 0 ? 'up' : 'down'}">${usd(chg, true)} (${pctS(pct)})</span>` : '') + `<span class="when">${when}${stale ? ' · chart catches up to your total on the next market day' : ''}</span>`;
       $('real-legend').innerHTML = '';
       chart($('real-chart-box'), {
         series:[{name:'Value', color: chg >= 0 ? C.green : C.red, pts, fill:true}],
