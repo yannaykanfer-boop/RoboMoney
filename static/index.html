@@ -436,6 +436,12 @@
     return `<span class="cd-long"> · ${long}</span><span class="cd-short"> · ${short}</span>`;
   }
 
+  // The computer-length countdown as plain words, e.g. "opens in 1h 23m" or "opens Mon 9:30 ET" ('' if none).
+  function nextOpenWords(){
+    if(typeof nextOpen !== 'function') return '';
+    const m = nextOpen().match(/class="cd-long"> · ([^<]*)</);
+    return m ? m[1] : '';
+  }
   // One or two plain-English sentences about what the bot is doing right now.
   function botSummary(d, trades){
     const pos = d.positions || {};
@@ -450,8 +456,11 @@
     const nToday = trades.filter(t => new Date(t.t * 1000).toDateString() === today).length;
     const buys = Object.entries(pos).filter(([, p]) => /not yet priced in, buy/.test(p.signal || '')).map(([t]) => esc(t));
     if(buys.length) parts.push(`Good news it hasn't acted on yet: ${buys.join(', ')}.`);
-    else if(!d.market_open) parts.push(`The market is closed, so it's waiting${typeof nextOpen === 'function' ? nextOpen().replace(' · ', ' until it ') : ''}.`);
+    else if(!d.market_open) parts.push(`The market is closed, so it's waiting${nextOpenWords() ? ' until it ' + nextOpenWords() : ''}.`);
     else parts.push('No strong news on its stocks, so it\'s waiting.');
+    const articles = Object.values(pos).reduce((n, p) => n + (+((p.signal || '').match(/from (\d+) article/) || [0, 0])[1]), 0);
+    const ranRecently = d.updated_at && Date.now() / 1000 - d.updated_at < 6 * 3600;
+    if(ranRecently && Object.keys(pos).length) parts.push(articles ? `On its last check it read ${articles} news article${articles === 1 ? '' : 's'} about its stocks.` : 'On its last check it found no news about its stocks.');
     parts.push(nToday ? `${nToday} trade${nToday === 1 ? '' : 's'} today.` : 'No trades today.');
     if(d.bh_value != null){
       const equity = d.real_equity ?? d.total_budget, diff = equity - d.bh_value;
@@ -465,7 +474,7 @@
   function emptyDecisions(d){
     if(d.paused) return 'No decisions yet. The bot is paused, so it isn\'t looking for new trades right now.';
     if(!d.market_open){
-      const nx = typeof nextOpen === 'function' ? nextOpen().replace(/<[^>]+>/g, '').replace(/ · [^·]*$/, '').replace(/^ · /, '') : '';
+      const nx = nextOpenWords();
       return `No decisions yet. The market is closed${nx ? ' (' + nx + ')' : ''}. Once it opens, the bot checks the news for each stock every few minutes and writes down here what it did and why.`;
     }
     return 'No decisions yet. The bot checks the news for each stock every few minutes during market hours. Its first decisions show up here after its next run.';
@@ -480,7 +489,8 @@
 
     // top bar
     $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
-    $('k-updated').textContent = d.updated_at ? ago(d.updated_at) : '—';
+    const runsToday = (d.history || []).filter(h => new Date(h.t * 1000).toDateString() === new Date().toDateString()).length;
+    $('k-updated').textContent = (d.updated_at ? ago(d.updated_at) : '—') + (d.updated_at ? ` · ${runsToday} run${runsToday === 1 ? '' : 's'} today` : '');
 
     renderReal(d);
 
