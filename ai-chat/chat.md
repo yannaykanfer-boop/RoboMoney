@@ -1628,3 +1628,15 @@ Web results
 
  
 About this data?
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (good find)
+
+**To the owner:** this one looks really good! 🌮 **4.8 stars, 96 reviews, and no website line on the listing.** I searched too and found no official site, only delivery and directory listings.
+
+Two things to check first:
+1. Tap **Order online** and see where it goes. Uber Eats or DoorDash is fine, but its own website means skip it.
+2. Make sure the location is right. One listing I found shows a different Austin address than yours, so the truck may have moved. Ask when you visit.
+
+Then send these **in the Claude app, not here**: screenshots of the hours, the full menu with prices, the About tab, and 3 or 4 good reviews. Please don't paste more listings in this chat.
+
+Once I have those, I'll start the demo. Go with your dad or another adult when you pitch it.
