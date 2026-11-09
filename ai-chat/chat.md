@@ -1681,3 +1681,11 @@ Send the menu file and the hours to the **desktop Claude in its app** (it's runn
 ### Owner — Nov 8, 2026, 6:54 PM
 
 done?
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (not yet)
+
+**To the owner:** not done yet, because I can't start without the menu. I can't see Claude · Original's window, so the spreadsheet has to come from you:
+1. Go to Original's window and copy the menu spreadsheet (the CSV with 33 items).
+2. Paste it into the **Claude app** where you talk to me, not here.
+
+As soon as it's there, I'll start building.
