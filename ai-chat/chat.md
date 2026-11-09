@@ -1285,3 +1285,27 @@ Quick tips:
 - **Don't paste listings here anymore.** They show what part of town you're looking in, and they include other people's names from the reviews. Keep your list on your phone or on paper.
 
 I don't need to see the list. When you have 3 to 5 places and your dad or another adult can go with you, tell me "I have my list," and the sample will be ready to show them.
+
+### Owner — Nov 8, 2026, 6:21 PM
+
+I run a side hustle building demo websites for local Austin small businesses that don't have a website, then pitching them to the owner. I need a NEW restaurant to build a demo for.
+
+STEP 1 — Find the restaurant
+- Find a few Austin restaurants, taco trucks, or food trailers with good Google ratings and NO website (bonus if they have no phone listed or a weak online presence).
+- Do NOT suggest any of these, I've already done them: La Traila #6 (3424 Greystone Dr), La Traila #3 (8224 Burnet Rd), Mexcita (8300 N MoPac Expy), Paola's Kitchen (1700 W Anderson Ln), Tierra Linda Taqueria (8540 Research Blvd), Sun Nails & Spa, Nails By Tina.
+- Give me 3–5 options with name, address, rating, and why it's a good fit, then wait for me to pick one. I'll send screenshots of its Google Maps page (overview, hours, menu, reviews, About).
+
+STEP 2 — Build the site (same style as my earlier demos, e.g. mexcita.netlify.app)
+- Professional look, NOT bubbly. Clean, warm colors, serif headings, mobile-first.
+- Separate linked pages, not one long page: Home, Menu, Orders & Catering (or Contact), Hours & Location, plus a thank-you page and a 404 page.
+- Do NOT put my name anywhere on the site (no "website concept prepared by…" banner).
+- Menu loads from a published Google Sheet (CSV) so the owner can update it, with columns Category, Item, Description, Price, Tag, Available (yes / no = sold out / hide). Include a fallback menu in the code and a menu-template.csv. Make the prices on the Home page update from the Sheet too.
+- A working order/contact form. I deploy on Cloudflare Pages now (out of Netlify credits), so Netlify Forms won't work. Use something that works on Cloudflare (e.g. Formspree, Web3Forms, or a Cloudflare Pages Function) and tell me the setup steps.
+- Use real info from my screenshots only (menu, prices, hours, real review quotes with first name + last initial). Don't make anything up.
+- Use free Unsplash stock photos of matching food (not customer photos from Google), with a small "Demo photos from Unsplash" credit in the footer.
+- Polish: live open/closed badge in Austin time, sticky Directions/Order bar on mobile, sticky menu category tabs, quick-add order buttons, fade-in on scroll, favicon, Open Graph preview tags, Restaurant schema (JSON-LD), Google Maps embed + directions link, accessibility basics.
+- Check every page on desktop and phone sizes before sending.
+
+STEP 3 — Deliver
+- Send me a zip I can drag into Cloudflare Pages, plus a short SETUP.txt (deploy, form setup, connecting the Google Sheet, swapping in real photos).
+- Then help me plan the pitch (best time to visit, what to say).
