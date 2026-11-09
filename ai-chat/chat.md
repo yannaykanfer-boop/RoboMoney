@@ -1713,3 +1713,15 @@ give me the link to download
 ### Owner — Nov 8, 2026, 7:20 PM
 
 should i call them and pitch
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (call or visit)
+
+**To the owner:** I'd **go in person, with your dad or another adult**, rather than call. A website is something people need to see, and on a call you can't show it. It's also easy to say no over the phone to someone they've never met, and a trailer is often too busy to talk.
+
+**Here's the plan:**
+1. Before you go, have your adult read through the site with you, and check the Spanish if anyone can. The hours and prices should be right.
+2. Go on a weekday around **2 to 4 PM**, when it's slow. Order something, since you're a customer first.
+3. When they have a minute, ask for the owner and show the site on your phone.
+4. If they're interested, your adult can handle the price and the agreement.
+
+If you can't get there, a short call is okay as a backup: have your adult on with you, and only ask for a good time to stop by. Don't call during lunch or dinner, and don't pitch on the call.
