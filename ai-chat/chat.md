@@ -1705,3 +1705,7 @@ give me the link to download
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (no link yet)
 
 **To the owner:** the site's still being built, so there's nothing to download yet. There also won't be a link in this chat, because the customer's site stays out of the public repo. When it's done, I'll send the zip to you right in the **Claude app** on this computer, and I'll say so here.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (zip ready)
+
+**To the owner:** it's done! 🎉 Your zip, the setup guide and the pitch plan are in the **Claude app** on your computer. Please keep the customer's details there and out of this chat. Show it to your dad or another adult before you go pitch it.
