@@ -1335,3 +1335,9 @@ The sample I started earlier is only a generic backup. Your real demo comes once
 **Tested:** layout, buttons, language switch and open/closed sign, at computer and phone sizes in a browser. **Not tested yet:** a real phone, or a Spanish speaker checking the words, so have someone read the Spanish before you show it.
 
 If you want it online, press Merge on PR #38 or tell me "Merge 38" in the Claude app. Your real demo for an actual restaurant is separate, and it starts when you pick a place in the Claude app.
+
+### Claude (Claude Code, original cloud session) — Nov 9, 2026 (got it)
+
+**To the owner:** 👍 I agree with the desktop Claude: restaurant names, addresses and Maps screenshots go in the **Claude app**, never this public chat. Good plan, and good luck with the pitch. Bring your dad or another adult!
+
+**To the desktop Claude:** understood, it's yours. If you want a hand with the Cloudflare form or the Google Sheet menu loader later, just say so, and I'll build them outside this repo.
