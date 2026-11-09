@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>El Comal de Eulalia | Family Mexican Kitchen (Sample Site)</title>
+<meta name="description" content="Handmade tortillas, slow-cooked family recipes, today's hours and one-tap calling. A sample website for a family-owned Mexican restaurant.">
+<meta name="theme-color" content="#2B1320">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%232B1320'/%3E%3Ccircle cx='16' cy='16' r='10' fill='%23F4E6CC'/%3E%3Ccircle cx='13' cy='13' r='2' fill='%23B9834A'/%3E%3Ccircle cx='20' cy='18' r='1.5' fill='%23B9834A'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;700&family=Rozha+One&display=swap">
+<!--
+  HOW TO MAKE THIS A REAL RESTAURANT'S SITE
+  - Photos: inside any <figure class="photo">, replace the <svg> with
+    <img src="your-photo.jpg" alt="Describe the photo">. It fills the same frame.
+  - Hours: edit data-open and data-close (24-hour clock) on each row of the hours
+    table. The open/closed status reads from those rows.
+  - Time zone: the status uses the visitor's clock. A real site should convert to
+    the restaurant's own time zone.
+  - Text: English lives in each element, Spanish in its data-es attribute.
+  - Directions: point the links marked data-directions at the real maps link.
+-->
+<style>
+:root{
+  --plum:#2B1320;
+  --rosa:#B4144F;
+  --rosa-deep:#8F0E3E;
+  --marigold:#F5AE24;
+  --masa:#F8EDD8;
+  --masa-2:#EFDDBD;
+  --agave:#0B4F4A;
+  --ink:#2B1320;
+  --ink-soft:#5C4348;
+  --bar:52px;
+  --display:"Rozha One",Georgia,"Times New Roman",serif;
+  --body:Karla,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --tile:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='28' viewBox='0 0 56 28'%3E%3Crect width='56' height='28' fill='%232B1320'/%3E%3Cpath d='M14 2 26 14 14 26 2 14Z' fill='%23F5AE24'/%3E%3Cpath d='M14 8 20 14 14 20 8 14Z' fill='%23B4144F'/%3E%3Ccircle cx='14' cy='14' r='2' fill='%23F8EDD8'/%3E%3Cpath d='M42 2 54 14 42 26 30 14Z' fill='%230F7A70'/%3E%3Cpath d='M42 8 48 14 42 20 36 14Z' fill='%23F8EDD8'/%3E%3Ccircle cx='42' cy='14' r='2' fill='%23B4144F'/%3E%3C/svg%3E");
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--bar) + 12px);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--masa);color:var(--ink);font:400 18px/1.55 var(--body);overflow-wrap:break-word}
+h1,h2,h3,h4,p,ul,figure{margin:0;padding:0}
+ul{list-style:none}
+a{color:inherit}
+svg,img{display:block;max-width:100%}
+:focus-visible{outline:3px solid var(--marigold);outline-offset:2px;box-shadow:0 0 0 5px var(--plum)}
+.wrap{width:min(1120px,100%);margin-inline:auto;padding-inline:20px}
+.tile-band{height:28px;background:var(--tile) center/56px 28px repeat-x}
+
+/* Top bar: always on screen, carries the sample label and language switch */
+.bar{position:sticky;top:0;z-index:20;background:var(--plum);color:var(--masa)}
+.bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;height:var(--bar)}
+.sample{display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.sample::before{content:"";width:9px;height:9px;background:var(--marigold);transform:rotate(45deg)}
+.nav{display:none;gap:30px;margin-inline:auto}
+.nav a{font-weight:500;font-size:16px;text-decoration:none;padding:12px 2px}
+.nav a:hover{color:var(--marigold)}
+.lang{display:flex;border:1.5px solid rgba(248,237,216,.55);border-radius:4px;overflow:hidden}
+.lang button{all:unset;box-sizing:border-box;min-width:48px;height:44px;text-align:center;cursor:pointer;font:700 15px/44px var(--body);color:var(--masa)}
+.lang button[aria-pressed="true"]{background:var(--masa);color:var(--plum)}
+.lang button:focus-visible{outline:3px solid var(--marigold);outline-offset:-3px}
+
+/* Hero */
+.hero{background:var(--rosa);color:#FFF7E9}
+.hero-text{padding:30px 20px 34px}
+.status{display:inline-flex;align-items:center;gap:9px;background:var(--plum);color:#FFF7E9;padding:8px 14px;border-radius:4px;font-weight:700;font-size:16px;line-height:1.3}
+.status i{flex:none;width:11px;height:11px;border-radius:50%;background:#B9A9A0}
+.status[data-state="open"] i{background:#5FE3A1}
+.status[data-state="closed"] i{background:var(--marigold)}
+h1{font:400 clamp(3.4rem,17.6vw,6.4rem)/.94 var(--display);margin:20px 0 16px;letter-spacing:-.005em}
+h1 small{display:block;font-size:.5em;line-height:1.05;color:var(--marigold);margin:.1em 0 .05em}
+.tagline{font-size:20px;line-height:1.4;max-width:30ch}
+.cta{display:grid;gap:12px;margin-top:24px}
+.btn{display:flex;align-items:center;justify-content:center;gap:11px;min-height:60px;padding:12px 22px;border-radius:4px;font-weight:700;font-size:20px;line-height:1.15;text-decoration:none;text-align:center}
+.btn svg{flex:none;width:23px;height:23px}
+.btn-call{background:var(--marigold);color:var(--plum);box-shadow:0 5px 0 var(--plum)}
+.btn-call .num{white-space:nowrap}
+.btn-way{border:2px solid #FFF7E9;color:#FFF7E9}
+.btn-way:hover{background:#FFF7E9;color:var(--rosa-deep)}
+.btn-call:hover{background:#FFC04A}
+.hero .photo{aspect-ratio:16/11;background:var(--agave)}
+.photo svg,.photo img{width:100%;height:100%;object-fit:cover}
+
+/* Menu */
+.section{padding-block:56px}
+.kicker{font-weight:700;font-size:15px;letter-spacing:.09em;text-transform:uppercase;color:var(--rosa-deep)}
+h2{font:400 clamp(2.5rem,11vw,3.9rem)/1.02 var(--display);margin:6px 0 12px}
+.lede{max-width:44ch;color:var(--ink-soft)}
+.menu-grid{display:grid;gap:44px;margin-top:36px}
+.course h3{font:400 30px/1.1 var(--display);color:var(--rosa-deep);padding-bottom:9px;border-bottom:3px solid var(--plum);margin-bottom:6px}
+.course .note{font-size:16px;color:var(--ink-soft);margin-top:10px}
+.dish{padding:14px 0;border-bottom:1px solid #D9C29B}
+.dish:last-child{border-bottom:0}
+.dish-top{display:flex;align-items:baseline;justify-content:space-between;gap:14px}
+.dish h4{font-size:20px;font-weight:700;line-height:1.25}
+.price{font-weight:700;font-size:19px;color:var(--agave);font-variant-numeric:tabular-nums}
+.dish p{font-size:17px;line-height:1.4;color:var(--ink-soft);margin-top:2px;max-width:40ch}
+
+/* Hours */
+.hours{background:var(--agave);color:#FDF4E2}
+.hours .kicker{color:var(--marigold)}
+.hours-grid{display:grid;gap:30px}
+.hours table{width:100%;border-collapse:collapse;font-size:19px}
+.hours caption{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.hours th,.hours td{padding:13px 12px;border-bottom:1px solid rgba(253,244,226,.28);text-align:left;font-weight:500}
+.hours td{text-align:right;white-space:nowrap}
+.hours tr.today th,.hours tr.today td{background:var(--marigold);color:var(--plum);font-weight:700;border-bottom-color:var(--marigold)}
+.hours tr.closed-day td{opacity:.86}
+
+/* Story */
+.story-grid{display:grid;gap:30px}
+.story-grid p+p{margin-top:16px}
+.story .copy{max-width:50ch;font-size:19px}
+.story .photo{aspect-ratio:4/3;background:var(--masa-2);border-radius:190px 190px 0 0;overflow:hidden}
+.drop-note{font-size:16px;color:var(--ink-soft);margin-top:10px;text-align:center}
+
+/* Find us */
+.find{background:var(--masa-2)}
+.find-grid{display:grid;gap:26px}
+.address{font-style:normal;font-size:21px;line-height:1.4;margin:6px 0 20px}
+.tel{font-weight:700;color:var(--rosa-deep);display:inline-block;padding:9px 0}
+.map{position:relative;min-height:290px;border:3px dashed var(--plum);border-radius:4px;background:var(--masa);overflow:hidden;display:grid;place-items:center;padding:24px}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.map-note{position:relative;background:var(--plum);color:#FFF7E9;padding:16px 20px;border-radius:4px;text-align:center;max-width:320px}
+.map-note strong{display:block;font:400 25px/1.15 var(--display);color:var(--marigold);margin-bottom:5px}
+.map-note span{font-size:17px;line-height:1.35;display:block}
+
+footer{background:var(--plum);color:var(--masa);padding:30px 0 34px;font-size:16px}
+footer strong{font:400 25px/1.2 var(--display);display:block;margin-bottom:6px}
+
+/* Phone call bar, appears once the hero buttons have scrolled away */
+.dock{position:fixed;inset:auto 0 0;z-index:15;display:grid;grid-template-columns:2fr 1fr;background:var(--plum);padding:8px 10px calc(8px + env(safe-area-inset-bottom));gap:8px;transform:translateY(110%);transition:transform .2s ease}
+.dock.show{transform:none}
+.dock a{display:flex;align-items:center;justify-content:center;gap:8px;min-height:52px;border-radius:4px;font-weight:700;font-size:18px;text-decoration:none;color:var(--plum);background:var(--marigold)}
+.dock a+a{background:none;color:#FFF7E9;border:2px solid rgba(255,247,233,.7)}
+.dock svg{width:20px;height:20px}
+body.has-dock footer{padding-bottom:104px}
+
+@media (min-width:620px){
+  .cta{grid-template-columns:auto auto;justify-content:start}
+  .btn span{white-space:nowrap}
+  .menu-grid{grid-template-columns:1fr 1fr;column-gap:56px}
+}
+@media (min-width:900px){
+  body{font-size:19px}
+  .nav{display:flex}
+  .hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,1fr);min-height:min(640px,calc(100vh - var(--bar) - 28px))}
+  .hero-text{align-self:center;padding:52px 40px 60px max(20px,calc((100vw - 1120px)/2 + 20px))}
+  h1{font-size:clamp(6rem,8.6vw,7.6rem)}
+  .hero .photo{aspect-ratio:auto;min-height:100%}
+  .section{padding-block:88px}
+  .hours-grid{grid-template-columns:1fr 1fr;align-items:center;gap:72px}
+  .story-grid{grid-template-columns:1fr 1.1fr;align-items:center;gap:72px}
+  .story .photo{aspect-ratio:1/1}
+  .find-grid{grid-template-columns:1fr 1.5fr;align-items:stretch;gap:56px}
+  .map{min-height:380px}
+  .dock{display:none}
+  body.has-dock footer{padding-bottom:34px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.dock{transition:none}}
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <span class="sample" data-es="Sitio de muestra">Sample site</span>
+    <nav class="nav" aria-label="Sections" data-es-aria-label="Secciones">
+      <a href="#menu" data-es="Menú">Menu</a>
+      <a href="#hours" data-es="Horario">Hours</a>
+      <a href="#story" data-es="Nuestra historia">Our story</a>
+      <a href="#find" data-es="Cómo llegar">Find us</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Language" data-es-aria-label="Idioma">
+      <button type="button" data-lang="en" lang="en" aria-pressed="true" aria-label="English">EN</button>
+      <button type="button" data-lang="es" lang="es" aria-pressed="false" aria-label="Español">ES</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero" aria-labelledby="name">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <p class="status" id="status" role="status" data-state="unknown"><i aria-hidden="true"></i><span id="status-text" data-es="Consulta el horario abajo">See hours below</span></p>
+        <h1 id="name" lang="es">El Comal <small>de</small> Eulalia</h1>
+        <p class="tagline" data-es="Tortillas hechas a mano cada mañana. Recetas de familia, cocinadas sin prisa.">Tortillas made by hand every morning. Family recipes, cooked slow.</p>
+        <div class="cta" id="hero-cta">
+          <a class="btn btn-call" href="tel:+15555550123">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2Z"/></svg>
+            <span><span data-es="Llámanos">Call us</span> <span class="num">(555) 555-0123</span></span>
+          </a>
+          <a class="btn btn-way" href="#find" data-directions>
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7Zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z"/></svg>
+            <span data-es="Cómo llegar">Directions</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Photo slot: replace this <svg> with <img src="food.jpg" alt="..."> -->
+      <figure class="photo">
+        <svg viewBox="0 0 800 640" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Illustration from above of tortillas toasting on a round comal, with a stone molcajete of red salsa, limes and chiles" data-es-aria-label="Ilustración vista desde arriba de tortillas tostándose en un comal redondo, con un molcajete de salsa roja, limones y chiles">
+          <defs>
+            <pattern id="floor" width="100" height="100" patternUnits="userSpaceOnUse">
+              <rect width="100" height="100" fill="#0B4F4A"/>
+              <path d="M50 8 92 50 50 92 8 50Z" fill="none" stroke="#0F6B62" stroke-width="3"/>
+              <circle cx="50" cy="50" r="9" fill="#0F6B62"/>
+              <circle cx="0" cy="0" r="9" fill="#0F6B62"/><circle cx="100" cy="0" r="9" fill="#0F6B62"/><circle cx="0" cy="100" r="9" fill="#0F6B62"/><circle cx="100" cy="100" r="9" fill="#0F6B62"/>
+            </pattern>
+          </defs>
+          <rect width="800" height="640" fill="url(#floor)"/>
+          <!-- woven cloth -->
+          <g transform="rotate(-9 150 500)">
+            <rect x="-30" y="420" width="360" height="320" fill="#F8EDD8"/>
+            <g fill="#B4144F"><rect x="-30" y="442" width="360" height="12"/><rect x="-30" y="492" width="360" height="5"/></g>
+            <g fill="#F5AE24"><rect x="-30" y="464" width="360" height="18"/></g>
+          </g>
+          <!-- comal -->
+          <circle cx="440" cy="300" r="262" fill="#160A10"/>
+          <circle cx="440" cy="300" r="246" fill="#2A2226"/>
+          <circle cx="440" cy="300" r="246" fill="none" stroke="#3B3136" stroke-width="5"/>
+          <circle cx="440" cy="300" r="190" fill="none" stroke="#352B30" stroke-width="2"/>
+          <!-- tortillas -->
+          <g>
+            <circle cx="340" cy="210" r="112" fill="#EBCB8E"/>
+            <circle cx="340" cy="210" r="112" fill="none" stroke="#D9AF6B" stroke-width="6"/>
+            <g fill="#9C6A32"><ellipse cx="302" cy="176" rx="18" ry="11"/><ellipse cx="368" cy="162" rx="9" ry="6"/><ellipse cx="386" cy="238" rx="20" ry="12"/><ellipse cx="318" cy="262" rx="11" ry="7"/><circle cx="346" cy="212" r="6"/><circle cx="276" cy="226" r="4"/></g>
+          </g>
+          <g>
+            <circle cx="548" cy="248" r="108" fill="#F3DBA8"/>
+            <circle cx="548" cy="248" r="108" fill="none" stroke="#DDB674" stroke-width="6"/>
+            <ellipse cx="538" cy="238" rx="62" ry="50" fill="#FBEBC8"/>
+            <g fill="#A87438"><ellipse cx="596" cy="206" rx="13" ry="8"/><ellipse cx="510" cy="306" rx="15" ry="9"/><circle cx="604" cy="286" r="6"/><circle cx="500" cy="186" r="5"/></g>
+          </g>
+          <g>
+            <circle cx="438" cy="418" r="104" fill="#E6C283"/>
+            <circle cx="438" cy="418" r="104" fill="none" stroke="#CFA25E" stroke-width="6"/>
+            <g fill="#8E5D2B"><ellipse cx="404" cy="388" rx="20" ry="11"/><ellipse cx="474" cy="382" rx="11" ry="7"/><ellipse cx="482" cy="452" rx="17" ry="10"/><ellipse cx="402" cy="466" rx="10" ry="6"/><circle cx="440" cy="426" r="7"/></g>
+          </g>
+          <!-- molcajete -->
+          <circle cx="120" cy="150" r="106" fill="#4D474A"/>
+          <circle cx="120" cy="150" r="106" fill="none" stroke="#383236" stroke-width="7"/>
+          <circle cx="120" cy="150" r="78" fill="#B3231F"/>
+          <circle cx="120" cy="150" r="78" fill="none" stroke="#8C1714" stroke-width="5"/>
+          <g fill="#E3584A"><circle cx="96" cy="130" r="7"/><circle cx="140" cy="172" r="9"/><circle cx="150" cy="122" r="5"/><circle cx="100" cy="178" r="5"/></g>
+          <g fill="#6FA93B"><circle cx="122" cy="146" r="6"/><circle cx="132" cy="136" r="4"/><circle cx="112" cy="160" r="4"/></g>
+          <g fill="#6E676A"><circle cx="36" cy="120" r="3"/><circle cx="52" cy="226" r="3"/><circle cx="206" cy="182" r="3"/><circle cx="188" cy="74" r="3"/><circle cx="76" cy="58" r="3"/></g>
+          <!-- limes on the cloth -->
+          <g transform="translate(150 500)">
+            <circle r="56" fill="#3F7D24"/><circle r="48" fill="#D9E79A"/>
+            <g stroke="#3F7D24" stroke-width="3"><path d="M0-47V47M-47 0H47M-33-33 33 33M33-33-33 33"/></g>
+            <circle r="5" fill="#D9E79A"/>
+          </g>
+          <g transform="translate(246 568)"><circle r="42" fill="#3F7D24"/><circle r="35" fill="#D9E79A"/><g stroke="#3F7D24" stroke-width="3"><path d="M0-35V35M-35 0H35M-25-25 25 25M25-25-25 25"/></g><circle r="4" fill="#D9E79A"/></g>
+          <!-- chiles -->
+          <g fill="none" stroke-linecap="round">
+            <path d="M664 548c44 28 84 26 118-6" stroke="#B4144F" stroke-width="30"/>
+            <path d="M654 542c-8-6-14-12-18-24" stroke="#3F7D24" stroke-width="10"/>
+            <path d="M618 610c40 12 78 2 108-30" stroke="#C7291F" stroke-width="26"/>
+            <path d="M608 606c-9-2-16-8-22-18" stroke="#3F7D24" stroke-width="9"/>
+          </g>
+        </svg>
+      </figure>
+    </div>
+  </section>
+  <div class="tile-band" aria-hidden="true"></div>
+
+  <section class="section" id="menu" aria-labelledby="menu-h">
+    <div class="wrap">
+      <p class="kicker" data-es="De nuestra cocina">From our kitchen</p>
+      <h2 id="menu-h" data-es="Menú">Menu</h2>
+      <p class="lede" data-es="Todos los tacos llevan tortilla de maíz hecha aquí, con cebolla, cilantro y nuestra salsa.">Every taco comes on a corn tortilla made here, with onion, cilantro and our salsa.</p>
+
+      <div class="menu-grid">
+        <div class="course">
+          <h3 data-es="Para empezar">To start</h3>
+          <ul>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Guacamole de molcajete</h4><span class="price">$9.50</span></div><p data-es="Machacado al momento, con totopos calientes.">Mashed to order, with warm tortilla chips.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Queso fundido</h4><span class="price">$10.00</span></div><p data-es="Queso derretido con chorizo y tortillas recién hechas.">Melted cheese with chorizo and fresh tortillas.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Sopes de frijol</h4><span class="price">$8.00</span></div><p data-es="Dos sopes de masa con frijoles, crema y queso fresco.">Two thick masa cakes with beans, crema and queso fresco.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Elote en vaso</h4><span class="price">$5.50</span></div><p data-es="Granos de elote con mayonesa, queso cotija, limón y chile.">Corn in a cup with mayo, cotija, lime and chile.</p></li>
+          </ul>
+        </div>
+
+        <div class="course">
+          <h3 data-es="Tacos">Tacos</h3>
+          <ul>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Al pastor</h4><span class="price">$4.25</span></div><p data-es="Cerdo adobado con piña asada.">Marinated pork with roasted pineapple.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Carnitas</h4><span class="price">$4.25</span></div><p data-es="Cerdo cocido lentamente, dorado por fuera.">Slow-cooked pork, crisped at the edges.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Barbacoa de res</h4><span class="price">$4.75</span></div><p data-es="Res guisada lentamente con chiles secos.">Beef braised for hours with dried chiles.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Tinga de pollo</h4><span class="price">$4.00</span></div><p data-es="Pollo deshebrado con chipotle y jitomate.">Shredded chicken with chipotle and tomato.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Rajas con crema</h4><span class="price">$3.75</span></div><p data-es="Chile poblano, cebolla y crema. Vegetariano.">Poblano strips, onion and crema. Vegetarian.</p></li>
+          </ul>
+        </div>
+
+        <div class="course">
+          <h3 data-es="De la casa">House plates</h3>
+          <ul>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Mole con pollo</h4><span class="price">$17.50</span></div><p data-es="El mole de Eulalia, dos días en preparación, con arroz.">Eulalia's mole, two days in the making, with rice.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Enchiladas verdes</h4><span class="price">$14.00</span></div><p data-es="Rellenas de pollo, con salsa de tomatillo y crema.">Filled with chicken, in tomatillo salsa with crema.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Chile relleno</h4><span class="price">$15.00</span></div><p data-es="Poblano relleno de queso, capeado, en caldillo de jitomate.">Cheese-stuffed poblano, battered, in tomato broth.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Cochinita pibil</h4><span class="price">$16.50</span></div><p data-es="Cerdo en achiote con cebolla morada encurtida.">Achiote pork with pickled red onion.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Pozole rojo</h4><span class="price">$14.00</span></div><p data-es="Solo fines de semana. Cerdo y maíz en caldo de chile.">Weekends only. Pork and hominy in red chile broth.</p></li>
+          </ul>
+        </div>
+
+        <div class="course">
+          <h3 data-es="Bebidas y postres">Drinks &amp; sweets</h3>
+          <ul>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Agua fresca</h4><span class="price">$3.50</span></div><p data-es="Jamaica, horchata o tamarindo.">Hibiscus, horchata or tamarind.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Café de olla</h4><span class="price">$3.00</span></div><p data-es="Con canela y piloncillo.">Brewed with cinnamon and piloncillo sugar.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Flan de la casa</h4><span class="price">$5.50</span></div><p data-es="Suave, con caramelo oscuro.">Silky, with dark caramel.</p></li>
+            <li class="dish"><div class="dish-top"><h4 lang="es">Churros con cajeta</h4><span class="price">$6.00</span></div><p data-es="Recién fritos, para compartir.">Fried to order, made for sharing.</p></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="tile-band" aria-hidden="true"></div>
+  <section class="section hours" id="hours" aria-labelledby="hours-h">
+    <div class="wrap hours-grid">
+      <div>
+        <p class="kicker" data-es="Te esperamos">Come on by</p>
+        <h2 id="hours-h" data-es="Horario">Hours</h2>
+        <p data-es="La cocina toma el último pedido quince minutos antes de cerrar.">The kitchen takes its last order fifteen minutes before closing.</p>
+      </div>
+      <table>
+        <caption data-es="Horario semanal">Weekly hours</caption>
+        <tbody>
+          <tr data-day="1"><th scope="row" data-es="Lunes">Monday</th><td data-es="Cerrado">Closed</td></tr>
+          <tr data-day="2" data-open="11" data-close="21"><th scope="row" data-es="Martes">Tuesday</th><td data-es="11 a. m. – 9 p. m.">11 AM – 9 PM</td></tr>
+          <tr data-day="3" data-open="11" data-close="21"><th scope="row" data-es="Miércoles">Wednesday</th><td data-es="11 a. m. – 9 p. m.">11 AM – 9 PM</td></tr>
+          <tr data-day="4" data-open="11" data-close="21"><th scope="row" data-es="Jueves">Thursday</th><td data-es="11 a. m. – 9 p. m.">11 AM – 9 PM</td></tr>
+          <tr data-day="5" data-open="11" data-close="22"><th scope="row" data-es="Viernes">Friday</th><td data-es="11 a. m. – 10 p. m.">11 AM – 10 PM</td></tr>
+          <tr data-day="6" data-open="11" data-close="22"><th scope="row" data-es="Sábado">Saturday</th><td data-es="11 a. m. – 10 p. m.">11 AM – 10 PM</td></tr>
+          <tr data-day="0" data-open="9" data-close="16"><th scope="row" data-es="Domingo">Sunday</th><td data-es="9 a. m. – 4 p. m.">9 AM – 4 PM</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section story" id="story" aria-labelledby="story-h">
+    <div class="wrap story-grid">
+      <div>
+        <!-- Photo slot: replace this <svg> with <img src="family.jpg" alt="..."> -->
+        <figure class="photo">
+          <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMax slice" role="img" aria-label="Illustration of a stack of tortillas on an embroidered cloth" data-es-aria-label="Ilustración de una pila de tortillas sobre una servilleta bordada">
+            <rect width="400" height="400" fill="#B4144F"/>
+            <g fill="#8F0E3E"><circle cx="200" cy="180" r="150"/></g>
+            <rect x="0" y="300" width="400" height="100" fill="#F8EDD8"/>
+            <g fill="#0B4F4A"><rect y="322" width="400" height="8"/></g>
+            <g fill="#F5AE24"><rect y="336" width="400" height="16"/></g>
+            <g fill="#B4144F"><path d="M20 370l14-12 14 12-14 12zM92 370l14-12 14 12-14 12zM164 370l14-12 14 12-14 12zM236 370l14-12 14 12-14 12zM308 370l14-12 14 12-14 12zM380 370l14-12 14 12-14 12z"/></g>
+            <ellipse cx="200" cy="306" rx="150" ry="17" fill="#C9A063"/>
+              <ellipse cx="205" cy="297" rx="148" ry="17" fill="#E6C283"/>
+              <ellipse cx="196" cy="288" rx="146" ry="17" fill="#D4AC6C"/>
+              <ellipse cx="206" cy="279" rx="150" ry="17" fill="#EBCB8E"/>
+              <ellipse cx="194" cy="270" rx="148" ry="17" fill="#CFA565"/>
+              <ellipse cx="203" cy="261" rx="146" ry="17" fill="#E9C88A"/>
+              <ellipse cx="197" cy="252" rx="150" ry="17" fill="#D9B272"/>
+              <ellipse cx="207" cy="243" rx="148" ry="17" fill="#EFD39B"/>
+              <ellipse cx="195" cy="234" rx="146" ry="17" fill="#CFA565"/>
+              <ellipse cx="202" cy="225" rx="150" ry="17" fill="#E6C283"/>
+              <ellipse cx="198" cy="216" rx="148" ry="17" fill="#DDB877"/>
+              <ellipse cx="204" cy="207" rx="146" ry="17" fill="#F0D8A4"/>
+              <ellipse cx="200" cy="204" rx="146" ry="19" fill="#F3DBA8"/>
+              <g fill="#A87438"><ellipse cx="150" cy="202" rx="15" ry="4"/><ellipse cx="246" cy="207" rx="11" ry="3"/><ellipse cx="204" cy="196" rx="7" ry="2.5"/></g>
+            </svg>
+        </figure>
+        <p class="drop-note" data-es="Aquí va una foto de tu familia.">Your family photo goes here.</p>
+      </div>
+      <div class="copy">
+        <p class="kicker" data-es="Nuestra historia">Our story</p>
+        <h2 id="story-h" data-es="El mismo comal de siempre">The same old comal</h2>
+        <p data-es="Eulalia aprendió a hacer tortillas subida en un cajón de madera, junto al comal de su abuela. Años después abrió esta pequeña cocina con ese mismo comal, un puñado de recetas y sus dos hijos doblando servilletas al salir de la escuela.">Eulalia learned to make tortillas standing on a wooden crate beside her grandmother's comal. Years later she opened this little kitchen with that same comal, a handful of recipes, and her two kids folding napkins after school.</p>
+        <p data-es="Hoy ellos llevan el negocio. La masa se sigue moliendo cada mañana, el mole sigue tardando dos días, y Eulalia todavía viene a probarlo y a decirnos qué le falta.">Those kids run the place now. The masa is still ground every morning, the mole still takes two days, and Eulalia still comes by to taste it and tell us what it needs.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section find" id="find" aria-labelledby="find-h">
+    <div class="wrap find-grid">
+      <div>
+        <p class="kicker" data-es="Visítanos">Visit us</p>
+        <h2 id="find-h" data-es="Cómo llegar">Find us</h2>
+        <address class="address">
+          <span data-es="123 Tu Calle">123 Your Street</span><br>
+          <span data-es="Tu Ciudad, Estado 00000">Your City, State 00000</span><br>
+          <a class="tel" href="tel:+15555550123">(555) 555-0123</a>
+        </address>
+      </div>
+      <div class="map">
+        <svg viewBox="0 0 600 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+          <g fill="none" stroke="#E2CDA6" stroke-width="16"><path d="M-10 90H610M-10 300H610M130-10V410M430-10V410"/><path d="M-10 400 610 30" stroke-width="22"/></g>
+        </svg>
+        <p class="map-note"><strong data-es="Aquí va tu mapa">Your map goes here</strong><span data-es="En el sitio real, este espacio muestra un mapa en vivo hasta tu puerta.">On the real site, this space shows a live map to your door.</span></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <strong lang="es">El Comal de Eulalia</strong>
+    <p data-es="Este es un sitio de muestra. El restaurante, la historia, el menú y los precios son inventados, para mostrar cómo podría verse el sitio de tu restaurante.">This is a sample site. The restaurant, story, menu and prices are invented, to show what your restaurant's site could look like.</p>
+  </div>
+</footer>
+
+<nav class="dock" id="dock" aria-label="Quick actions" data-es-aria-label="Acciones rápidas">
+  <a href="tel:+15555550123"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2Z"/></svg><span data-es="Llamar">Call</span></a>
+  <a href="#find" data-directions data-es="Llegar">Directions</a>
+</nav>
+
+<script>
+(function () {
+  var texts = [].slice.call(document.querySelectorAll('[data-es]'));
+  var labels = [].slice.call(document.querySelectorAll('[data-es-aria-label]'));
+  texts.forEach(function (el) { el.dataset.en = el.textContent; });
+  labels.forEach(function (el) { el.dataset.enAriaLabel = el.getAttribute('aria-label'); });
+
+  var meta = document.querySelector('meta[name="description"]');
+  var head = {
+    en: { title: document.title, desc: meta.content },
+    es: {
+      title: 'El Comal de Eulalia | Cocina mexicana familiar (sitio de muestra)',
+      desc: 'Tortillas hechas a mano, recetas de familia cocinadas sin prisa, el horario de hoy y llamada con un toque. Sitio de muestra para un restaurante mexicano familiar.'
+    }
+  };
+
+  var nbsp = ' ';
+  var copy = {
+    en: {
+      days: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      time: function (h) { return (h % 12 || 12) + nbsp + (h < 12 ? 'AM' : 'PM'); },
+      open: function (t) { return 'Open now until ' + t; },
+      today: function (t) { return 'Closed. Opens today at ' + t; },
+      tomorrow: function (t) { return 'Closed. Opens tomorrow at ' + t; },
+      later: function (d, t) { return 'Closed. Opens ' + d + ' at ' + t; }
+    },
+    es: {
+      days: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+      time: function (h) { return (h % 12 || 12) + nbsp + (h < 12 ? 'a.' : 'p.') + nbsp + 'm.'; },
+      open: function (t) { return 'Abierto ahora, hasta las ' + t; },
+      today: function (t) { return 'Cerrado. Abre hoy a las ' + t; },
+      tomorrow: function (t) { return 'Cerrado. Abre mañana a las ' + t; },
+      later: function (d, t) { return 'Cerrado. Abre el ' + d + ' a las ' + t; }
+    }
+  };
+
+  // Hours are read from the table so there is only one place to edit them.
+  var hours = {};
+  var rows = {};
+  document.querySelectorAll('tr[data-day]').forEach(function (tr) {
+    var day = +tr.dataset.day;
+    rows[day] = tr;
+    hours[day] = tr.dataset.open ? { open: +tr.dataset.open, close: +tr.dataset.close } : null;
+    if (!hours[day]) tr.classList.add('closed-day');
+  });
+
+  var lang = 'en';
+  var status = document.getElementById('status');
+  var statusText = document.getElementById('status-text');
+
+  function renderStatus() {
+    var now = new Date();
+    var day = now.getDay();
+    var hour = now.getHours() + now.getMinutes() / 60;
+    var c = copy[lang];
+    var today = hours[day];
+    var isOpen = !!today && hour >= today.open && hour < today.close;
+    var msg;
+    if (isOpen) {
+      msg = c.open(c.time(today.close));
+    } else if (today && hour < today.open) {
+      msg = c.today(c.time(today.open));
+    } else {
+      for (var i = 1; i <= 7; i++) {
+        var next = hours[(day + i) % 7];
+        if (!next) continue;
+        msg = i === 1 ? c.tomorrow(c.time(next.open)) : c.later(c.days[(day + i) % 7], c.time(next.open));
+        break;
+      }
+    }
+    statusText.textContent = msg;
+    status.dataset.state = isOpen ? 'open' : 'closed';
+    Object.keys(rows).forEach(function (d) {
+      var isToday = +d === day;
+      rows[d].classList.toggle('today', isToday);
+      if (isToday) rows[d].setAttribute('aria-current', 'date');
+      else rows[d].removeAttribute('aria-current');
+    });
+  }
+
+  function setLang(next) {
+    lang = next;
+    document.documentElement.lang = next;
+    texts.forEach(function (el) { el.textContent = next === 'es' ? el.dataset.es : el.dataset.en; });
+    labels.forEach(function (el) {
+      el.setAttribute('aria-label', next === 'es' ? el.dataset.esAriaLabel : el.dataset.enAriaLabel);
+    });
+    document.title = head[next].title;
+    meta.content = head[next].desc;
+    document.querySelectorAll('.lang button').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.lang === next));
+    });
+    renderStatus();
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem('comal-lang'); } catch (e) {}
+  var browser = (navigator.language || '').toLowerCase().indexOf('es') === 0 ? 'es' : 'en';
+  setLang(saved === 'es' || saved === 'en' ? saved : browser);
+
+  document.querySelector('.lang').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    setLang(b.dataset.lang);
+    try { localStorage.setItem('comal-lang', b.dataset.lang); } catch (err) {}
+  });
+
+  setInterval(renderStatus, 60000);
+
+  // The phone call bar only shows once the hero buttons are off screen.
+  var dock = document.getElementById('dock');
+  if ('IntersectionObserver' in window) {
+    document.body.classList.add('has-dock');
+    new IntersectionObserver(function (entries) {
+      dock.classList.toggle('show', !entries[0].isIntersecting);
+    }).observe(document.getElementById('hero-cta'));
+  }
+})();
+</script>
+</body>
+</html>
