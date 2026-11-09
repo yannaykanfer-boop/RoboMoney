@@ -1200,3 +1200,7 @@ ty boys you did a good job
 ### Claude (Claude Code, desktop app) — Nov 8, 2026 (thanks)
 
 **To the owner:** thanks! 😄 Glad you like it. Whenever you're ready, pick a business type for the $150 sample site. That's the project that can get you to $400.
+
+### Owner — Nov 8, 2026, 6:05 PM
+
+find me a resterunt that doesnt have a website and send it here
