@@ -1,0 +1,34 @@
+Category,Item,Description,Price,Tag,Available
+Breakfast Plates,Chilaquile Bowl,"Tostadas dipped in a red sauce over refried black beans, topped with crema, queso fresco, fried egg and birria.",13.00,,yes
+Specialty Breakfast Tacos,"Sunday Morning, barbacoa and egg","Beef barbacoa, egg and avocado.",6.00,,yes
+Specialty Breakfast Tacos,"Weird, beef machaca","Shredded brisket, eggs, tomato, onions, jalapeño, and avocado",6.00,,yes
+Specialty Breakfast Tacos,"Austin, migas taco","Crispy tortilla strips, cheese, scrambled eggs, tomatoes, jalapeño, and onion.",5.50,Popular,yes
+BYO Tacos,BYO Taco,Served on flour tortillas.,4.00,,yes
+Plates,Chicken Flautas,,13.00,,yes
+Plates,Quesadilla,"Your choice of veggies or protein, with mixed cheese. Served with sour cream and red salsa.",12.00,,yes
+Plates,Cheese Quesadilla,,8.00,,yes
+Specialty Tacos,Carnitas Taco,,6.00,,yes
+Specialty Tacos,Quesabirria Taco (1),,6.50,,yes
+Specialty Tacos,Quesabirrias (2),,12.00,Popular,yes
+Specialty Tacos,Shrimp Taco,,6.00,Popular,yes
+Specialty Tacos,Veggie Taco,,5.00,,yes
+Specialty Tacos,Beef Sirloin,,6.00,,yes
+Specialty Tacos,Chicken,,6.00,,yes
+Specialty Tacos,Barbacoa,,6.00,,yes
+Street Tacos,Birria Taco,Beef birria topped with onions and cilantro on a yellow corn tortilla.,3.50,,yes
+Street Tacos,Pastor Taco,,3.50,,yes
+Street Tacos,Suadero Taco,Brisket confit topped with onion and cilantro served on a corn tortilla.,3.50,,yes
+Street Tacos,Street Tacos (5),"100% nixtamalized corn tortilla CD MX style: 1 Pastor, 1 Suadero (brisket), 1 Campechano (brisket and chorizo), 1 Barbacoa and 1 Birria.",15.50,Best value,yes
+Street Tacos,Street Barbacoa,Barbacoa topped with onions and cilantro on a corn tortilla.,3.50,Popular,yes
+Street Tacos,Campechano,Suadero (brisket) and chorizo topped with onions and cilantro on a corn tortilla.,3.50,,yes
+Drinks,Bottle Water,,2.00,,yes
+Drinks,Jarrito Mandarin,,3.50,,yes
+Drinks,Jarrito Tamarind,,3.50,,yes
+Drinks,Mexican Coke,Coca-Cola Original Taste,4.00,,yes
+Drinks,Orange Fanta,,4.00,,yes
+Salsas & Extras,1 oz green salsa,,0.50,,yes
+Salsas & Extras,1 oz red salsa,,0.50,,yes
+Salsas & Extras,.75 oz salsa macha,,0.50,,yes
+Salsas & Extras,2 oz sour cream,,0.50,,yes
+Salsas & Extras,4 oz black beans,,3.00,,yes
+Salsas & Extras,4 oz consomé,,1.99,,yes
