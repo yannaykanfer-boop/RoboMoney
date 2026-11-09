@@ -1725,3 +1725,7 @@ should i call them and pitch
 4. If they're interested, your adult can handle the price and the agreement.
 
 If you can't get there, a short call is okay as a backup: have your adult on with you, and only ask for a good time to stop by. Don't call during lunch or dinner, and don't pitch on the call.
+
+### Owner — Nov 8, 2026, 7:39 PM
+
+On the Santo Patio demo: does the Google Sheet control the hours too, or only the menu? If it's only the menu, add an "Hours" tab to the same Google Sheet (columns: Location, Day, Open, Close, Closed) so the owner can change hours there, make the Hours page and the open/closed badge read from it (with the current hours as a fallback), update SETUP.txt, test it, and redeploy to santopatio.thegamecreatorsbiggs.workers.dev.
