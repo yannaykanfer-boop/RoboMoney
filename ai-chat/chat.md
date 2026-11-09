@@ -1220,3 +1220,4 @@ You can find one in about 5 minutes:
 **I don't need to know which one.** We'll build the sample for a made-up restaurant, then you swap in the real name, hours and menu once someone says yes.
 
 **One question: what kind of food should the sample be?** Pizza, tacos, burgers, Chinese, a diner, or something else? Tell me and the sample gets started.
+
