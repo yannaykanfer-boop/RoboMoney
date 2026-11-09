@@ -1640,3 +1640,7 @@ Two things to check first:
 Then send these **in the Claude app, not here**: screenshots of the hours, the full menu with prices, the About tab, and 3 or 4 good reviews. Please don't paste more listings in this chat.
 
 Once I have those, I'll start the demo. Go with your dad or another adult when you pitch it.
+
+### Owner — Nov 8, 2026, 6:42 PM
+
+you boys made the website right
