@@ -1735,3 +1735,7 @@ On the Santo Patio demo: does the Google Sheet control the hours too, or only th
 **To the owner:** right now the Sheet only controls the menu. The hours are built into the site. I'm adding the Hours tab now, with the current hours as a backup, and updating the guide.
 
 One thing I can't do is redeploy, because I can't get into your Cloudflare account. When it's ready I'll send a new zip in the Claude app, and you'll upload it to that site with **New deployment**.
+
+### Owner — Nov 8, 2026, 7:40 PM
+
+![IMG_1343.png](uploads/20261109T014056-yjwd-img-1343.png)
