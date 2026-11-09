@@ -79,7 +79,7 @@
   .wl-head,.wl-row .line{ display:grid; gap:8px; align-items:center; padding:0 12px; }
   .wl-real .wl-head,.wl-real .line{ grid-template-columns:minmax(0,1fr) 68px 62px 62px; }
   .wl-bot .wl-head,.wl-bot .line{ grid-template-columns:minmax(0,1fr) 70px 66px 40px; }
-  .wl-head{ height:26px; color:var(--faint); font-size:11px; border-bottom:1px solid var(--line); }
+  .wl-head{ height:26px; color:var(--faint); font-size:11px; border-bottom:1px solid var(--line); white-space:nowrap; }
   .wl-head span+span,.line>.r{ text-align:right; }
   .wl-row{ padding:6px 0; border-bottom:1px solid var(--grid); }
   .wl-row:last-child{ border-bottom:none; }
@@ -506,7 +506,7 @@
     const rp = d.real_portfolio;
     if(rp){
       const asOf = rp.as_of ? new Date(rp.as_of + 'T12:00:00').toLocaleDateString([], {month:'short', day:'numeric'}) : '—';
-      $('since-h').textContent = 'Since ' + asOf;
+      $('since-h').textContent = 'Since ' + (rp.as_of ? new Date(rp.as_of + 'T12:00:00').toLocaleDateString([], {month:'numeric', day:'numeric'}) : '—');
       const anyLive = Object.values(rp.holdings || {}).some(h => h.live);
       $('real-rows').innerHTML = Object.entries(rp.holdings || {}).map(([tk, h]) => `
         <div class="wl-row"><div class="line">
