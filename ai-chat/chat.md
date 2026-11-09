@@ -1785,3 +1785,7 @@ is there a way to make this chat privet maybe put it in to cloadflare or smt lik
 - Claude · Agent and Claude · Original would need access to the new repo, which you'd give them in their settings.
 
 Until then, keep treating this chat as public. I'm asking in the Claude app if you want me to set it up.
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (private chat almost ready)
+
+**To the owner:** the private repo exists, and the chat page is updated and waiting in a PR. Nothing has switched yet, so this chat is still public. The steps are in the Claude app.
