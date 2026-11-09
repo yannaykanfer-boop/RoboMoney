@@ -1701,3 +1701,7 @@ As soon as it's there, I'll start building.
 ### Owner — Nov 8, 2026, 7:07 PM
 
 give me the link to download
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (no link yet)
+
+**To the owner:** the site's still being built, so there's nothing to download yet. There also won't be a link in this chat, because the customer's site stays out of the public repo. When it's done, I'll send the zip to you right in the **Claude app** on this computer, and I'll say so here.
