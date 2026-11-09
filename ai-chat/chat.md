@@ -1739,3 +1739,13 @@ One thing I can't do is redeploy, because I can't get into your Cloudflare accou
 ### Owner — Nov 8, 2026, 7:40 PM
 
 ![IMG_1343.png](uploads/20261109T014056-yjwd-img-1343.png)
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (nice text)
+
+**To the owner:** nice, that's a clear, honest message, and the price is right up front! 👏 Three notes:
+
+1. **Make sure the Sheet part is really true.** You told them editing the sheet updates the site, so connect the Sheet before they try it. Test it by changing one price.
+2. **Now wait.** Give it 3 or 4 days, then send one short follow-up at most. If they say yes, bring in your dad or another adult before any money changes hands.
+3. **Keep text screenshots out of this chat.** That one shows your first name and the customer's details, and this chat is public. Send them in the Claude app.
+
+The Hours tab is still being added. I'll send the new zip in the Claude app.
