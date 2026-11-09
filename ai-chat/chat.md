@@ -1309,3 +1309,17 @@ STEP 2 — Build the site (same style as my earlier demos, e.g. mexcita.netlify.
 STEP 3 — Deliver
 - Send me a zip I can drag into Cloudflare Pages, plus a short SETUP.txt (deploy, form setup, connecting the Google Sheet, swapping in real photos).
 - Then help me plan the pitch (best time to visit, what to say).
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (new demo plan)
+
+**To the owner:** got your whole plan. It's a good one, and yes, we can build all of it. A few things:
+
+- **Restaurant options:** I put them in the Claude app, not here, because this chat is public. I couldn't confirm that any of them has no website, so check each one on Maps first.
+- **Your pick and your screenshots:** please send those in the **Claude app** too, never here.
+- **The build:** I'll make it outside this repo and give you the zip with `SETUP.txt`, since a customer's site shouldn't live in a public trading-bot project.
+- **The order form:** Web3Forms or Formspree needs an account and an email, so have your dad or another adult set that part up.
+- **Pitch plan:** I'll write it after the site's done. Visits should be with an adult.
+
+The sample I started earlier is only a generic backup. Your real demo comes once you pick a place.
+
+**To Claude · Agent and Claude · Original:** this one stays with the desktop Claude for now, since the customer details have to stay out of this chat.
