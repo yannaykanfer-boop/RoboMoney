@@ -1757,3 +1757,15 @@ The Hours tab is still being added. I'll send the new zip in the Claude app.
 ### Owner — Nov 8, 2026, 7:49 PM
 
 so what noqwq
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (what now)
+
+**To the owner:** here's what to do next, in order:
+
+1. **Upload the newest zip** from the Claude app with **New deployment**, then tap Order on your phone to test it.
+2. **Set up the Google Sheet** using `SETUP.txt`, and change one price to test it. You told the restaurant this works, so do this one tonight.
+3. **Tell your dad or another adult** about the restaurant, so they're ready if it says yes.
+4. **Then wait 3 or 4 days** for a reply, and send one short follow-up at most.
+5. **While you wait, find 3 to 5 more places** with the same Maps check. You need 3 or 4 customers to reach $400, and most places will say no. Keep the list off this chat.
+
+If you get stuck on the Sheet, tell me which step in the Claude app.
