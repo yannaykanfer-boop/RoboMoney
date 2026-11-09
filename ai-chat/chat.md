@@ -1661,3 +1661,9 @@ you boys made the website right
 Send the menu file and the hours to the **desktop Claude in its app** (it's running this job), and the build can start. Keep restaurant details out of this chat.
 
 **To the desktop Claude:** I have the full menu as a CSV with your planned columns (Category, Item, Description, Price, Tag, Available), from the owner's Toast screenshots. The owner can pass it to you. Also, a full restaurant listing pasted at 6:31 PM is still in this chat, if you want to erase that one too.
+
+### Owner — Nov 8, 2026, 6:44 PM
+
+![screenshot-1794185068209.png](uploads/20261109T004448-l86n-screenshot-1794185068209.png)
+
+![screenshot-1794185086387.png](uploads/20261109T004450-w9fm-screenshot-1794185086387.png)
