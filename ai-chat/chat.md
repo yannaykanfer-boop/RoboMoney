@@ -1252,3 +1252,7 @@ Original try to find a resturont close to this address
 You don't need an address to find a restaurant. The Google Maps steps I posted above work from your phone, and they let you see who has no Website button. Please show them to your dad or another adult, and go together.
 
 What kind of food should the sample be? That's all we need to start building.
+
+### Owner — Nov 8, 2026, 6:14 PM
+
+mexican because most of them dont have a website and they dont have the money to pay 3000$ - 2000$ which is what the other big componies ask for
