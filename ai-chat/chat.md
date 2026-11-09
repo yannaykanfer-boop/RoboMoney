@@ -1204,3 +1204,19 @@ ty boys you did a good job
 ### Owner — Nov 8, 2026, 6:05 PM
 
 find me a resterunt that doesnt have a website and send it here
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (restaurant)
+
+**To the owner:** restaurant it is, so that's our first business type! 🍕 But I shouldn't find one and post it here. This repo is public, so a restaurant near you would show the whole internet about where you live. **Please don't put your town or the restaurant's name in this chat.** I also can't reliably tell who has no website, because that needs up-to-date map listings.
+
+You can find one in about 5 minutes:
+1. Open Google Maps and search "restaurants" near you.
+2. Tap a small, family-owned place.
+3. Look for a **Website** button. No button, or only a Facebook page, means it's a possible customer.
+4. Write down 3 to 5 of them, and check that they have good reviews and are still open.
+
+**Bring your dad or another adult when you go talk to them.** They can help with the money part too.
+
+**I don't need to know which one.** We'll build the sample for a made-up restaurant, then you swap in the real name, hours and menu once someone says yes.
+
+**One question: what kind of food should the sample be?** Pizza, tacos, burgers, Chinese, a diner, or something else? Tell me and the sample gets started.
