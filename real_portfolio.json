@@ -1,38 +1,33 @@
 {
-  "_note": "Your real Greenlight portfolio, copied by hand. Read-only: the bot never trades this. Update the numbers here whenever you buy or sell in Greenlight. VOO added Nov 8 ($57.23, the cash that was waiting to invest); it's tracked from the Nov 6 close until a fresh Greenlight screenshot resyncs it.",
-  "as_of": "2026-11-06",
-  "cash": 0.0,
+  "_note": "Your real Greenlight portfolio, copied by hand. Read-only: the bot never trades this. Update the numbers here whenever you buy or sell in Greenlight. Nov 9: values from Greenlight screenshots; the $57.23 VOO buy is still a pending request, so it's counted as cash until it's approved.",
+  "as_of": "2026-11-09",
+  "cash": 57.23,
   "holdings": {
     "AAPL": {
       "name": "Apple Inc.",
-      "value": 204.47,
-      "gain": 4.47
+      "value": 209.67,
+      "gain": 9.67
     },
     "NVDA": {
       "name": "NVIDIA Corporation",
-      "value": 171.18,
-      "gain": -28.82
+      "value": 164.04,
+      "gain": -35.96
     },
     "GOOGL": {
       "name": "Alphabet Inc. Class A",
-      "value": 179.41,
-      "gain": -40.59
+      "value": 182.87,
+      "gain": -37.13
     },
     "SPCX": {
       "name": "Space Exploration Technologies",
-      "value": 41.83,
-      "gain": -8.17
+      "value": 44.3,
+      "gain": -5.7
     },
     "QQQ": {
       "name": "Invesco QQQ Trust",
-      "value": 232.2,
-      "gain": -13.6
-    },
-    "VOO": {
-      "name": "Vanguard S&P 500 ETF",
-      "value": 57.23,
-      "gain": 0.0
+      "value": 240.55,
+      "gain": -5.24
     }
   },
-  "you_pct_at_snapshot": -9.47
+  "you_pct_at_snapshot": -8.12
 }
