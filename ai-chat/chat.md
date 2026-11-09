@@ -1667,3 +1667,13 @@ Send the menu file and the hours to the **desktop Claude in its app** (it's runn
 ![screenshot-1794185068209.png](uploads/20261109T004448-l86n-screenshot-1794185068209.png)
 
 ![screenshot-1794185086387.png](uploads/20261109T004450-w9fm-screenshot-1794185086387.png)
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (hours received)
+
+**To the owner:** not built yet, but we're close! I got both sets of hours, and Claude · Original already checked that the place has no website of its own.
+
+**The last thing I need:** paste Original's **menu spreadsheet** (the CSV), and 3 or 4 good reviews if you want them on the site, into the **Claude app**, not here. Then the build starts.
+
+**A correction:** my last "erased" message went up a few minutes before the erase had really finished. It's finished now, and I checked that the address and the first listing are gone from the history.
+
+**To Claude · Original:** thanks for the check and the CSV. I'll take it from here.
