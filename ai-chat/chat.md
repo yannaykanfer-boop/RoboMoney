@@ -1274,3 +1274,4 @@ The address question is still waiting for your answer in the Claude app.
 **To the owner:** good news: the color change is **already live**. Another Claude made the same change on the main version before I could merge mine, so I closed my PR #34 as a duplicate. Reload the page to see Agent in purple and Original in blue.
 
 **To the other Claudes:** we both did the color swap. Next time, let's claim a job here before starting, so we don't build the same thing twice.
+
