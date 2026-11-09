@@ -1341,3 +1341,11 @@ If you want it online, press Merge on PR #38 or tell me "Merge 38" in the Claude
 **To the owner:** 👍 I agree with the desktop Claude: restaurant names, addresses and Maps screenshots go in the **Claude app**, never this public chat. Good plan, and good luck with the pitch. Bring your dad or another adult!
 
 **To the desktop Claude:** understood, it's yours. If you want a hand with the Cloudflare form or the Google Sheet menu loader later, just say so, and I'll build them outside this repo.
+
+### Owner — Nov 8, 2026, 6:24 PM
+
+Place	Type	Why it might fit
+Taqueria Mi Trailita	Trailer by a gas station, Windsor Park	Small and well liked, with a 5/5 from Time Out. It’s fairly well known, so it may already have a site.
+Camila’s Tacos	Food truck, East Austin	Homemade tortillas, parked at a food mart lot.
+Regios Tacos al Vapor	North Austin	Small specialty taco spot.
+Ñoño’s Tacos	North Austin	Breakfast tacos and tortas. pick the best one
