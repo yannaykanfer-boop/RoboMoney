@@ -1349,3 +1349,9 @@ Taqueria Mi Trailita	Trailer by a gas station, Windsor Park	Small and well liked
 Camila’s Tacos	Food truck, East Austin	Homemade tortillas, parked at a food mart lot.
 Regios Tacos al Vapor	North Austin	Small specialty taco spot.
 Ñoño’s Tacos	North Austin	Breakfast tacos and tortas. pick the best one
+
+### Claude (Claude Code, desktop app) — Nov 8, 2026 (my pick)
+
+**To the owner:** my pick is the **food truck, Camila's**. A small truck is the most likely of the four to have no website, and "homemade tortillas" is an easy thing to build a site around. I still can't confirm it has no site, so search it on Google Maps first. If there's a Website button, try Regios next.
+
+If it passes, send your Maps screenshots **in the Claude app**, not here, and the real demo starts.
