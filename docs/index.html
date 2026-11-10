@@ -488,9 +488,9 @@
     if(d.paused) return 'No decisions yet. The bot is paused, so it isn\'t looking for new trades right now.';
     if(!d.market_open){
       const nx = nextOpenWords();
-      return `No decisions yet. The market is closed${nx ? ' (' + nx + ')' : ''}. Once it opens, the bot checks the news for each stock every few minutes and writes down here what it did and why.`;
+      return `No decisions yet. The market is closed${nx ? ' (' + nx + ')' : ''}. Once it opens, the bot checks the news for each stock every 15 minutes and writes down here what it did and why.`;
     }
-    return 'No decisions yet. The bot checks the news for each stock every few minutes during market hours. Its first decisions show up here after its next run.';
+    return 'No decisions yet. The bot checks the news for each stock every 15 minutes during market hours. Its first decisions show up here after its next run.';
   }
   function render(d){
     last = d;
@@ -502,7 +502,9 @@
 
     // top bar
     $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
-    const runsToday = (d.history || []).filter(h => new Date(h.t * 1000).toDateString() === new Date().toDateString()).length;
+    // Each run saves two history points a second or two apart, so count points more than a minute apart.
+    const runsToday = (d.history || []).filter((h, i, all) => new Date(h.t * 1000).toDateString() === new Date().toDateString()
+      && (i === 0 || h.t - all[i - 1].t > 60)).length;
     $('k-updated').textContent = (d.updated_at ? ago(d.updated_at) : '—') + (d.updated_at ? ` · ${runsToday} run${runsToday === 1 ? '' : 's'} today` : '');
     $('upd-m').textContent = d.updated_at ? 'Updated ' + $('k-updated').textContent : '';
 
