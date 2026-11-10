@@ -455,6 +455,11 @@
     const pos = d.positions || {};
     const held = Object.entries(pos).filter(([, p]) => p.qty > 0);
     const parts = [];
+    // Say first if the numbers are old, so a stalled bot doesn't read as "waiting for the market".
+    if(d.updated_at && Date.now() / 1000 - d.updated_at > 20 * 3600){
+      const when = new Date(d.updated_at * 1000).toLocaleDateString([], {weekday: 'long'});
+      parts.push(`⚠ The bot hasn't run since ${when}, so these numbers are old.`);
+    }
     if(d.paused) parts.push(`Paused: not buying anything new${d.pause_note ? ' (' + esc(d.pause_note) + ')' : ''}.`);
     if(held.length){
       const tot = held.reduce((a, [, p]) => a + (p.value || 0), 0), pl = held.reduce((a, [, p]) => a + (p.pnl || 0), 0);
