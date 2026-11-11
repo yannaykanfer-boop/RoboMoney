@@ -61,6 +61,10 @@
   /* phones: the top bar has no room for "Updated", so it gets its own slim line */
   .upd-m{ display:none; padding:5px 14px; font-size:12px; color:var(--dim); border-bottom:1px solid var(--line); }
   .upd-m:empty{ display:none !important; }
+  /* health mark on the BOT tab: ✓ ran recently, • a run or two late, ! hasn't run for 2+ hours (market hours only) */
+  .hmark{ margin-left:6px; font-weight:700; }
+  .hmark:empty{ display:none; }
+  .runnow{ color:var(--blue); text-decoration:none; font-weight:600; margin-left:6px; white-space:nowrap; }
   .share{ font-weight:500; font-size:11px; color:var(--faint); margin-left:4px; }
   .strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .strip div{ background:var(--panel); padding:5px 12px; font-size:11px; color:var(--dim); }
@@ -157,7 +161,7 @@
 <header class="bar">
   <div class="brand">RoboMoney</div>
   <nav class="views" id="tabs">
-    <button data-v="real" class="on">MY MONEY</button><button data-v="bot">BOT · PAPER</button>
+    <button data-v="real" class="on">MY MONEY</button><button data-v="bot">BOT · PAPER<span class="hmark" id="hmark"></span></button>
   </nav>
   <div class="status"><span>Market <b id="k-market">—</b></span><span class="upd">Updated <b id="k-updated">—</b></span></div>
   <a class="chat" href="chat.html">AI Chat</a>
@@ -457,6 +461,9 @@
     return ny.getDay() > 0 && ny.getDay() < 6 && !HOLIDAYS.includes(ymd(ny)) && mins >= 9 * 60 + 30 && mins < 16 * 60;
   }
   // Trust the bot's own flag only when its data is fresh (it knows early closes); otherwise use the clock.
+  // Where the owner presses "Run workflow" to start the bot by hand.
+  const RUN_URL = 'https://github.com/yannaykanfer-boop/RoboMoney/actions/workflows/trade.yml';
+  const runLink = (txt = 'Run now ›') => `<a class="runnow" href="${RUN_URL}" target="_blank" rel="noopener">${txt}</a>`;
   const isOpen = d => d.updated_at && Date.now() / 1000 - d.updated_at < 20 * 60 ? !!d.market_open : marketOpenNow();
 
   // "· opens in 6h 12m": next regular session start (9:30 AM New York, Mon–Fri, skipping NYSE holidays).
@@ -490,7 +497,7 @@
     // Say first if the numbers are old, so a stalled bot doesn't read as "waiting for the market".
     if(d.updated_at && Date.now() / 1000 - d.updated_at > 20 * 3600){
       const when = new Date(d.updated_at * 1000).toLocaleDateString([], {weekday: 'long'});
-      parts.push(`⚠ The bot hasn't run since ${when}, so these numbers are old.`);
+      parts.push(`⚠ The bot hasn't run since ${when}, so these numbers are old. ${runLink('Run it now ›')}`);
     }
     if(d.paused) parts.push(`Paused: not buying anything new${d.pause_note ? ' (' + esc(d.pause_note) + ')' : ''}.`);
     if(held.length){
@@ -545,8 +552,15 @@
     const staleMin = d.updated_at ? Math.min((Date.now() / 1000 - d.updated_at) / 60, sinceOpen) : 0;
     if(!offline && marketOpenNow() && staleMin > 30){
       const cls = staleMin > 120 ? 'down' : 'amber', msg = `⚠ ${ago(d.updated_at)} · bot hasn’t run`;
-      $('k-updated').innerHTML = `<span class="${cls}">${msg}</span>`;
-      $('upd-m').innerHTML = `<span class="${cls}">${msg}</span>`;
+      $('k-updated').innerHTML = `<span class="${cls}">${msg}</span>${runLink()}`;
+      $('upd-m').innerHTML = `<span class="${cls}">${msg}</span> ${runLink()}`;
+    }
+    // Health mark on the BOT tab, so a stuck bot shows without opening the tab. Symbols as well as colors (colorblind-safe).
+    const hm = $('hmark');
+    if(offline || !marketOpenNow() || !d.updated_at){ hm.textContent = ''; hm.className = 'hmark'; hm.title = ''; }
+    else{
+      const [sym, c, t] = staleMin > 120 ? ['!', 'down', 'Bot hasn’t run for 2+ hours'] : staleMin > 30 ? ['•', 'amber', 'Bot is a run or two late'] : ['✓', 'up', 'Bot ran recently'];
+      hm.textContent = sym; hm.className = 'hmark ' + c; hm.title = t; hm.setAttribute('aria-label', t);
     }
 
     renderReal(d);
