@@ -64,7 +64,7 @@
   /* health mark on the BOT tab: ✓ ran recently, • a run or two late, ! hasn't run for 2+ hours (market hours only) */
   .hmark{ margin-left:6px; font-weight:700; }
   .hmark:empty{ display:none; }
-  .runnow{ color:var(--blue); text-decoration:none; font-weight:600; margin-left:6px; white-space:nowrap; }
+  .runnow{ display:inline-block; padding:8px 6px; margin:-8px 0 -8px 2px; color:var(--blue); text-decoration:none; font-weight:600; white-space:nowrap; }
   .share{ font-weight:500; font-size:11px; color:var(--faint); margin-left:4px; }
   .strip{ display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:1px; background:var(--line); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
   .strip div{ background:var(--panel); padding:5px 12px; font-size:11px; color:var(--dim); }
@@ -557,7 +557,9 @@
     }
     // Health mark on the BOT tab, so a stuck bot shows without opening the tab. Symbols as well as colors (colorblind-safe).
     const hm = $('hmark');
-    if(offline || !marketOpenNow() || !d.updated_at){ hm.textContent = ''; hm.className = 'hmark'; hm.title = ''; }
+    // No mark until the bot's first run after today's open, so a ✓ always means it really ran today.
+    const ranSinceOpen = d.updated_at && (Date.now() / 1000 - d.updated_at) / 60 < sinceOpen;
+    if(offline || !marketOpenNow() || !d.updated_at || (!ranSinceOpen && staleMin <= 30)){ hm.textContent = ''; hm.className = 'hmark'; hm.title = ''; }
     else{
       const [sym, c, t] = staleMin > 120 ? ['!', 'down', 'Bot hasn’t run for 2+ hours'] : staleMin > 30 ? ['•', 'amber', 'Bot is a run or two late'] : ['✓', 'up', 'Bot ran recently'];
       hm.textContent = sym; hm.className = 'hmark ' + c; hm.title = t; hm.setAttribute('aria-label', t);
