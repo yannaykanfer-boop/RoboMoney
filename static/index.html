@@ -423,16 +423,25 @@
   }
 
 
+  // NYSE full-day closures (update yearly): skipped like weekends.
+  const HOLIDAYS = ['2026-11-26','2026-12-25','2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31',
+                    '2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24'];
+  const ymd = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+  const nyTime = (now = new Date()) => new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+  // Worked out in the browser, because state.json's market_open is stale when the bot hasn't run.
+  function marketOpenNow(now = new Date()){
+    const ny = nyTime(now), mins = ny.getHours() * 60 + ny.getMinutes();
+    return ny.getDay() > 0 && ny.getDay() < 6 && !HOLIDAYS.includes(ymd(ny)) && mins >= 9 * 60 + 30 && mins < 16 * 60;
+  }
+  // Trust the bot's own flag only when its data is fresh (it knows early closes); otherwise use the clock.
+  const isOpen = d => d.updated_at && Date.now() / 1000 - d.updated_at < 20 * 60 ? !!d.market_open : marketOpenNow();
+
   // "· opens in 6h 12m": next regular session start (9:30 AM New York, Mon–Fri, skipping NYSE holidays).
   function nextOpen(){
     const now = new Date();
-    const ny = new Date(now.toLocaleString('en-US', {timeZone: 'America/New_York'}));
+    const ny = nyTime(now);
     const t = new Date(ny); t.setHours(9, 30, 0, 0);
     if(ny >= t) t.setDate(t.getDate() + 1);
-    // NYSE full-day closures (update yearly): skip these like weekends.
-    const HOLIDAYS = ['2026-11-26','2026-12-25','2027-01-01','2027-01-18','2027-02-15','2027-03-26','2027-05-31',
-                      '2027-06-18','2027-07-05','2027-09-06','2027-11-25','2027-12-24'];
-    const ymd = x => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
     while(t.getDay() === 0 || t.getDay() === 6 || HOLIDAYS.includes(ymd(t))) t.setDate(t.getDate() + 1);
     const mins = Math.round((t - ny) / 60000);
     if(mins <= 0 || mins > 4 * 24 * 60) return '';
@@ -469,7 +478,7 @@
     const nToday = trades.filter(t => new Date(t.t * 1000).toDateString() === today).length;
     const buys = Object.entries(pos).filter(([, p]) => /not yet priced in, buy/.test(p.signal || '')).map(([t]) => esc(t));
     if(buys.length) parts.push(`Good news it hasn't acted on yet: ${buys.join(', ')}.`);
-    else if(!d.market_open) parts.push(`The market is closed, so it's waiting${nextOpenWords() ? ' until it ' + nextOpenWords() : ''}.`);
+    else if(!isOpen(d)) parts.push(`The market is closed, so it's waiting${nextOpenWords() ? ' until it ' + nextOpenWords() : ''}.`);
     else parts.push('No strong news on its stocks, so it\'s waiting.');
     const articles = Object.values(pos).reduce((n, p) => n + (+((p.signal || '').match(/from (\d+) article/) || [0, 0])[1]), 0);
     const ranRecently = d.updated_at && Date.now() / 1000 - d.updated_at < 6 * 3600;
@@ -486,7 +495,7 @@
   // What to say when the bot hasn't logged any decisions yet.
   function emptyDecisions(d){
     if(d.paused) return 'No decisions yet. The bot is paused, so it isn\'t looking for new trades right now.';
-    if(!d.market_open){
+    if(!isOpen(d)){
       const nx = nextOpenWords();
       return `No decisions yet. The market is closed${nx ? ' (' + nx + ')' : ''}. Once it opens, the bot checks the news for each stock every 15 minutes and writes down here what it did and why.`;
     }
@@ -501,12 +510,21 @@
     const pos = d.positions || {};
 
     // top bar
-    $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : d.market_open ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
+    $('k-market').innerHTML = offline ? '<span class="down">OFFLINE</span>' : d.paused ? '<span class="amber">PAUSED</span>' : isOpen(d) ? '<span class="up">OPEN</span>' : `<span class="dim">CLOSED${nextOpen()}</span>`;
     // Each run saves two history points a second or two apart, so count points more than a minute apart.
     const runsToday = (d.history || []).filter((h, i, all) => new Date(h.t * 1000).toDateString() === new Date().toDateString()
       && (i === 0 || h.t - all[i - 1].t > 60)).length;
     $('k-updated').textContent = (d.updated_at ? ago(d.updated_at) : '—') + (d.updated_at ? ` · ${runsToday} run${runsToday === 1 ? '' : 's'} today` : '');
     $('upd-m').textContent = d.updated_at ? 'Updated ' + $('k-updated').textContent : '';
+    // Old-data warning, only while the market is open. Runs are every 15 min, so 30 min means 2 missed.
+    // Measured from the later of the last update and today's 9:30 ET open, so it's quiet right after the open.
+    const nyNow = nyTime(), sinceOpen = nyNow.getHours() * 60 + nyNow.getMinutes() - (9 * 60 + 30);
+    const staleMin = d.updated_at ? Math.min((Date.now() / 1000 - d.updated_at) / 60, sinceOpen) : 0;
+    if(!offline && marketOpenNow() && staleMin > 30){
+      const cls = staleMin > 120 ? 'down' : 'amber', msg = `⚠ ${ago(d.updated_at)} · bot hasn’t run`;
+      $('k-updated').innerHTML = `<span class="${cls}">${msg}</span>`;
+      $('upd-m').innerHTML = `<span class="${cls}">${msg}</span>`;
+    }
 
     renderReal(d);
 
