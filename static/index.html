@@ -416,7 +416,15 @@
       const when = session && !isToday ? 'Last trading day · ' + session.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'}) : 'Today';
       // After a holding is added, the day's chart is older than the total until the next market-hours run.
       const stale = pts.length && Math.abs(rp.total - pts.at(-1).v) > 1;
-      $('hero-change').innerHTML = (pts.length >= 2 ? `<span class="${chg >= 0 ? 'up' : 'down'}">${usd(chg, true)} (${pctS(pct)})</span>` : '') + `<span class="when">${when}${stale ? ' · chart catches up to your total on the next market day' : ''}</span>`;
+      // After the close, if the bot's last run was before 4:00 PM ET, say so: Greenlight shows the closing
+      // prices, so its total can differ by a few dollars from ours.
+      let early = '';
+      if(d.updated_at && !marketOpenNow()){
+        const ran = new Date(d.updated_at * 1000), ny = nyTime(ran), m = ny.getHours() * 60 + ny.getMinutes();
+        if(m >= 9 * 60 + 30 && m < 16 * 60 && (!rp.today || !rp.today.session || ymd(ny) === rp.today.session))
+          early = ` · prices from ${ran.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})}, just before the close, so Greenlight may differ by a few dollars`;
+      }
+      $('hero-change').innerHTML = (pts.length >= 2 ? `<span class="${chg >= 0 ? 'up' : 'down'}">${usd(chg, true)} (${pctS(pct)})</span>` : '') + `<span class="when">${when}${stale ? ' · chart catches up to your total on the next market day' : early}</span>`;
       $('real-legend').innerHTML = '';
       chart($('real-chart-box'), {
         series:[{name:'Value', color: chg >= 0 ? C.green : C.red, pts, fill:true}],
