@@ -522,6 +522,20 @@
     return parts.join(' ');
   }
 
+  // "This week" scorecard: change in the bot's money vs just holding the same stocks, since Monday 12:00 AM New York.
+  // Baseline is the last saved point before Monday (or the week's first point if tracking started mid-week).
+  function weekScore(d){
+    const pts = (d.history || []).filter(h => h.bh != null);
+    if(!pts.length) return null;
+    const ny = nyTime(), monday = new Date(ny);
+    monday.setDate(ny.getDate() - ((ny.getDay() + 6) % 7)); monday.setHours(0, 0, 0, 0);
+    const startTs = Date.now() / 1000 - (ny - monday) / 1000;
+    const before = pts.filter(h => h.t < startTs), during = pts.filter(h => h.t >= startTs);
+    if(!during.length) return null;
+    const base = before.length ? before[before.length - 1] : during[0], end = during[during.length - 1];
+    return {bot: end.equity - base.equity, hold: end.bh - base.bh};
+  }
+
   // What to say when the bot hasn't logged any decisions yet.
   function emptyDecisions(d){
     if(d.paused) return 'No decisions yet. The bot is paused, so it isn\'t looking for new trades right now.';
@@ -594,7 +608,9 @@
     let peak = -Infinity, mdd = 0;
     series(d).forEach(p => { peak = Math.max(peak, p.v); mdd = Math.min(mdd, p.v - peak); });
     const realized = rts.reduce((s, r) => s + (r.usd || 0), 0);
+    const wk = weekScore(d);
     const stats = [
+      ['This week', wk ? `<b><span class="${cls(wk.bot)}">bot ${usd(wk.bot, true)}</span> · <span class="${cls(wk.hold)}">holding ${usd(wk.hold, true)}</span></b>` : '<b class="dim">after this week’s first run</b>'],
       ['Just holding', d.bh_value != null ? `<b class="${cls(d.bh_value - budget)}">${usd(d.bh_value - budget, true)}</b>` : '<b class="dim">starts with the first run</b>'],
       ['Bot vs holding', d.bh_value != null ? `<b class="${cls(equity - d.bh_value)}">${usd(equity - d.bh_value, true)}</b>` : '<b>—</b>'],
       ['Closed trades', `<b>${rts.length}</b>`],
