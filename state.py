@@ -11,6 +11,8 @@ import config
 MAX_HISTORY = 500
 MAX_TRADES = 100
 MAX_DECISIONS = 120
+MAX_DESK_LOG = 400
+MAX_DESK_ALERTS = 50
 
 
 def buy_and_hold_value(stakes, budget, start_prices, prices):
@@ -47,8 +49,17 @@ def load():
 
 
 def save(acct, market_open, positions, new_trades, paused=None, pause_note=None, real=None, real_ref_prices=None,
-         decisions=None, peaks=None):
+         decisions=None, peaks=None, desk=None, desk_log=None, desk_alerts=None):
     data = load()
+
+    # Trading desk: the latest cycle's per-agent verdicts, each agent's running record, and the
+    # alerts where the Head of Desk wants a person to look.
+    if desk is not None:
+        data["desk"] = desk
+    if desk_log:
+        data["desk_log"] = (data.get("desk_log", []) + desk_log)[-MAX_DESK_LOG:]
+    if desk_alerts:
+        data["desk_alerts"] = (data.get("desk_alerts", []) + desk_alerts)[-MAX_DESK_ALERTS:]
 
     if peaks is not None:
         data["peaks"] = peaks
@@ -120,6 +131,7 @@ def save(acct, market_open, positions, new_trades, paused=None, pause_note=None,
     data["cooldown_minutes"] = config.COOLDOWN_MINUTES
     data["stop_loss_pct"] = config.STOP_LOSS_PCT
     data["max_overall_loss"] = config.MAX_OVERALL_LOSS_DOLLARS
+    data["crash_block_pct"] = config.CRASH_BLOCK_PCT
 
     # Write to a temp file then swap it in, so a shutdown mid-write can't corrupt the saved data.
     tmp = config.STATE_FILE + ".tmp"

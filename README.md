@@ -79,6 +79,34 @@ react in milliseconds, and this bot polls every few minutes. Treat it as an
 experiment and paper-trade it for weeks before any real money. Beat
 buy-and-hold first.
 
+## The trading desk (agents)
+
+Every run, each stock goes past a desk of small "agents". Each one has one job, explains its call,
+and keeps its own record on the dashboard's **Desk** tab. They're plain rule-based functions in
+`agents.py`, not LLMs, and none of them can place an order.
+
+| Agent | Job |
+|---|---|
+| **SEARCH** | Finds the trade idea: the news score or price signal for your `STRATEGY`. |
+| **EXIT** | Protects open positions: stop-loss, downtrend stop, trailing stop, time limit. Works even while paused. |
+| **RISK** | House rules: trading window, cooldown, daily trade limit, one news story = one bet. |
+| **CRASH** | Won't buy a stock that has fallen `CRASH_BLOCK_PCT` (3%) from its high in the recent price window, for example a spike that collapsed. `0` turns it off. |
+| **SIZER** | How many dollars: fractional Kelly, capped by total exposure (news strategy). |
+| **HEAD OF DESK** | `desk.py`. Reviews every buy before it reaches the broker and never trades itself. |
+
+The Head of Desk keeps its own count of what happened this run instead of trusting the agents. It
+blocks a buy if SEARCH never proposed it, any agent vetoed it, the size is zero or over that
+stock's stake, the stock already traded this run, the daily limit is reached, or the money put into
+stocks (at cost) would go over `TOTAL_BUDGET`. It **never blocks a sell**, because stopping a
+stop-loss would remove the safety net.
+
+It raises an alert (the ⚑ on the Desk tab) only when a person should look: the circuit breaker
+tripped, it had to block something an agent let through, an order failed, or CRASH stopped a buy
+that SEARCH liked.
+
+Not on this desk: copying "whale" wallets (no clean free equivalent for stocks) and social-media
+hype tracking (needs paid APIs).
+
 ## What this is and isn't
 
 - It's a deterministic rule-based bot, not an LLM deciding trades live —
