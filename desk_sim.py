@@ -193,9 +193,19 @@ def fetch_crypto(symbols, days):
                                 start=start, end=end)
         bars[sym] = [(b.timestamp.timestamp() + BAR_MINUTES * 60, float(b.close))   # bar END time
                      for b in data.get_crypto_bars(req).data.get(sym, [])]
-        nreq = NewsRequest(symbols=news_symbol(sym), start=start - timedelta(hours=config.NEWS_LOOKBACK_HOURS),
-                           end=end, limit=None)
-        raw = news_client.get_news(nreq).data.get("news", [])
+        # Alpaca's news tags for crypto vary, so ask each spelling and keep the one with the most stories.
+        raw, tried = [], {}
+        for name in dict.fromkeys([news_symbol(sym), sym, sym.split("/")[0]]):
+            try:
+                nreq = NewsRequest(symbols=name, start=start - timedelta(hours=config.NEWS_LOOKBACK_HOURS),
+                                   end=end, limit=None)
+                got = news_client.get_news(nreq).data.get("news", [])
+            except Exception as e:                 # some spellings are rejected outright
+                got, tried[name] = [], f"error {type(e).__name__}"
+            tried.setdefault(name, len(got))
+            if len(got) > len(raw):
+                raw = got
+        print(f"  {sym} news by spelling: {tried}")
         articles[sym] = sorted(({"id": getattr(a, "id", None), "t": a.created_at.timestamp(),
                                  "headline": a.headline or "", "summary": a.summary or ""} for a in raw),
                                key=lambda a: a["t"])
