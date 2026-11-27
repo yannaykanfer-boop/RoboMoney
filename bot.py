@@ -339,7 +339,9 @@ def _run_cycle(broker, log, notes):
                real=real, real_ref_prices=real_refs, decisions=decisions,
                desk=desk.report() if market_open else None,
                desk_log=desk.log_entries() if market_open else None, desk_alerts=desk.alerts,
-               peaks={k: v for k, v in peaks.items() if positions.get(k, {}).get("qty", 0) > 0})
+               # Drop a peak only once the position is known to be closed: a stock skipped this run
+               # (no price, or its market is shut) keeps its high for the trailing stop.
+               peaks={k: v for k, v in peaks.items() if positions.get(k, {"qty": 1}).get("qty", 0) > 0})
 
 
 def main():

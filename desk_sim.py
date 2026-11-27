@@ -112,10 +112,19 @@ class SimBroker:
         held = sum(p["qty"] * (self.price(s) or 0) for s, p in self.pos.items())
         return {"equity": self.cash + held, "cash": self.cash, "buying_power": self.cash, "paper": True}
 
-    def recent_closes(self, sym, lookback=30):
-        """The live bot asks for `lookback` one-minute bars; history here is 5-minute bars."""
+    def tradable(self, sym):
+        """Crypto ("BTC/USD") trades around the clock. A stock only while its market is open, which in
+        this history means it has a bar ending in the last 5 minutes (so holidays count as closed)."""
         i = self._i(sym)
         if i < 0:
+            return False
+        return is_crypto(sym) or self.clock.t - self.bars[sym][i][0] < BAR_MINUTES * 60
+
+    def recent_closes(self, sym, lookback=30):
+        """The live bot asks for `lookback` one-minute bars; history here is 5-minute bars. Outside a
+        stock's market hours this returns nothing, so the bot skips that stock for the check."""
+        i = self._i(sym)
+        if i < 0 or not self.tradable(sym):
             return []
         n = max(2, lookback // BAR_MINUTES)
         return [c for _, c in self.bars[sym][max(0, i - n + 1):i + 1]]
@@ -157,6 +166,51 @@ class SimBroker:
         self.fills.append({"t": self.clock.t, "symbol": sym, "side": "SELL", "price": price,
                            "dollars": p["qty"] * price, "cost": p["cost"]})
         return type("Order", (), {"id": f"sim-{len(self.fills)}"})()
+
+
+def is_crypto(sym):
+    return "/" in sym
+
+
+def news_symbol(sym):
+    """Alpaca's news API names crypto without the slash: BTC/USD -> BTCUSD."""
+    return sym.replace("/", "")
+
+
+def fetch_crypto(symbols, days):
+    """5-minute crypto bars (all hours) and their headlines, in the same shape as news_backtest.fetch."""
+    from alpaca.data.historical import CryptoHistoricalDataClient, NewsClient
+    from alpaca.data.requests import CryptoBarsRequest, NewsRequest
+    from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+    from datetime import timezone
+    end = datetime.now(timezone.utc) - timedelta(minutes=20)
+    start = end - timedelta(days=days)
+    data = CryptoHistoricalDataClient(config.API_KEY or None, config.SECRET_KEY or None)
+    news_client = NewsClient(config.API_KEY, config.SECRET_KEY)
+    bars, articles = {}, {}
+    for sym in symbols:
+        req = CryptoBarsRequest(symbol_or_symbols=sym, timeframe=TimeFrame(BAR_MINUTES, TimeFrameUnit.Minute),
+                                start=start, end=end)
+        bars[sym] = [(b.timestamp.timestamp() + BAR_MINUTES * 60, float(b.close))   # bar END time
+                     for b in data.get_crypto_bars(req).data.get(sym, [])]
+        nreq = NewsRequest(symbols=news_symbol(sym), start=start - timedelta(hours=config.NEWS_LOOKBACK_HOURS),
+                           end=end, limit=None)
+        raw = news_client.get_news(nreq).data.get("news", [])
+        articles[sym] = sorted(({"id": getattr(a, "id", None), "t": a.created_at.timestamp(),
+                                 "headline": a.headline or "", "summary": a.summary or ""} for a in raw),
+                               key=lambda a: a["t"])
+        print(f"  {sym}: {len(bars[sym])} price bars, {len(articles[sym])} headlines")
+    return bars, articles
+
+
+def fetch_all(symbols, days):
+    stocks = [s for s in symbols if not is_crypto(s)]
+    coins = [s for s in symbols if is_crypto(s)]
+    bars, articles = news_backtest.fetch(stocks, days) if stocks else ({}, {})
+    if coins:
+        b, a = fetch_crypto(coins, days)
+        bars.update(b); articles.update(a)
+    return bars, articles
 
 
 class Clock:
@@ -360,13 +414,16 @@ def synthetic(symbols, days, seed=7):
     aid = 0
     while day < end:
         day += timedelta(days=1)
-        if day.weekday() >= 5:
-            continue
-        open_t = day.replace(hour=9, minute=30).timestamp()
+        weekend = day.weekday() >= 5
         for s in symbols:
-            crash_at = rnd.randrange(78) if rnd.random() < 0.08 else None
-            for i in range(78):
-                shock = rnd.gauss(0, 0.0015)
+            coin = is_crypto(s)
+            if weekend and not coin:
+                continue
+            open_t = day.timestamp() if coin else day.replace(hour=9, minute=30).timestamp()
+            n_bars = 288 if coin else 78                # crypto trades all day, every day
+            crash_at = rnd.randrange(n_bars) if rnd.random() < 0.08 else None
+            for i in range(n_bars):
+                shock = rnd.gauss(0, 0.0012 if coin else 0.0015)
                 if crash_at is not None and crash_at <= i < crash_at + 3:
                     shock = 0.015                       # spike...
                 elif crash_at is not None and crash_at + 3 <= i < crash_at + 7:
@@ -488,7 +545,7 @@ def main():
         if problems:
             p.error(problems[0] + " (or try --synthetic)")
         print(f"Downloading {args.days} days of prices and headlines for {', '.join(wanted)}...")
-        bars, articles = news_backtest.fetch(wanted, args.days)
+        bars, articles = fetch_all(wanted, args.days)
         source = f"real prices and headlines, last {args.days} days"
     if args.save_data:
         with open(args.save_data, "w") as f:

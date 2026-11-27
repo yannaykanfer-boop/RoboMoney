@@ -48,6 +48,18 @@ class SimBrokerTests(unittest.TestCase):
         self.assertEqual(self.b.recent_closes("AAA", lookback=60), [10.0 + i for i in range(8, 20)])  # 12 bars
         self.assertEqual(len(self.b.recent_closes("AAA", lookback=1)), 2)
 
+    def test_stocks_only_trade_in_market_hours_crypto_always(self):
+        clock = desk_sim.Clock()
+        b = desk_sim.SimBroker({"QQQ": [(1000, 5.0), (1300, 6.0)], "BTC/USD": [(1000, 1.0), (1300, 2.0)]},
+                               {}, 0.0, clock)
+        clock.t = 1300
+        self.assertTrue(b.tradable("QQQ")); self.assertEqual(b.recent_closes("QQQ"), [5.0, 6.0])
+        clock.t = 1300 + 3600                        # an hour after QQQ's last bar: market shut
+        self.assertFalse(b.tradable("QQQ")); self.assertEqual(b.recent_closes("QQQ"), [])
+        self.assertEqual(b.price("QQQ"), 6.0)        # still valued at its last price
+        self.assertTrue(b.tradable("BTC/USD")); self.assertEqual(b.recent_closes("BTC/USD"), [1.0, 2.0])
+        self.assertEqual(desk_sim.news_symbol("BTC/USD"), "BTCUSD")
+
     def test_buy_sell_cash_and_positions(self):
         self.clock.t = 100                                                # price 10
         self.b.buy_notional("AAA", 50.0)
