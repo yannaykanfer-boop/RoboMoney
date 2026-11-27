@@ -6,3 +6,6 @@ state.json
 trading_bot.log
 __pycache__/
 *.pyc
+
+# Downloaded price history (crypto_pullback.py --download), regenerated on demand.
+data/
