@@ -53,6 +53,9 @@ DOWNTREND_STOP_MIN_LOSS_DOLLARS = float(os.getenv("DOWNTREND_STOP_MIN_LOSS_DOLLA
 # is down this many dollars from where it started. Existing positions' own
 # stop-loss/downtrend-stop still work while paused.
 MAX_OVERALL_LOSS_DOLLARS = float(os.getenv("MAX_OVERALL_LOSS_DOLLARS", "30"))
+# CRASH agent: never buy a stock that has fallen this % from its high within the recent price
+# window (something is happening that a headline score may miss). 0 turns the check off.
+CRASH_BLOCK_PCT = float(os.getenv("CRASH_BLOCK_PCT", "3"))
 # Assumed cost per trade, shown on the dashboard only — Alpaca itself charges $0 commission.
 EST_COST_PER_TRADE = float(os.getenv("EST_COST_PER_TRADE", "1.00"))
 

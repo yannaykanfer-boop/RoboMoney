@@ -20,6 +20,8 @@ import state
 import news
 import exits
 import real_portfolio
+import agents
+from desk import HeadOfDesk
 
 LIVE_CONFIRM_PHRASE = "trade real money"
 NY = ZoneInfo("America/New_York")
@@ -99,6 +101,7 @@ def _run_cycle(broker, log, notes):
     cycle_id = int(time.time())  # tags trades opened in this run, so Kelly can count them as one bet
     spent_this_cycle = 0.0
     bought_this_cycle = set()
+    desk = HeadOfDesk(cycle_id)
     last_trade = {}
     today = datetime.now(NY).date()
     trades_today = 0
@@ -156,6 +159,10 @@ def _run_cycle(broker, log, notes):
         pause_note = (f"overall account down ${abs(overall_change):.2f}, "
                        f"past the ${config.MAX_OVERALL_LOSS_DOLLARS} limit — paused automatically")
         log.warning(f"CIRCUIT BREAKER: {pause_note}")
+        # Alert once, when it first trips. A trend "resume" that the breaker cancels in the same run
+        # would otherwise send the same alert every 15 minutes.
+        if not prior.get("paused", False):
+            desk.alert(None, f"Circuit breaker: {pause_note}. New trades are stopped until you look.", level="error")
 
     # Same-story check (news strategy): if one article is the main reason for buying
     # several symbols this cycle, buy only the symbol with the strongest news score.
@@ -180,6 +187,19 @@ def _run_cycle(broker, log, notes):
                          key=lambda s: candidates[s][0])
             same_story_skip[symbol] = winner
 
+    def open_value():
+        """Dollars already in the market from earlier cycles (this cycle's buys are counted separately)."""
+        return news.held_exposure(
+            {sym: (broker.get_position(sym) or {}).get("value", 0.0) for sym in config.SYMBOLS},
+            bought_this_cycle)
+
+    def committed():
+        """Dollars put into open positions in earlier cycles, at cost. The Head of Desk's budget check
+        uses cost, not today's value, so a winning position growing doesn't block new buys."""
+        return news.held_exposure(
+            {sym: (broker.get_position(sym) or {}).get("cost", 0.0) for sym in config.SYMBOLS},
+            bought_this_cycle)
+
     for symbol in config.SYMBOLS:
         try:
             closes, series = price_data[symbol]
@@ -193,80 +213,88 @@ def _run_cycle(broker, log, notes):
 
             if market_open:
                 action, reason = "hold", "signal"
+
+                # SEARCH: what does the strategy want?
                 if not paused:
-                    if config.STRATEGY == "ict":
-                        action = strategy.decide_ict(series, ict_ref_bars, has_position)
-                    elif config.STRATEGY == "news":
-                        action, news_note = news.decide_news(closes, series, has_position)
-                        if action != "hold":
-                            log.info(f"{symbol}: {news_note}")
-                        if action == "buy" and symbol in same_story_skip:
-                            log.info(f"{symbol}: buy skipped — same news story is already behind "
-                                     f"{same_story_skip[symbol]}, so this would be the same bet twice.")
-                            action = "hold"
-                    else:
-                        action = strategy.decide(series, has_position)
+                    found = agents.search(config.STRATEGY, closes, series, has_position, ict_ref_bars)
+                    desk.hear(symbol, found)
+                    action = found.action
+                    if config.STRATEGY == "news" and action != "hold":
+                        log.info(f"{symbol}: {found.note}")
+                    if action == "buy" and symbol in same_story_skip:
+                        veto = agents.same_story(symbol, same_story_skip[symbol])
+                        desk.hear(symbol, veto)
+                        log.info(f"{symbol}: {veto.note}")
+                        action = "hold"
                 elif has_position:
                     log.info(f"{symbol}: trading paused, but still watching for stop-loss/downtrend on this open position.")
 
-                # Stop-loss and downtrend-stop protect open positions even while paused —
-                # pausing means "don't open new trades," not "remove the safety net."
+                # EXIT: protects open positions even while paused. Pausing means "don't open new
+                # trades," not "remove the safety net."
                 if has_position:
                     entry = broker.get_entry_price(symbol)
-                    if entry and price < entry * (1 - config.STOP_LOSS_PCT / 100):
-                        action, reason = "sell", "stop-loss"
-                    elif (entry and config.STRATEGY == "trend"
-                          and (entry - price) * qty >= config.DOWNTREND_STOP_MIN_LOSS_DOLLARS):
-                        fast = strategy.moving_avg(closes, config.FAST_MA)
-                        slow = strategy.moving_avg(closes, config.SLOW_MA)
-                        buf = config.TREND_BUFFER_PCT / 100
-                        if fast is not None and slow is not None and fast < slow * (1 - buf):
-                            action, reason = "sell", "downtrend-stop"
-                    if reason == "signal" and action != "sell" and config.STRATEGY == "news":
-                        exit_reason, peaks[symbol] = exits.check(
-                            entry, price, peaks.get(symbol), exits.opened_at(prior.get("trades", []), symbol),
-                            time.time(), news.sentiment(series)[0])
-                        if exit_reason:
-                            action, reason = "sell", exit_reason
-                            log.info(f"{symbol}: {exit_reason} — high ${peaks[symbol]:.2f}, now ${price:.2f}, "
-                                     f"bought ${entry:.2f}" if entry else f"{symbol}: {exit_reason}")
+                    exit_v, peak = agents.exit_watch(
+                        config.STRATEGY, closes, price, qty, entry, peaks.get(symbol),
+                        exits.opened_at(prior.get("trades", []), symbol), time.time(), series, action)
+                    if peak is not None:
+                        peaks[symbol] = peak
+                    if exit_v:
+                        desk.hear(symbol, exit_v)
+                        log.info(f"{symbol}: {exit_v.note}")
+                        action, reason = "sell", exit_v.tag
 
-                is_override = reason in ("stop-loss", "downtrend-stop", "trailing-stop", "time-limit")
+                is_override = reason in agents.OVERRIDE_TAGS
 
-                if action != "hold" and not is_override and not in_act_window:
-                    window_desc = (f"first {config.ICT_WINDOW_MINUTES} min after open" if config.STRATEGY == "ict"
-                                    else f"last {config.DAILY_ACT_WINDOW_MIN} min of the day")
-                    log.info(f"{symbol}: {action} signal noted outside the {window_desc} — ignored.")
-                    action = "hold"
+                # RISK: trading window, cooldown, daily limit (protective exits skip this).
+                if action != "hold" and not is_override:
+                    in_cooldown = (time.time() - last_trade.get(symbol, 0)) < config.COOLDOWN_MINUTES * 60
+                    rule = agents.risk(action, config.STRATEGY, in_act_window, in_cooldown, trades_today)
+                    desk.hear(symbol, rule)
+                    if rule.action == "veto":
+                        log.info(f"{symbol}: {rule.note}")
+                        action = "hold"
 
-                in_cooldown = (time.time() - last_trade.get(symbol, 0)) < config.COOLDOWN_MINUTES * 60
-                if action != "hold" and in_cooldown and not is_override:
-                    log.info(f"{symbol}: {action} signal ignored (cooldown, avoids churning).")
-                    action = "hold"
+                # CRASH: don't buy into a stock that is falling hard right now.
+                if action == "buy":
+                    crash = agents.crash_guard(closes)
+                    if crash:
+                        desk.hear(symbol, crash)
+                        log.info(f"{symbol}: {crash.note}")
+                        # One alert per stock per hour: a crash lasts several checks.
+                        if not any(x.get("symbol") == symbol and "CRASH stopped" in x.get("message", "")
+                                   and time.time() - x.get("t", 0) < 3600 for x in prior.get("desk_alerts", [])):
+                            desk.alert(symbol, f"SEARCH wanted to buy {symbol}, but CRASH stopped it: "
+                                               f"{crash.note.split('— ', 1)[-1]} Worth checking the news yourself.",
+                                       level="info")
+                        action = "hold"
 
-                if action != "hold" and not is_override and trades_today >= config.MAX_TRADES_PER_DAY:
-                    log.info(f"{symbol}: {action} signal ignored (daily limit of {config.MAX_TRADES_PER_DAY} trades reached).")
-                    action = "hold"
-
+                # SIZER: how many dollars.
+                stake = config.STAKES[symbol]
                 if action == "buy" and config.STRATEGY == "news":
-                    stake, kelly_note = news.kelly_dollars(prior.get("trades", []) + new_trades,
-                                                           config.STAKES[symbol], config.TOTAL_BUDGET)
-                    log.info(f"{symbol}: {kelly_note}")
-                    if stake > 0:
-                        open_value = news.held_exposure(
-                            {sym: (broker.get_position(sym) or {}).get("value", 0.0) for sym in config.SYMBOLS},
-                            bought_this_cycle)
-                        stake, cap_note = news.cap_to_exposure(stake, open_value, spent_this_cycle, config.TOTAL_BUDGET)
-                        log.info(f"{symbol}: {cap_note}")
+                    stake, sized = agents.size_news(prior.get("trades", []) + new_trades, config.STAKES[symbol],
+                                                    config.TOTAL_BUDGET, open_value, spent_this_cycle)
+                    desk.hear(symbol, sized)
+                    for part in sized.note.split(" · "):
+                        log.info(f"{symbol}: {part}")
                     if stake <= 0:
                         action = "hold"
 
+                # HEAD OF DESK: final review. Buys can be blocked; sells are only recorded.
                 if action == "buy":
-                    stake = config.STAKES[symbol] if config.STRATEGY != "news" else stake
+                    ok, why = desk.review_buy(symbol, stake, price, committed(), trades_today)
+                    if not ok:
+                        log.warning(f"{symbol}: HEAD OF DESK blocked buy — {why}")
+                        action = "hold"
+                elif action == "sell":
+                    desk.review_sell(symbol, reason)
+
+                # EXECUTION: the only place orders are sent.
+                if action == "buy":
                     order = broker.buy_notional(symbol, stake)
                     log.info(f"{symbol}: BUY ~${stake} (order id {order.id})")
                     new_trades.append({"t": time.time(), "symbol": symbol, "side": "BUY", "price": price, "dollars": stake,
                                        "cycle": cycle_id, "reason": reason, "est_cost": config.EST_COST_PER_TRADE})
+                    desk.filled(symbol, "BUY", stake)
                     spent_this_cycle += stake
                     bought_this_cycle.add(symbol)
                     last_trade[symbol] = time.time()
@@ -277,12 +305,14 @@ def _run_cycle(broker, log, notes):
                     log.info(f"{symbol}: SELL all ({qty} shares, {reason}, order id {order.id if order else 'n/a'})")
                     new_trades.append({"t": time.time(), "symbol": symbol, "side": "SELL", "price": price, "qty": qty,
                                        "reason": reason, "est_cost": config.EST_COST_PER_TRADE})
+                    desk.filled(symbol, "SELL")
                     last_trade[symbol] = time.time()
                     trades_today += 1
                     qty = 0
                     peaks.pop(symbol, None)
                 else:
                     log.info(f"{symbol}: hold (price {price:.2f}, position {qty})")
+                desk.done(symbol, action)
 
             pos = broker.get_position(symbol) if qty > 0 else None
             positions[symbol] = {
@@ -299,6 +329,7 @@ def _run_cycle(broker, log, notes):
 
         except Exception as e:
             log.error(f"{symbol}: error during cycle — {e}")
+            desk.alert(symbol, f"error during cycle — {e}", level="error")
 
     real, real_refs = real_portfolio.update(broker, prior, log)
     if real:
@@ -309,7 +340,11 @@ def _run_cycle(broker, log, notes):
                                               {s: p.get("signal") for s, p in positions.items()})
     state.save(acct, market_open, positions, new_trades, paused=paused, pause_note=pause_note,
                real=real, real_ref_prices=real_refs, decisions=decisions,
-               peaks={k: v for k, v in peaks.items() if positions.get(k, {}).get("qty", 0) > 0})
+               desk=desk.report() if market_open else None,
+               desk_log=desk.log_entries() if market_open else None, desk_alerts=desk.alerts,
+               # Drop a peak only once the position is known to be closed: a stock skipped this run
+               # (no price, or its market is shut) keeps its high for the trailing stop.
+               peaks={k: v for k, v in peaks.items() if positions.get(k, {"qty": 1}).get("qty", 0) > 0})
 
 
 def main():

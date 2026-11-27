@@ -1,0 +1,55 @@
+name: Desk sim
+
+# Replays real past prices and headlines through the real bot (all agents + Head of Desk) with a
+# simulated broker. Read-only: it downloads market data with the Alpaca keys and never places an
+# order. Results show on the run's Summary page.
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: "Days of history to replay"
+        default: "90"
+  pull_request:
+    paths:
+      - agents.py
+      - desk.py
+      - bot.py
+      - news.py
+      - exits.py
+      - config.py
+      - desk_sim.py
+      - .github/workflows/desk-sim.yml
+      - .github/workflows/trade.yml
+
+permissions:
+  contents: read
+
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    environment: default
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install -r requirements.txt
+
+      - name: Offline tests
+        run: python -m unittest discover tests
+
+      - name: Run the desk sim (real history, CRASH on vs off)
+        env:
+          ALPACA_API_KEY: ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
+          ALPACA_PAPER: "true"
+          DAYS: ${{ github.event.inputs.days || '90' }}
+        run: |
+          # --print-data puts the compressed history in this log (stderr, not the summary) so the
+          # simulator page can be built from it.
+          python desk_sim.py --days "$DAYS" --compare --print-data \
+            --extra-symbols GOOG,MSFT,AMZN,META,TSLA,AMD,BTC/USD,ETH/USD,SOL/USD | tee sim.txt
+          { echo '## Trading desk sim'; echo '```'; cat sim.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

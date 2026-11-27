@@ -81,5 +81,21 @@ class CycleTests(unittest.TestCase):
             config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE = old
 
 
+class PeakKeptWhenSkippedTests(unittest.TestCase):
+    def test_peak_survives_a_run_without_price_data(self):
+        import bot
+        tmp = tempfile.mkdtemp()
+        old = (config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE)
+        try:
+            config.STRATEGY, config.STATE_FILE = "news", os.path.join(tmp, "s.json")
+            config.STAKES = {"AAPL": 200.0}; config.SYMBOLS = ["AAPL"]
+            json.dump({"history": [], "peaks": {"AAPL": 105.0}, "trades": []}, open(config.STATE_FILE, "w"))
+            b = Broker(); b.recent_closes = lambda s, lookback=30: []      # price feed down this run
+            bot.run_cycle(b, logging.getLogger("test-exits"))
+            self.assertEqual(json.load(open(config.STATE_FILE))["peaks"], {"AAPL": 105.0})
+        finally:
+            config.STRATEGY, config.STAKES, config.SYMBOLS, config.STATE_FILE = old
+
+
 if __name__ == "__main__":
     unittest.main()

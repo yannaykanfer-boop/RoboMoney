@@ -1,0 +1,619 @@
+"""Trading desk sim: replays past prices and headlines through the real bot, agents and all.
+
+Unlike news_backtest.py (which re-implements the rules in a simplified loop), this drives the live
+code itself: bot.run_cycle with every agent, the Head of Desk, Kelly sizing, the exposure cap,
+cooldowns, daily limits and the circuit breaker. Only the broker and the clock are simulated. It
+never touches your account and never places an order.
+
+  * Prices: 5-minute bars (Alpaca's free IEX feed). Orders "fill" at the last bar's close, so real
+    fills would be a little worse.
+  * Settings: the same ones the live bot uses, read from .github/workflows/trade.yml.
+  * Checks: every 15 minutes of market hours, like the scheduled workflow.
+
+Run:
+  python desk_sim.py --days 90              download real history (needs Alpaca keys in .env)
+  python desk_sim.py --days 90 --compare    also run with CRASH off, to see what CRASH changes
+  python desk_sim.py --synthetic            made-up data, no keys: checks the plumbing, NOT the strategy
+  python desk_sim.py --save-data h.json     keep the download;  --data h.json  to replay it offline
+"""
+
+import argparse
+import base64
+import bisect
+import gzip
+import hashlib
+import json
+import logging
+import os
+import random
+import re
+import sys
+import tempfile
+import time
+from datetime import datetime, timedelta
+from unittest import mock
+from zoneinfo import ZoneInfo
+
+import config
+import desk
+import news_backtest
+
+NY = ZoneInfo("America/New_York")
+BAR_MINUTES = news_backtest.BAR_MINUTES
+CRYPTO_FEE_PCT = 0.25        # Alpaca's base crypto trading fee per fill; stock trades are commission-free
+SIM_STRATEGIES = ("news", "trend", "meanrev")
+WORKFLOW = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".github", "workflows", "trade.yml")
+
+
+# ---------------- settings ----------------
+
+def live_settings(path=WORKFLOW):
+    """The KEY: "value" settings from the live workflow's env block (secrets are skipped)."""
+    out = {}
+    with open(path) as f:
+        for line in f:
+            m = re.match(r'\s+([A-Z][A-Z0-9_]+):\s*"([^"]*)"\s*$', line)
+            if m:
+                out[m.group(1)] = m.group(2)
+    return out
+
+
+def apply_settings(env):
+    """Set config values from {NAME: "text"} the way config.py would have read them. Returns the old
+    values so they can be put back."""
+    old = {}
+    for k, v in env.items():
+        if k == "STAKES":
+            old.update(STAKES=config.STAKES, SYMBOLS=config.SYMBOLS)
+            config.STAKES = config._parse_stakes(v, 100.0)
+            config.SYMBOLS = list(config.STAKES)
+        elif k == "STRATEGY":
+            old[k] = config.STRATEGY
+            config.STRATEGY = v.strip().lower()
+        elif hasattr(config, k) and isinstance(getattr(config, k), (int, float)) and not isinstance(getattr(config, k), bool):
+            old[k] = getattr(config, k)
+            setattr(config, k, type(old[k])(float(v)) if isinstance(old[k], int) else float(v))
+    return old
+
+
+def restore_settings(old):
+    for k, v in old.items():
+        setattr(config, k, v)
+
+
+# ---------------- simulated broker ----------------
+
+class SimBroker:
+    """Looks like broker.Broker to bot.py, but answers from history as of the sim clock."""
+
+    def __init__(self, bars, articles, cash, clock):
+        self.bars, self.articles, self.cash, self.clock = bars, articles, cash, clock
+        self.times = {s: [t for t, _ in rows] for s, rows in bars.items()}
+        self.pos = {}      # symbol -> {"qty", "cost"}
+        self.fills = []    # every simulated order
+
+    def _i(self, sym):
+        return bisect.bisect_right(self.times.get(sym, []), self.clock.t) - 1
+
+    def price(self, sym):
+        i = self._i(sym)
+        return self.bars[sym][i][1] if i >= 0 else None
+
+    def is_market_open(self):
+        return True
+
+    def minutes_to_close(self):
+        ny = datetime.fromtimestamp(self.clock.t, NY)
+        return 16 * 60 - (ny.hour * 60 + ny.minute)
+
+    def minutes_since_open(self):
+        ny = datetime.fromtimestamp(self.clock.t, NY)
+        return ny.hour * 60 + ny.minute - (9 * 60 + 30)
+
+    def account_summary(self):
+        held = sum(p["qty"] * (self.price(s) or 0) for s, p in self.pos.items())
+        return {"equity": self.cash + held, "cash": self.cash, "buying_power": self.cash, "paper": True}
+
+    def tradable(self, sym):
+        """Crypto ("BTC/USD") trades around the clock. A stock only while its market is open, which in
+        this history means it has a bar ending in the last 5 minutes (so holidays count as closed)."""
+        i = self._i(sym)
+        if i < 0:
+            return False
+        return is_crypto(sym) or self.clock.t - self.bars[sym][i][0] < BAR_MINUTES * 60
+
+    def recent_closes(self, sym, lookback=30):
+        """The live bot asks for `lookback` one-minute bars; history here is 5-minute bars. Outside a
+        stock's market hours this returns nothing, so the bot skips that stock for the check."""
+        i = self._i(sym)
+        if i < 0 or not self.tradable(sym):
+            return []
+        # The news strategy's window is a time span (an hour of 1-minute bars = 12 five-minute bars).
+        # The price strategies count bars, so here they run on 5-minute bars instead of 1-minute ones.
+        n = max(2, lookback // BAR_MINUTES) if config.STRATEGY == "news" else lookback
+        return [c for _, c in self.bars[sym][max(0, i - n + 1):i + 1]]
+
+    def recent_news(self, sym, hours=24, limit=50):
+        lo, hi = self.clock.t - hours * 3600, self.clock.t
+        hits = [a for a in self.articles.get(sym, []) if lo < a["t"] <= hi]
+        return sorted(hits, key=lambda a: a["t"], reverse=True)[:limit]
+
+    def get_position_qty(self, sym):
+        return self.pos.get(sym, {}).get("qty", 0.0)
+
+    def get_entry_price(self, sym):
+        p = self.pos.get(sym)
+        return p["cost"] / p["qty"] if p and p["qty"] else None
+
+    def get_position(self, sym):
+        p, price = self.pos.get(sym), self.price(sym)
+        if not p or not p["qty"] or price is None:
+            return None
+        value = p["qty"] * price
+        return {"qty": p["qty"], "entry": p["cost"] / p["qty"], "cost": p["cost"], "value": value,
+                "pnl": value - p["cost"]}
+
+    def fee(self, sym):
+        return CRYPTO_FEE_PCT / 100 if is_crypto(sym) else 0.0
+
+    def buy_notional(self, sym, dollars):
+        price = self.price(sym)
+        p = self.pos.setdefault(sym, {"qty": 0.0, "cost": 0.0})
+        p["qty"] += dollars * (1 - self.fee(sym)) / price
+        p["cost"] += dollars
+        self.cash -= dollars
+        self.fills.append({"t": self.clock.t, "symbol": sym, "side": "BUY", "price": price, "dollars": dollars})
+        return type("Order", (), {"id": f"sim-{len(self.fills)}"})()
+
+    def sell_all(self, sym):
+        p, price = self.pos.pop(sym, None), self.price(sym)
+        if not p:
+            return None
+        proceeds = p["qty"] * price * (1 - self.fee(sym))
+        self.cash += proceeds
+        self.fills.append({"t": self.clock.t, "symbol": sym, "side": "SELL", "price": price,
+                           "dollars": proceeds, "cost": p["cost"]})
+        return type("Order", (), {"id": f"sim-{len(self.fills)}"})()
+
+
+def is_crypto(sym):
+    return "/" in sym
+
+
+def news_symbol(sym):
+    """Alpaca's news API names crypto without the slash: BTC/USD -> BTCUSD."""
+    return sym.replace("/", "")
+
+
+def fetch_crypto(symbols, days):
+    """5-minute crypto bars (all hours) and their headlines, in the same shape as news_backtest.fetch."""
+    from alpaca.data.historical import CryptoHistoricalDataClient, NewsClient
+    from alpaca.data.requests import CryptoBarsRequest, NewsRequest
+    from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
+    from datetime import timezone
+    end = datetime.now(timezone.utc) - timedelta(minutes=20)
+    start = end - timedelta(days=days)
+    data = CryptoHistoricalDataClient(config.API_KEY or None, config.SECRET_KEY or None)
+    news_client = NewsClient(config.API_KEY, config.SECRET_KEY)
+    bars, articles = {}, {}
+    for sym in symbols:
+        req = CryptoBarsRequest(symbol_or_symbols=sym, timeframe=TimeFrame(BAR_MINUTES, TimeFrameUnit.Minute),
+                                start=start, end=end)
+        bars[sym] = [(b.timestamp.timestamp() + BAR_MINUTES * 60, float(b.close))   # bar END time
+                     for b in data.get_crypto_bars(req).data.get(sym, [])]
+        # Alpaca's news tags for crypto vary, so ask each spelling and keep the one with the most stories.
+        raw, tried = [], {}
+        for name in dict.fromkeys([news_symbol(sym), sym, sym.split("/")[0]]):
+            try:
+                nreq = NewsRequest(symbols=name, start=start - timedelta(hours=config.NEWS_LOOKBACK_HOURS),
+                                   end=end, limit=None)
+                got = news_client.get_news(nreq).data.get("news", [])
+            except Exception as e:                 # some spellings are rejected outright
+                got, tried[name] = [], f"error {type(e).__name__}"
+            tried.setdefault(name, len(got))
+            if len(got) > len(raw):
+                raw = got
+        print(f"  {sym} news by spelling: {tried}")
+        articles[sym] = sorted(({"id": getattr(a, "id", None), "t": a.created_at.timestamp(),
+                                 "headline": a.headline or "", "summary": a.summary or ""} for a in raw),
+                               key=lambda a: a["t"])
+        print(f"  {sym}: {len(bars[sym])} price bars, {len(articles[sym])} headlines")
+    return bars, articles
+
+
+def fetch_all(symbols, days):
+    stocks = [s for s in symbols if not is_crypto(s)]
+    coins = [s for s in symbols if is_crypto(s)]
+    bars, articles = news_backtest.fetch(stocks, days) if stocks else ({}, {})
+    if coins:
+        b, a = fetch_crypto(coins, days)
+        bars.update(b); articles.update(a)
+    return bars, articles
+
+
+class Clock:
+    t = 0.0
+
+
+def _sim_datetime(clock):
+    class SimDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime.fromtimestamp(clock.t, tz)
+    return SimDatetime
+
+
+# ---------------- running ----------------
+
+def run(bars, articles, step_bars=3, crash_pct=None):
+    """Replays history through bot.run_cycle. Returns a result dict (see summarize)."""
+    import bot
+    if config.STRATEGY not in SIM_STRATEGIES:
+        raise SystemExit(f"The sim supports these strategies: {', '.join(SIM_STRATEGIES)}.")
+    old_crash = config.CRASH_BLOCK_PCT
+    old_state = config.STATE_FILE
+    if crash_pct is not None:
+        config.CRASH_BLOCK_PCT = crash_pct
+    clock = Clock()
+    broker = SimBroker(bars, articles, config.TOTAL_BUDGET, clock)
+    log = logging.getLogger("desk-sim")
+    log.propagate = False                      # the desk's own record is the report; keep the console quiet
+    tmp = tempfile.mkdtemp()
+    config.STATE_FILE = os.path.join(tmp, "state.json")
+    times = sorted({t for rows in bars.values() for t, _ in rows})
+    verdicts, alerts, paused_at, equity = [], [], None, []
+
+    real_alert = desk.HeadOfDesk.alert
+
+    def spy_alert(self, symbol, message, level="warn"):
+        real_alert(self, symbol, message, level)
+        alerts.append(dict(self.alerts[-1], t=clock.t))
+
+    try:
+        with mock.patch("time.time", lambda: clock.t), \
+             mock.patch.object(bot, "datetime", _sim_datetime(clock)), \
+             mock.patch.object(bot.real_portfolio, "update", lambda *a: (None, None)), \
+             mock.patch.object(desk.HeadOfDesk, "alert", spy_alert):
+            for k, t in enumerate(times):
+                if k % step_bars:
+                    continue
+                clock.t = t
+                bot.run_cycle(broker, log)
+                equity.append((t, round(broker.account_summary()["equity"], 2)))
+                with open(config.STATE_FILE) as f:
+                    st = json.load(f)
+                if st.get("paused") and paused_at is None:
+                    paused_at = t
+                rep = st.get("desk") or {}
+                if rep.get("t") == int(t):
+                    for sym, r in rep.get("symbols", {}).items():
+                        verdicts.extend(dict(v, symbol=sym, t=t) for v in r["verdicts"])
+    finally:
+        config.CRASH_BLOCK_PCT = old_crash
+        config.STATE_FILE = old_state
+
+    last = {s: rows[-1][1] for s, rows in bars.items() if rows}
+    clock.t = max(times) if times else 0
+    return {"equity": equity, "fills": broker.fills, "verdicts": verdicts, "alerts": alerts, "paused_at": paused_at,
+            "checks": len(range(0, len(times), step_bars)), "final_equity": broker.account_summary()["equity"],
+            "open": {s: dict(p, price=last.get(s)) for s, p in broker.pos.items()}}
+
+
+def round_trips(fills, open_pos):
+    """Pairs each BUY with the SELL that closed it. Positions still open are valued at the last price."""
+    out, opened = [], {}
+    for f in fills:
+        if f["side"] == "BUY":
+            opened.setdefault(f["symbol"], []).append(f)
+        else:
+            buys = opened.pop(f["symbol"], [])
+            out.append({"symbol": f["symbol"], "buy_t": buys[0]["t"] if buys else None, "sell_t": f["t"],
+                        "pnl": f["dollars"] - f["cost"], "open": False})
+    for sym, p in open_pos.items():
+        buys = opened.get(sym, [])
+        out.append({"symbol": sym, "buy_t": buys[0]["t"] if buys else None, "sell_t": None,
+                    "pnl": p["qty"] * p["price"] - p["cost"], "open": True})
+    return out
+
+
+SCORE = re.compile(r"news score ([+-]?\d+\.\d+) from (\d+) article")
+
+
+def why_search(verdicts):
+    """Per stock, from SEARCH's own notes: best news score seen, how often it reached the buy line,
+    and what SEARCH said at those moments. Answers "why didn't it trade?"."""
+    out = {}
+    for v in verdicts:
+        if v["agent"] != "search":
+            continue
+        m = SCORE.search(v.get("note", ""))
+        if not m:
+            continue
+        w = out.setdefault(v["symbol"], {"checks": 0, "with_news": 0, "best": None, "at_line": {}})
+        score, n = float(m.group(1)), int(m.group(2))
+        w["checks"] += 1
+        w["with_news"] += n > 0
+        w["best"] = score if w["best"] is None else max(w["best"], score)
+        if score >= config.NEWS_BUY_THRESHOLD:
+            said = ("bought" if v["action"] == "buy" else "already priced in" if "priced in" in v["note"]
+                    else "price falling" if "disagrees" in v["note"]
+                    else "already holding" if v["action"] == "hold" else v["action"])
+            w["at_line"][said] = w["at_line"].get(said, 0) + 1
+    return out
+
+
+def summarize(res, bars):
+    budget = config.TOTAL_BUDGET
+    rts = round_trips(res["fills"], res["open"])
+    closed = [r for r in rts if not r["open"]]
+    hold = sum(config.STAKES.get(s, 0) * (rows[-1][1] / rows[0][1] - 1) for s, rows in bars.items() if rows)
+    agents = {}
+    for v in res["verdicts"]:
+        a = agents.setdefault(v["agent"], {"calls": 0, "by": {}})
+        a["calls"] += 1
+        key = v.get("tag") or v["action"]
+        if v["agent"] == "desk":
+            key = ("approved " if v["action"] == "approve" else "blocked ") + \
+                  ("buy" if "buy" in v.get("note", "") else "sell")
+        a["by"][key] = a["by"].get(key, 0) + 1
+    return {"why": why_search(res["verdicts"]), "pnl": res["final_equity"] - budget, "hold_pnl": hold, "budget": budget,
+            "round_trips": len(closed), "wins": sum(r["pnl"] > 0 for r in closed),
+            "still_open": [r for r in rts if r["open"]], "agents": agents, "alerts": res["alerts"],
+            "paused_at": res["paused_at"], "checks": res["checks"], "buys": sum(f["side"] == "BUY" for f in res["fills"])}
+
+
+# ---------------- report ----------------
+
+AGENT_ORDER = [("search", "SEARCH"), ("exit", "EXIT"), ("risk", "RISK"), ("crash", "CRASH"),
+               ("sizer", "SIZER"), ("desk", "HEAD OF DESK")]
+
+
+def _day(t):
+    return datetime.fromtimestamp(t, NY).strftime("%b %d")
+
+
+def report(s, bars, title):
+    t0 = min(rows[0][0] for rows in bars.values() if rows)
+    t1 = max(rows[-1][0] for rows in bars.values() if rows)
+    pct = lambda x: f"{x / s['budget'] * 100:+.1f}%"
+    lines = [title, f"  {_day(t0)} to {_day(t1)} · {s['checks']:,} checks · ${s['budget']:.2f} budget · "
+                    f"stocks: {', '.join(f'{k} ${v:g}' for k, v in config.STAKES.items())}", ""]
+    wr = f"{s['wins'] / s['round_trips']:.0%}" if s["round_trips"] else "—"
+    lines += [f"  Bot:           ${s['pnl']:+.2f}  ({pct(s['pnl'])} of budget)",
+              f"  Just holding:  ${s['hold_pnl']:+.2f}  ({pct(s['hold_pnl'])})",
+              f"  Trades:        {s['buys']} buys, {s['round_trips']} closed, {s['wins']} won ({wr})"
+              + (f", {len(s['still_open'])} still open" if s["still_open"] else "")]
+    lines.append("  Circuit breaker: " + (f"tripped {_day(s['paused_at'])}. The bot stopped opening trades "
+                                          f"after that and waits for you, just like live."
+                                          if s["paused_at"] else "never tripped"))
+    lines += ["", "  The desk (each agent's calls; vetoes and exits by reason):"]
+    for key, name in AGENT_ORDER:
+        a = s["agents"].get(key)
+        if not a:
+            note = "turned off" if key == "crash" and config.CRASH_BLOCK_PCT <= 0 else "never needed"
+            lines.append(f"    {name:<13} {note}")
+            continue
+        by = ", ".join(f"{k} {n}" for k, n in sorted(a["by"].items(), key=lambda kv: -kv[1]))
+        lines.append(f"    {name:<13} {a['calls']:>6,}  {by}")
+    if s.get("why"):
+        lines += ["", f"  Why SEARCH did or didn't buy (buy line: news score +{config.NEWS_BUY_THRESHOLD:.2f}):"]
+        for sym in config.SYMBOLS:
+            w = s["why"].get(sym)
+            if not w:
+                continue
+            at = sum(w["at_line"].values())
+            detail = ", ".join(f"{k} {n}" for k, n in w["at_line"].items())
+            lines.append(f"    {sym:<6} headlines at {w['with_news'] / w['checks']:.0%} of checks · best score "
+                         f"{w['best']:+.2f} · at/over the line {at} time{'s' if at != 1 else ''}"
+                         + (f" ({detail})" if detail else ""))
+    alerts = s["alerts"]
+    lines.append(f"\n  Alerts to you: {len(alerts)}")
+    for a in alerts[:8]:
+        lines.append(f"    {_day(a['t'])}  {a.get('symbol') or 'DESK'}: {a['message'][:150]}")
+    if len(alerts) > 8:
+        lines.append(f"    … and {len(alerts) - 8} more")
+    return "\n".join(lines)
+
+
+# ---------------- data ----------------
+
+def synthetic(symbols, days, seed=7):
+    """Made-up 5-minute prices and headlines, with a few spike-and-crash episodes so every agent gets
+    exercised. There is no real edge built in: results say nothing about the strategy."""
+    rnd = random.Random(seed)
+    end = datetime.now(NY).replace(hour=0, minute=0, second=0, microsecond=0)
+    day = end - timedelta(days=days)
+    bars = {s: [] for s in symbols}
+    articles = {s: [] for s in symbols}
+    price = {s: rnd.uniform(100, 600) for s in symbols}
+    good = ["{s} beats estimates, raises guidance", "Analysts upgrade {s}", "{s} posts record revenue"]
+    bad = ["{s} misses estimates", "{s} faces investigation", "Analysts downgrade {s}"]
+    meh = ["{s} to present at conference", "{s} announces dividend date"]
+    aid = 0
+    while day < end:
+        day += timedelta(days=1)
+        weekend = day.weekday() >= 5
+        for s in symbols:
+            coin = is_crypto(s)
+            if weekend and not coin:
+                continue
+            open_t = day.timestamp() if coin else day.replace(hour=9, minute=30).timestamp()
+            n_bars = 288 if coin else 78                # crypto trades all day, every day
+            crash_at = rnd.randrange(n_bars) if rnd.random() < 0.08 else None
+            for i in range(n_bars):
+                shock = rnd.gauss(0, 0.0012 if coin else 0.0015)
+                if crash_at is not None and crash_at <= i < crash_at + 3:
+                    shock = 0.015                       # spike...
+                elif crash_at is not None and crash_at + 3 <= i < crash_at + 7:
+                    shock = -0.011                      # ...and collapse back to about where it started
+                price[s] *= 1 + shock
+                bars[s].append((open_t + (i + 1) * BAR_MINUTES * 60, round(price[s], 2)))
+            if crash_at is not None:                    # the spike comes with good headlines
+                for j in range(2):
+                    aid += 1
+                    articles[s].append({"id": aid, "t": open_t + (crash_at + j) * BAR_MINUTES * 60,
+                                        "headline": good[j].format(s=s), "summary": ""})
+            for _ in range(rnd.randint(0, 3)):
+                aid += 1
+                pool = rnd.choice([good, good, bad, meh])
+                articles[s].append({"id": aid, "t": open_t + rnd.uniform(-6, 6.5) * 3600,
+                                    "headline": rnd.choice(pool).format(s=s), "summary": ""})
+    for s in symbols:
+        articles[s].sort(key=lambda a: a["t"])
+    return bars, articles
+
+
+DATA_BEGIN, DATA_END = "=====DESK-SIM-DATA-BEGIN=====", "=====DESK-SIM-DATA-END====="
+
+
+def encode_history(bars, articles):
+    """History as compressed text lines, so a CI log can carry it (see decode_history)."""
+    raw = json.dumps({"bars": {s: [[int(t), round(c, 4)] for t, c in rows] for s, rows in bars.items()},
+                      "articles": articles}, separators=(",", ":")).encode()
+    blob = base64.b64encode(gzip.compress(raw, 9)).decode()
+    return [DATA_BEGIN, f"sha256={hashlib.sha256(raw).hexdigest()}"] + \
+           [blob[i:i + 2000] for i in range(0, len(blob), 2000)] + [DATA_END]
+
+
+def decode_history(text):
+    """Reads the block encode_history printed, from a log (timestamps in front of lines are fine)."""
+    lines, inside, digest = [], False, None
+    for line in text.splitlines():
+        body = line.split(" ", 1)[1] if re.match(r"^\d{4}-\d\d-\d\dT\S+Z ", line) else line
+        if body.strip() == DATA_BEGIN:
+            inside, lines = True, []
+        elif body.strip() == DATA_END:
+            break
+        elif inside and body.startswith("sha256="):
+            digest = body.strip()[7:]
+        elif inside:
+            lines.append(body.strip())
+    raw = gzip.decompress(base64.b64decode("".join(lines)))
+    if digest and hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError("history block is damaged (checksum mismatch)")
+    d = json.loads(raw)
+    return {s: [tuple(r) for r in rows] for s, rows in d["bars"].items()}, d["articles"]
+
+
+def parse_variant(text):
+    """'Label|KEY=VALUE;KEY=VALUE' -> (label, {KEY: VALUE})."""
+    label, _, sets = text.partition("|")
+    env = {}
+    for part in filter(None, (x.strip() for x in sets.split(";"))):
+        k, _, v = part.partition("=")
+        env[k.strip().upper()] = v.strip()
+    return label.strip() or "variant", env
+
+
+def run_variant(label, env, bars, articles, step, crash_pct=None):
+    """Runs one setting change on top of the current settings, on the stocks those settings trade."""
+    old = apply_settings(env)
+    try:
+        b = {s: bars[s] for s in config.SYMBOLS if bars.get(s)}
+        a = {s: articles.get(s, []) for s in b}
+        res = run(b, a, step, crash_pct)
+        return {"label": label, "env": env, "stakes": dict(config.STAKES), "budget": config.TOTAL_BUDGET,
+                "buy_line": config.NEWS_BUY_THRESHOLD, "crash_pct": config.CRASH_BLOCK_PCT if crash_pct is None
+                else crash_pct, "summary": summarize(res, b), "result": res,
+                "prices": {s: rows[::step] for s, rows in b.items()}}
+    finally:
+        restore_settings(old)
+
+
+def main():
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--days", type=int, default=90)
+    p.add_argument("--step", type=int, default=3, help="check every N five-minute bars (3 = every 15 min)")
+    p.add_argument("--compare", action="store_true", help="also run with CRASH off and show the difference")
+    p.add_argument("--variant", action="append", default=[], metavar="'LABEL|KEY=VALUE;KEY=VALUE'",
+                   help="also run with these settings changed, e.g. 'Lower line|NEWS_BUY_THRESHOLD=0.25'")
+    p.add_argument("--synthetic", action="store_true", help="made-up data (no keys); tests the plumbing only")
+    p.add_argument("--data", help="replay a file saved earlier with --save-data")
+    p.add_argument("--save-data", help="save the downloaded history to this file")
+    p.add_argument("--extra-symbols", default="", help="also download these (comma-separated), e.g. for variants")
+    p.add_argument("--print-data", action="store_true", help="print the history, compressed, to stderr")
+    p.add_argument("--json", help="write every run's full results here (used by sim_page.py)")
+    p.add_argument("--own-settings", action="store_true",
+                   help="use your .env settings instead of the live workflow's")
+    args = p.parse_args()
+    if args.days < 1 or args.step < 1:
+        p.error("--days and --step must be at least 1")
+
+    if not args.own_settings:
+        apply_settings(live_settings())
+    variants = [parse_variant(v) for v in args.variant]
+    wanted = list(dict.fromkeys(config.SYMBOLS + [x.strip().upper() for x in args.extra_symbols.split(",") if x.strip()]
+                                + [s for _, env in variants for s in config._parse_stakes(env.get("STAKES", ""), 0)]))
+
+    if args.data:
+        with open(args.data) as f:
+            text = f.read()
+        if DATA_BEGIN in text:
+            bars, articles = decode_history(text)
+        else:
+            raw = json.loads(text)
+            bars = {s: [tuple(r) for r in rows] for s, rows in raw["bars"].items()}
+            articles = raw["articles"]
+        source = f"saved real history ({os.path.basename(args.data)})"
+    elif args.synthetic:
+        bars, articles = synthetic(wanted, args.days)
+        source = "SYNTHETIC data (made up; checks the plumbing, says nothing about the strategy)"
+    else:
+        problems = [x for x in config.validate() if "ALPACA" in x]
+        if problems:
+            p.error(problems[0] + " (or try --synthetic)")
+        print(f"Downloading {args.days} days of prices and headlines for {', '.join(wanted)}...")
+        bars, articles = fetch_all(wanted, args.days)
+        source = f"real prices and headlines, last {args.days} days"
+    if args.save_data:
+        with open(args.save_data, "w") as f:
+            json.dump({"bars": bars, "articles": articles}, f)
+    if args.print_data:
+        print("\n".join(encode_history(bars, articles)), file=sys.stderr)
+    bars = {s: rows for s, rows in bars.items() if rows}
+    if not any(bars.get(s) for s in config.SYMBOLS):
+        sys.exit("No price data.")
+
+    started = time.time()
+    runs = [run_variant("Live settings", {}, bars, articles, args.step)]
+    print()
+    print(report(runs[0]["summary"], {s: bars[s] for s in config.SYMBOLS if s in bars}, f"TRADING DESK SIM · {source}"))
+    if args.compare:
+        runs.append(run_variant("Live settings, CRASH off", {}, bars, articles, args.step, crash_pct=0))
+        s, s0 = runs[0]["summary"], runs[-1]["summary"]
+        print()
+        print("WITH CRASH OFF (same data, same everything else):")
+        print(f"  Bot: ${s0['pnl']:+.2f}  vs  ${s['pnl']:+.2f} with CRASH on  →  CRASH changed P/L by "
+              f"${s['pnl'] - s0['pnl']:+.2f}")
+        print(f"  Buys: {s0['buys']} without CRASH, {s['buys']} with it. "
+              f"Closed trades won: {s0['wins']}/{s0['round_trips']} vs {s['wins']}/{s['round_trips']}.")
+    for label, env in variants:
+        missing = [x for x in config._parse_stakes(env.get("STAKES", ""), 0) if not bars.get(x)]
+        if missing:
+            print(f"\n{label}: skipped, no price data for {', '.join(missing)}")
+            continue
+        runs.append(run_variant(label, env, bars, articles, args.step))
+        old = apply_settings(env)
+        try:
+            print()
+            print(report(runs[-1]["summary"], {s: bars[s] for s in config.SYMBOLS},
+                         f"VARIANT · {label} · {'; '.join(f'{k}={v}' for k, v in env.items())}"))
+        finally:
+            restore_settings(old)
+    if len(runs) > 1:
+        print("\nSIDE BY SIDE")
+        for r in runs:
+            s = r["summary"]
+            print(f"  {r['label'][:34]:<34} bot ${s['pnl']:+8.2f}   holding ${s['hold_pnl']:+8.2f}   "
+                  f"{s['buys']:>3} buys   {s['wins']}/{s['round_trips']} won")
+    headline_counts = {s: len(articles.get(s, [])) for s in wanted}
+    print("\nHeadlines downloaded: " + ", ".join(f"{s} {n}" for s, n in headline_counts.items()))
+    if args.json:
+        with open(args.json, "w") as f:
+            json.dump({"source": source, "step": args.step, "headlines": headline_counts, "runs": runs}, f)
+    print(f"\n(took {time.time() - started:.1f}s. Fills are at the last 5-minute close, so real orders would "
+          f"do slightly worse. Past results don't predict future ones.)")
+
+
+if __name__ == "__main__":
+    main()

@@ -130,6 +130,18 @@
   .stat b{ font:500 12px var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); text-align:right; }
   .stat b.up{ color:var(--green); } .stat b.down{ color:var(--red); }
 
+  /* trading desk */
+  .desk th:nth-child(1){ width:128px; } .desk th:nth-child(3){ width:96px; }
+  .desk .who{ font:700 12px var(--mono); }
+  .desk .role{ display:block; color:var(--faint); font-size:11px; }
+  .desk .when,.alert .when{ color:var(--faint); font:11px var(--mono); margin-right:6px; }
+  @media (max-width:640px){ .desk th:nth-child(1){ width:104px; } .desk th:nth-child(3){ width:64px; } }
+  .alerts{ border-bottom:1px solid var(--line); }
+  .alert{ display:flex; gap:8px; padding:7px 12px; font-size:12px; border-bottom:1px solid var(--grid); }
+  .alert:last-child{ border-bottom:none; }
+  .alert b{ flex:none; font:700 11px var(--mono); }
+  .desk-note{ padding:8px 12px; color:var(--faint); font-size:11px; border-top:1px solid var(--line); }
+
   footer{ color:var(--dim); font-size:12px; padding:12px 12px 20px; }
 
   @media (max-width:900px){
@@ -219,10 +231,15 @@
 
   <section class="panel lower" id="lower" hidden>
     <div class="ltabs" id="ltabs">
-      <button data-p="log" class="on">Decisions</button><button data-p="fills">Trades</button><button data-p="stats">Stats</button>
+      <button data-p="log" class="on">Decisions</button><button data-p="desk">Desk<span class="hmark amber" id="desk-mark"></span></button><button data-p="fills">Trades</button><button data-p="stats">Stats</button>
     </div>
     <div id="p-log">
       <table class="log"><thead><tr><th>Time</th><th>Stock</th><th>Execution log</th></tr></thead><tbody id="log"></tbody></table>
+    </div>
+    <div id="p-desk" hidden>
+      <div class="alerts" id="desk-alerts" hidden></div>
+      <table class="desk"><thead><tr><th>Agent</th><th>Latest call</th><th class="r">Record</th></tr></thead><tbody id="desk"></tbody></table>
+      <div class="desk-note">Each agent does one job and explains itself. The Head of Desk reviews every buy before it reaches the broker, never places orders itself, and never blocks a protective sell. Not on this desk: WHALE (no clean free data for stocks) and SHILL (needs paid social-media APIs).</div>
     </div>
     <div id="p-fills" hidden>
       <table class="fills"><thead><tr><th>Stock</th><th>Side</th><th class="r">Size</th><th class="r">P&amp;L</th></tr></thead><tbody id="fills"></tbody></table>
@@ -629,6 +646,8 @@
     }
     $('log').innerHTML = logRows.join('') || `<tr><td colspan="3" class="dim">${esc(emptyDecisions(d))}</td></tr>`;
 
+    renderDesk(d);
+
     // trades
     $('fills').innerHTML = [...trades].reverse().slice(0, 10).map(t => {
       const rt = rts.find(r => r.sell === t);
@@ -660,6 +679,35 @@
     }
   }
 
+  // Trading desk: one row per agent with its latest call and its record, plus Head of Desk alerts.
+  const AGENTS = [
+    ['search', 'SEARCH', 'finds the trade idea'],
+    ['exit', 'EXIT', 'stop-loss, trailing stop, time limit'],
+    ['risk', 'RISK', 'window, cooldown, daily limit'],
+    ['crash', 'CRASH', 'won\u2019t buy a falling stock'],
+    ['sizer', 'SIZER', 'how many dollars'],
+    ['desk', 'HEAD OF DESK', 'final check, never trades'],
+  ];
+  function renderDesk(d){
+    const log = d.desk_log || [], day = 86400, now = Date.now() / 1000;
+    $('desk').innerHTML = AGENTS.map(([key, name, role]) => {
+      const mine = log.filter(e => e.agent === key);
+      const lastE = mine[mine.length - 1];
+      const recent = mine.filter(e => now - e.t < 7 * day);
+      const vetoes = recent.filter(e => e.action === 'veto').length;
+      const said = lastE ? `<span class="when">${ago(lastE.t)}</span><b class="num">${esc(lastE.symbol)}</b> <span class="${lastE.action === 'veto' ? 'amber' : lastE.action === 'sell' ? 'down' : lastE.action === 'buy' || lastE.action === 'approve' ? 'up' : 'dim'}">${esc(lastE.action)}</span> <span class="dim">${esc(lastE.note || '')}</span>`
+        : `<span class="dim">${key === 'crash' && d.crash_block_pct === 0 ? 'turned off (CRASH_BLOCK_PCT=0)' : 'nothing to say yet'}</span>`;
+      return `<tr><td><span class="who">${name}</span><span class="role">${role}</span></td><td>${said}</td>
+        <td class="n r">${recent.length}<span class="role">${vetoes ? `<span class="amber">${vetoes} veto${vetoes === 1 ? '' : 'es'}</span>` : 'calls · 7d'}</span></td></tr>`;
+    }).join('');
+    const alerts = (d.desk_alerts || []).filter(a => now - a.t < 3 * day).reverse().slice(0, 6);
+    $('desk-alerts').hidden = !alerts.length;
+    $('desk-alerts').innerHTML = alerts.map(a => `<div class="alert"><b class="${a.level === 'error' ? 'down' : a.level === 'info' ? 'dim' : 'amber'}">⚑ ${esc(a.symbol || 'DESK')}</b><span><span class="when">${ago(a.t)}</span>${esc(a.message)}</span></div>`).join('');
+    const urgent = alerts.filter(a => a.level !== 'info' && now - a.t < day).length;
+    $('desk-mark').textContent = urgent ? '⚑' : '';
+    $('desk-mark').title = urgent ? `${urgent} alert${urgent === 1 ? '' : 's'} from the Head of Desk today` : '';
+  }
+
   const pick = (host, fn) => $(host).addEventListener('click', e => {
     const b = e.target.closest('button'); if(!b) return;
     document.querySelectorAll('#' + host + ' button').forEach(x => x.classList.toggle('on', x === b));
@@ -674,7 +722,7 @@
   });
   pick('real-ranges', b => { realRange = b.dataset.r; });
   pick('ranges', b => { range = b.dataset.r; });
-  pick('ltabs', b => { ['log','fills','stats'].forEach(p => $('p-' + p).hidden = p !== b.dataset.p); });
+  pick('ltabs', b => { ['log','desk','fills','stats'].forEach(p => $('p-' + p).hidden = p !== b.dataset.p); });
 
   let rz;
   window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => { if(last) render(last); }, 80); });
