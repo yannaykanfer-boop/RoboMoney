@@ -240,6 +240,32 @@ def round_trips(fills, open_pos):
     return out
 
 
+SCORE = re.compile(r"news score ([+-]?\d+\.\d+) from (\d+) article")
+
+
+def why_search(verdicts):
+    """Per stock, from SEARCH's own notes: best news score seen, how often it reached the buy line,
+    and what SEARCH said at those moments. Answers "why didn't it trade?"."""
+    out = {}
+    for v in verdicts:
+        if v["agent"] != "search":
+            continue
+        m = SCORE.search(v.get("note", ""))
+        if not m:
+            continue
+        w = out.setdefault(v["symbol"], {"checks": 0, "with_news": 0, "best": None, "at_line": {}})
+        score, n = float(m.group(1)), int(m.group(2))
+        w["checks"] += 1
+        w["with_news"] += n > 0
+        w["best"] = score if w["best"] is None else max(w["best"], score)
+        if score >= config.NEWS_BUY_THRESHOLD:
+            said = ("bought" if v["action"] == "buy" else "already priced in" if "priced in" in v["note"]
+                    else "price falling" if "disagrees" in v["note"]
+                    else "already holding" if v["action"] == "hold" else v["action"])
+            w["at_line"][said] = w["at_line"].get(said, 0) + 1
+    return out
+
+
 def summarize(res, bars):
     budget = config.TOTAL_BUDGET
     rts = round_trips(res["fills"], res["open"])
@@ -254,7 +280,7 @@ def summarize(res, bars):
             key = ("approved " if v["action"] == "approve" else "blocked ") + \
                   ("buy" if "buy" in v.get("note", "") else "sell")
         a["by"][key] = a["by"].get(key, 0) + 1
-    return {"pnl": res["final_equity"] - budget, "hold_pnl": hold, "budget": budget,
+    return {"why": why_search(res["verdicts"]), "pnl": res["final_equity"] - budget, "hold_pnl": hold, "budget": budget,
             "round_trips": len(closed), "wins": sum(r["pnl"] > 0 for r in closed),
             "still_open": [r for r in rts if r["open"]], "agents": agents, "alerts": res["alerts"],
             "paused_at": res["paused_at"], "checks": res["checks"], "buys": sum(f["side"] == "BUY" for f in res["fills"])}
@@ -293,6 +319,17 @@ def report(s, bars, title):
             continue
         by = ", ".join(f"{k} {n}" for k, n in sorted(a["by"].items(), key=lambda kv: -kv[1]))
         lines.append(f"    {name:<13} {a['calls']:>6,}  {by}")
+    if s.get("why"):
+        lines += ["", f"  Why SEARCH did or didn't buy (buy line: news score +{config.NEWS_BUY_THRESHOLD:.2f}):"]
+        for sym in config.SYMBOLS:
+            w = s["why"].get(sym)
+            if not w:
+                continue
+            at = sum(w["at_line"].values())
+            detail = ", ".join(f"{k} {n}" for k, n in w["at_line"].items())
+            lines.append(f"    {sym:<6} headlines at {w['with_news'] / w['checks']:.0%} of checks · best score "
+                         f"{w['best']:+.2f} · at/over the line {at} time{'s' if at != 1 else ''}"
+                         + (f" ({detail})" if detail else ""))
     alerts = s["alerts"]
     lines.append(f"\n  Alerts to you: {len(alerts)}")
     for a in alerts[:8]:

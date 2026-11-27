@@ -78,5 +78,18 @@ class EndToEndTests(unittest.TestCase):
             desk_sim.restore_settings(old)
 
 
+class WhySearchTests(unittest.TestCase):
+    def test_best_score_and_what_happened_at_the_line(self):
+        v = lambda sym, act, note: {"agent": "search", "symbol": sym, "action": act, "note": note}
+        w = desk_sim.why_search([
+            v("AAA", "hold", "news score +0.00 from 0 article(s), price +0.10% over window — no actionable signal"),
+            v("AAA", "hold", "news score +0.50 from 3 article(s), price +2.00% over window — positive but already priced in"),
+            v("AAA", "buy", "news score +0.40 from 2 article(s), price +0.20% over window — positive news not yet priced in, buy"),
+            {"agent": "risk", "symbol": "AAA", "action": "ok", "note": "news score +9.00 from 9 article(s)"},
+        ])["AAA"]
+        self.assertEqual((w["checks"], w["with_news"], w["best"]), (3, 2, 0.5))
+        self.assertEqual(w["at_line"], {"already priced in": 1, "bought": 1})
+
+
 if __name__ == "__main__":
     unittest.main()
