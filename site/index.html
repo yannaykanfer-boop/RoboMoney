@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>RoboMoney Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* One column, top to bottom: status + the Start button, what it decided, recent runs. */
+  :root{
+    --bg:#f4f6f8; --card:#ffffff; --line:#dfe4ea; --ink:#141a21; --dim:#566170; --faint:#8a94a1;
+    --go:#1f7a4d; --go-ink:#ffffff; --green:#11805a; --red:#c4374a; --amber:#9a6400; --chip:#eef1f4;
+    --sans:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark){ :root{
+    --bg:#0c0f13; --card:#151a21; --line:#262e39; --ink:#e7ebf0; --dim:#9aa4b1; --faint:#6c7683;
+    --go:#22a06b; --go-ink:#06120c; --green:#2bc48a; --red:#f2596a; --amber:#f0b34a; --chip:#1d232c; color-scheme:dark; } }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 var(--sans); -webkit-font-smoothing:antialiased; }
+  main{ max-width:620px; margin:0 auto; display:grid; gap:14px;
+    padding:calc(18px + env(safe-area-inset-top,0px)) max(16px, env(safe-area-inset-right,0px)) 32px max(16px, env(safe-area-inset-left,0px)); }
+  header{ display:flex; align-items:center; gap:10px; }
+  header h1{ margin:0; font-size:20px; font-weight:800; letter-spacing:-.01em; }
+  .pill{ margin-left:auto; font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px; background:var(--chip); color:var(--dim); white-space:nowrap; }
+  .pill.open{ color:var(--green); } .pill.paused{ color:var(--amber); }
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px; min-width:0; }
+  .card h2{ margin:0 0 10px; font-size:13px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; }
+  .big{ font:800 34px/1.1 var(--mono); letter-spacing:-.02em; }
+  .sub{ color:var(--dim); font-size:14px; }
+  .up{ color:var(--green); } .down{ color:var(--red); } .dim{ color:var(--dim); } .faint{ color:var(--faint); }
+  .row{ display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+  .start{ width:100%; margin-top:16px; height:60px; border:0; border-radius:12px; background:var(--go); color:var(--go-ink);
+    font:800 20px var(--sans); cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .start:hover{ filter:brightness(1.06); } .start:disabled{ opacity:.55; cursor:default; filter:none; }
+  .start:focus-visible, a:focus-visible, input:focus-visible{ outline:3px solid var(--go); outline-offset:2px; }
+  .start svg{ width:18px; height:18px; fill:currentColor; }
+  .pin{ display:none; margin-top:12px; gap:8px; align-items:center; }
+  .pin.on{ display:flex; } .pin input{ flex:1; min-width:0; height:44px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--ink); padding:0 12px; font:inherit; }
+  .msg{ margin-top:12px; font-size:14px; min-height:1.5em; }
+  .msg.err{ color:var(--red); } .msg.ok{ color:var(--green); }
+  .auto{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line); font-size:14px; color:var(--dim); }
+  .auto b{ color:var(--ink); font-weight:600; }
+  .stock{ display:grid; grid-template-columns:62px auto 1fr; gap:4px 10px; align-items:baseline; padding:10px 0; border-top:1px solid var(--line); }
+  .stock:first-of-type{ border-top:0; padding-top:0; }
+  .sym{ font:700 14px var(--mono); }
+  .act{ font-size:12px; font-weight:800; padding:2px 8px; border-radius:6px; background:var(--chip); }
+  .act.buy{ color:var(--green); } .act.sell{ color:var(--red); } .act.hold{ color:var(--dim); }
+  .why{ grid-column:2 / -1; color:var(--dim); font-size:14px; overflow-wrap:anywhere; }
+  .stock .px{ justify-self:end; font:500 13px var(--mono); color:var(--dim); }
+  ul.runs{ list-style:none; margin:0; padding:0; }
+  ul.runs li{ display:flex; gap:10px; align-items:baseline; padding:7px 0; border-top:1px solid var(--line); font-size:14px; }
+  ul.runs li:first-child{ border-top:0; }
+  ul.runs .when{ min-width:9.5em; } ul.runs .res{ margin-left:auto; font-weight:700; white-space:nowrap; }
+  ul.runs a{ color:inherit; }
+  .more{ display:block; text-align:center; padding:14px; border-radius:12px; background:var(--card); border:1px solid var(--line); color:var(--ink); text-decoration:none; font-weight:600; }
+  .more:hover{ border-color:var(--dim); }
+  footer{ color:var(--faint); font-size:12.5px; text-align:center; line-height:1.5; }
+  .setup ol{ margin:6px 0 0; padding-left:20px; color:var(--dim); font-size:14px; } .setup li{ margin:4px 0; }
+  .spin{ width:16px; height:16px; border-radius:50%; border:2.5px solid currentColor; border-right-color:transparent; animation:sp .8s linear infinite; }
+  @keyframes sp{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ .spin{ animation:none; } }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>RoboMoney Bot</h1><span class="pill" id="pill">loading…</span></header>
+
+  <section class="card" aria-live="polite">
+    <h2>Paper balance</h2>
+    <div class="row"><span class="big" id="bal">$—</span><span class="sub" id="chg"></span></div>
+    <div class="sub" id="last">Checking when the bot last ran…</div>
+    <button class="start" id="start" type="button"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg><span>Start bot</span></button>
+    <div class="pin" id="pinRow"><label for="pin" class="sub">PIN</label><input id="pin" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter your PIN"></div>
+    <div class="msg" id="msg"></div>
+    <div class="auto" id="auto"></div>
+  </section>
+
+  <section class="card setup" id="setup" hidden>
+    <h2>One-time setup for the Start button</h2>
+    <div class="sub">The button needs permission to start your bot on GitHub. Until then, the automatic runs still happen.</div>
+    <ol>
+      <li>On GitHub: your picture → <b>Settings</b> → <b>Developer settings</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>.</li>
+      <li>Repository access: <b>Only select repositories</b> → <b>RoboMoney</b>. Permissions: <b>Actions: Read and write</b>. Generate and copy it.</li>
+      <li>On Vercel: project <b>robomoney-replay</b> → <b>Settings</b> → <b>Environment Variables</b>. Name <b>GITHUB_TOKEN</b>, paste the token, save.</li>
+      <li>Tell Claude "done" so it can refresh the site.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>What it decided last time</h2>
+    <div id="stocks" class="sub">Loading…</div>
+  </section>
+
+  <section class="card">
+    <h2>Recent runs</h2>
+    <ul class="runs" id="runs"><li class="sub">Loading…</li></ul>
+  </section>
+
+  <a class="more" href="replay.html">See the 90-day simulation →</a>
+
+  <footer>Paper money only: nothing here can spend real money. The bot buys on good news it thinks the price hasn’t reacted to yet,
+    and it can lose. Not financial advice.</footer>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const usd = (n, sign) => (sign ? (n > 0.004 ? '+' : n < -0.004 ? '−' : '') : '') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const ago = ms => { const m = Math.round((Date.now() - ms) / 60000);
+    return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
+  const nyFmt = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', weekday:'short', hour:'numeric', minute:'2-digit'});
+  const BUY_LINE = 0.35;
+  let S = null, watching = null, needsPin = false;
+
+  // Next automatic run: weekdays 10:07 AM to 3:07 PM New York time, every hour (holidays not counted).
+  function nextAuto(){
+    const parts = t => Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York', hourCycle:'h23',
+      weekday:'short', hour:'numeric', minute:'numeric'}).formatToParts(t).map(p => [p.type, p.value]));
+    for(let m = 1; m <= 7 * 24 * 60; m++){
+      const t = new Date(Date.now() + m * 60000), p = parts(t);
+      if(['Sat','Sun'].includes(p.weekday)) continue;
+      const h = +p.hour, min = +p.minute;
+      if(min === 7 && h >= 10 && h <= 15) return t;
+    }
+    return null;
+  }
+
+  // Turn the bot's notes into plain words.
+  function plain(d, pos){
+    const why = (d && d.why) || (pos && pos.signal) || '';
+    const n = +(why.match(/from (\d+) article/) || [])[1] || 0;
+    const sc = parseFloat((why.match(/news score ([+-]?\d+\.\d+)/) || [])[1] || '0');
+    if(/stop-loss/.test(why)) return 'sold: price fell to the stop-loss';
+    if(/trailing-stop/.test(why)) return 'sold: price dropped back from its high (trailing stop)';
+    if(/time-limit/.test(why)) return 'sold: held for 3 trading days without strong news';
+    if(/news turned negative/.test(why)) return 'sold: the news turned negative';
+    if(/same news story/.test(why)) return 'skipped: the same story already drove another buy';
+    if(/buy blocked/.test(why)) return 'skipped: the price is falling hard right now';
+    if(/already priced in/.test(why)) return 'good news, but the price already jumped, so it waited';
+    if(/market disagrees/.test(why)) return 'good news, but the price is falling, so it waited';
+    if(/BUY ~\$/.test(why) || /not yet priced in, buy/.test(why)) return 'bought on good news the price hadn’t reacted to yet';
+    if(!n) return 'no news about it in the last 24 hours';
+    return `${n} headline${n === 1 ? '' : 's'}, news score ${sc >= 0 ? '+' : '−'}${Math.abs(sc).toFixed(2)} (it buys at +${BUY_LINE.toFixed(2)})`;
+  }
+
+  function render(){
+    const b = S.bot;
+    const pill = $('pill');
+    pill.textContent = b.paused ? 'Paused' : b.market_open ? 'Market open' : 'Market closed';
+    pill.className = 'pill' + (b.paused ? ' paused' : b.market_open ? ' open' : '');
+    $('bal').textContent = usd(b.balance ?? b.budget ?? 0);
+    const ch = b.change || 0;
+    $('chg').innerHTML = `<span class="${ch > 0.004 ? 'up' : ch < -0.004 ? 'down' : 'dim'}">${usd(ch, true)}</span> since it started · ${b.trades} trade${b.trades === 1 ? '' : 's'}`;
+    $('last').textContent = b.updated_at ? `Last ran ${ago(b.updated_at * 1000)}${b.paused ? ` · paused: ${b.pause_note || 'loss limit reached'}` : ''}.` : 'It hasn’t run yet.';
+    const nx = nextAuto();
+    $('auto').innerHTML = `<b>Automatic runs:</b> weekdays every hour, 10:07 AM to 3:07 PM New York time.${nx ? ` Next: <b>${esc(nyFmt.format(nx))}</b>.` : ''}`;
+    $('setup').hidden = S.canStart;
+    needsPin = S.needsPin; $('pinRow').classList.toggle('on', needsPin);
+    if(!S.canStart){ $('start').disabled = true; if(!watching) setMsg('The Start button needs a one-time setup (below).', ''); }
+    else if(!watching) $('start').disabled = false;
+
+    const decided = Object.fromEntries((b.decisions || []).map(d => [d.symbol, d]));
+    const syms = Object.keys(b.positions || {});
+    $('stocks').innerHTML = syms.length ? syms.map(s => {
+      const p = b.positions[s], d = decided[s], act = (d && d.action) || 'hold';
+      return `<div class="stock"><span class="sym">${esc(s)}</span><span class="act ${act}">${act.toUpperCase()}</span>
+        <span class="px">${p.price ? '$' + p.price.toFixed(2) : ''}${p.held ? ` · holding <span class="${p.pnl >= 0 ? 'up' : 'down'}">${usd(p.pnl, true)}</span>` : ''}</span>
+        <span class="why">${esc(plain(d, p))}</span></div>`;
+    }).join('') + (b.decided_at ? `<div class="faint" style="margin-top:8px;font-size:13px">Decided ${esc(ago(b.decided_at * 1000))}${b.market_open ? '' : ', while the market was open'}.</div>` : '')
+      : 'No decisions yet.';
+
+    $('runs').innerHTML = (S.runs || []).slice(0, 6).map(r => {
+      const t = new Date(r.created_at);
+      const who = r.event === 'workflow_dispatch' ? 'Start button or hourly timer' : r.event === 'schedule' ? 'GitHub’s own schedule' : r.event;
+      const res = r.status !== 'completed' ? '<span class="dim">running…</span>' : r.conclusion === 'success' ? '<span class="up">✓ done</span>' : `<span class="down">✗ ${esc(r.conclusion || 'failed')}</span>`;
+      return `<li><span class="when">${esc(nyFmt.format(t))}</span><span class="dim">${esc(who)}</span><a class="res" href="${esc(r.url)}" target="_blank" rel="noopener">${res}</a></li>`;
+    }).join('') || `<li class="sub">${esc(S.runsError || 'No runs yet.')}</li>`;
+  }
+
+  function setMsg(text, kind){ const m = $('msg'); m.className = 'msg' + (kind ? ' ' + kind : ''); m.innerHTML = text; }
+
+  async function load(){
+    const r = await fetch('/api/status', {cache:'no-store'});
+    const d = await r.json();
+    if(!r.ok) throw new Error(d.error || r.status);
+    S = d; render(); return d;
+  }
+
+  async function start(){
+    const btn = $('start');
+    btn.disabled = true; btn.innerHTML = '<span class="spin" aria-hidden="true"></span><span>Starting…</span>';
+    setMsg('', '');
+    try{
+      const r = await fetch('/api/start', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pin:$('pin').value})});
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.error || ('Error ' + r.status));
+      watching = Date.parse(d.startedAt) - 15000;
+      btn.innerHTML = '<span class="spin" aria-hidden="true"></span><span>Bot is running…</span>';
+      setMsg('Started. It takes about 30 seconds; this page updates by itself.', 'ok');
+      watch(0);
+    }catch(e){
+      setMsg(esc(e.message), 'err'); resetBtn();
+    }
+  }
+  function resetBtn(){ const b = $('start'); b.disabled = !(S && S.canStart); b.innerHTML = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 1l9 5-9 5z"/></svg><span>Start bot</span>'; }
+
+  async function watch(n){
+    try{ await load(); }catch(_){}
+    const run = (S && S.runs || []).find(r => Date.parse(r.created_at) >= watching);
+    if(run && run.status === 'completed' && S.bot.updated_at * 1000 >= Date.parse(run.created_at)){
+      watching = null; resetBtn();
+      setMsg(run.conclusion === 'success' ? '✓ Done. Its decisions are below.' : `The run ended with “${esc(run.conclusion)}”. <a href="${esc(run.url)}" target="_blank" rel="noopener">See what happened</a>.`,
+             run.conclusion === 'success' ? 'ok' : 'err');
+      return;
+    }
+    if(n > 36){ watching = null; resetBtn(); setMsg('Still going after 3 minutes. GitHub may be slow; check Recent runs below.', ''); return; }
+    setTimeout(() => watch(n + 1), 5000);
+  }
+
+  $('start').addEventListener('click', start);
+  load().catch(e => { setMsg(`Couldn’t load the bot’s status (${esc(e.message)}). Reload to try again.`, 'err'); $('pill').textContent = 'offline'; });
+  setInterval(() => { if(!watching) load().catch(() => {}); }, 60000);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Desk Replay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  /* Layout: a trading-desk terminal. Balance bar, tickers and controls on top; the equity candles;
+     the desk hub (scouts on the left feed the Head of Desk on the right); then verdicts, news and P/L.
+     One deliberate dark look, matching the reference the owner asked for. */
+  :root{
+    color-scheme:dark;
+    --bg:#07090d; --panel:#0d1117; --raised:#141a23; --line:#212935; --grid:#18202a;
+    --ink:#e9edf2; --dim:#8f99a7; --faint:#5c6674;
+    --green:#25d68e; --red:#ff4f61; --orange:#ff8a1f; --gold:#ffc544; --blue:#4d8eff; --violet:#9b7bff;
+    --display:"Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  *{ box-sizing:border-box; }
+  body{ background:var(--bg); color:var(--ink); font:13px/1.4 var(--display); -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:1220px; margin:0 auto; display:grid; gap:10px; padding-block:14px 26px;
+    padding-left:max(16px, env(safe-area-inset-left, 0px)); padding-right:max(16px, env(safe-area-inset-right, 0px)); }
+  .num,.mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .up{ color:var(--green); } .down{ color:var(--red); } .dim{ color:var(--dim); } .faint{ color:var(--faint); } .or{ color:var(--orange); }
+  button,select,input{ font:inherit; color:inherit; }
+  :focus-visible{ outline:2px solid var(--orange); outline-offset:2px; }
+  .panel{ background:var(--panel); border:1px solid var(--line); border-radius:8px; min-width:0; }
+  .cap{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px 0; font:700 10.5px var(--mono); letter-spacing:.08em; color:var(--dim); text-transform:uppercase; }
+  .cap .live{ color:var(--green); } .cap .live::before{ content:"●"; margin-right:5px; }
+
+  /* top bar */
+  .top{ display:flex; align-items:center; gap:12px; padding:12px 14px; }
+  .logo{ flex:none; width:40px; height:40px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff, #c9d1dc 55%, #7d8794); display:grid; place-items:center; box-shadow:0 0 0 2px var(--line); }
+  .logo i{ width:4px; height:10px; background:#0b0e13; border-radius:2px; margin:0 2px; display:inline-block; }
+  .brand h1{ margin:0; font:800 21px/1.1 var(--display); letter-spacing:-.01em; }
+  .brand h1 span{ color:var(--orange); }
+  .brand p{ margin:2px 0 0; font:11px var(--mono); color:var(--faint); }
+  .bal{ margin-left:auto; text-align:right; }
+  .bal small{ display:block; font:700 9.5px var(--mono); letter-spacing:.1em; color:var(--faint); }
+  .bal b{ display:block; font:800 30px/1.05 var(--mono); letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .bal em{ font:500 11px var(--mono); font-style:normal; color:var(--dim); }
+
+  /* tickers + controls */
+  .tick{ display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 10px; }
+  .chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 9px; border:1px solid var(--line); border-radius:999px; background:var(--raised); font:600 11.5px var(--mono); }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; background:var(--faint); }
+  .chip.held{ border-color:var(--gold); box-shadow:0 0 0 1px rgba(255,197,68,.25) inset; } .chip.held .dot{ background:var(--gold); }
+  .chip.shut{ opacity:.55; }
+  .days{ display:flex; gap:3px; padding:0 14px 12px; overflow-x:auto; }
+  .days span{ flex:1 0 18px; height:16px; border-radius:3px; background:var(--raised); font:600 9px/16px var(--mono); text-align:center; color:var(--faint); }
+  .days span.past{ background:#163327; color:var(--green); } .days span.lossy{ background:#3a1820; color:var(--red); }
+  .days span.now{ background:var(--orange); color:#140a00; }
+  .controls{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 14px; border-top:1px solid var(--line); }
+  .opt{ display:flex; flex-wrap:wrap; gap:6px; }
+  .opt button{ border:1px solid var(--line); background:var(--raised); border-radius:6px; padding:6px 10px; cursor:pointer; font:600 12px var(--display); color:var(--dim); }
+  .opt button.on{ border-color:var(--orange); color:var(--ink); background:#22160a; }
+  .play{ display:inline-flex; align-items:center; gap:7px; height:32px; padding:0 14px; border:0; border-radius:6px; background:var(--orange); color:#160b00; font-weight:800; cursor:pointer; }
+  .play svg{ width:11px; height:11px; fill:currentColor; }
+  .speed{ height:32px; border:1px solid var(--line); background:var(--raised); border-radius:6px; padding:0 6px; }
+  .scrub{ flex:1 1 240px; display:flex; align-items:center; gap:10px; min-width:0; }
+  .scrub input{ flex:1; min-width:0; accent-color:var(--orange); }
+  .clock{ font:600 11.5px var(--mono); color:var(--dim); white-space:nowrap; }
+
+  /* equity */
+  .eqhead{ display:flex; flex-wrap:wrap; gap:4px 14px; align-items:baseline; padding:2px 12px 0; font:11px var(--mono); color:var(--faint); }
+  #eq{ display:block; width:100%; height:250px; }
+  #eq text{ font:10px var(--mono); fill:var(--faint); }
+  #eq .g{ stroke:var(--grid); } #eq .z{ stroke:var(--faint); stroke-dasharray:2 4; }
+  #eq .cu{ fill:var(--green); stroke:var(--green); } #eq .cd{ fill:var(--red); stroke:var(--red); }
+  #eq .ghost{ opacity:.18; }
+  #eq .hold{ fill:none; stroke:var(--violet); stroke-width:1.3; stroke-dasharray:4 4; opacity:.8; }
+  #eq .cur{ stroke:var(--orange); stroke-dasharray:3 3; }
+  .tagbox{ font:800 15px var(--mono); }
+
+  /* desk hub */
+  .hub{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr) minmax(0,1fr); gap:10px; padding:10px 12px 12px; align-items:center; }
+  .col{ display:grid; gap:6px; }
+  .tile{ display:grid; grid-template-columns:22px 1fr; gap:0 8px; align-items:center; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--raised); transition:border-color .25s, box-shadow .25s, background .25s; }
+  .tile .ic{ grid-row:span 2; width:22px; height:22px; border-radius:5px; display:grid; place-items:center; font:800 11px var(--mono); color:#0b0e13; }
+  .tile b{ font:800 10.5px var(--mono); letter-spacing:.06em; }
+  .tile small{ font:10.5px var(--mono); color:var(--faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tile.hot{ border-color:var(--c); box-shadow:0 0 0 1px var(--c) inset, 0 0 18px -6px var(--c); background:#18202b; }
+  .tile.hot small{ color:var(--ink); }
+  .stage{ position:relative; display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:6px; min-height:170px; }
+  .orb{ width:92px; height:92px; border-radius:50%; display:grid; place-items:center; position:relative; }
+  .orb.scout{ background:radial-gradient(circle at 35% 30%, #fff, #c5ccd6 55%, #6f7987); box-shadow:0 0 0 6px #10151d, 0 0 0 7px var(--line); }
+  .orb.scout i{ width:7px; height:18px; background:#0b0e13; border-radius:3px; margin:0 3px; display:inline-block; }
+  .orb.desk{ background:radial-gradient(circle, #ffb35c 0 18%, #ff8a1f 19% 34%, #2a1606 35% 100%); box-shadow:0 0 0 6px #1d1208, 0 0 0 7px #5a3410, 0 0 40px -6px var(--orange); }
+  .orb.desk::after{ content:""; position:absolute; inset:14px; border-radius:50%; background:repeating-conic-gradient(var(--orange) 0 4deg, transparent 4deg 22.5deg); mask:radial-gradient(circle, transparent 0 38%, #000 39% 70%, transparent 71%); -webkit-mask:radial-gradient(circle, transparent 0 38%, #000 39% 70%, transparent 71%); }
+  .busy .orb.desk::after{ animation:spin 6s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  .orbcap{ text-align:center; font:700 10px var(--mono); color:var(--faint); margin-top:8px; letter-spacing:.05em; }
+  .orbcap b{ color:var(--ink); }
+  .link{ position:relative; height:2px; background:linear-gradient(90deg, var(--line), var(--orange)); }
+  .verdict{ position:absolute; left:50%; top:10px; transform:translateX(-50%); max-width:min(320px, 92%); text-align:center; padding:6px 12px; border-radius:6px; border:1.5px solid var(--c, var(--faint));
+    background:var(--panel); font:800 12px var(--mono); color:var(--c, var(--dim)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-shadow:0 0 22px -8px var(--c, transparent); }
+  .verdict small{ display:block; font:500 10px var(--mono); color:var(--dim); }
+  .boom{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%) scale(.8); padding:8px 18px; border-radius:10px; border:2px solid var(--c); background:rgba(7,9,13,.92); text-align:center; pointer-events:none; opacity:0;
+    transition:opacity .25s, transform .25s; z-index:3; }
+  .boom.show{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+  .boom b{ display:block; font:800 30px/1.05 var(--display); letter-spacing:-.02em; color:var(--c); text-shadow:0 0 18px var(--c); white-space:nowrap; }
+  .boom span{ font:700 13px var(--mono); color:var(--ink); }
+
+  /* bottom panels */
+  .row3{ display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:10px; }
+  .list{ list-style:none; margin:0; padding:6px 0 8px; max-height:230px; overflow-y:auto; }
+  .list li{ display:grid; grid-template-columns:auto 1fr auto; gap:8px; align-items:baseline; padding:4px 12px; font:11.5px var(--mono); }
+  .list .k{ font-weight:800; } .list .k.ok{ color:var(--green); } .list .k.veto{ color:var(--red); }
+  .list .t{ color:var(--dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .list .h{ color:var(--ink); font-family:var(--display); font-size:12px; white-space:normal; }
+  .list .empty{ grid-template-columns:1fr; color:var(--dim); font-family:var(--display); padding:8px 12px; }
+  #pl{ display:block; width:100%; height:110px; }
+  #pl .ln{ fill:none; stroke:var(--orange); stroke-width:1.8; } #pl .ar{ fill:var(--orange); opacity:.12; } #pl .z{ stroke:var(--faint); stroke-dasharray:2 4; }
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:4px 12px; padding:4px 12px 12px; font:11.5px var(--mono); color:var(--dim); }
+  .stats b{ color:var(--ink); float:right; }
+  footer{ color:var(--faint); font-size:11.5px; max-width:95ch; line-height:1.5; }
+  .err{ color:var(--red); }
+
+  @media (max-width:900px){
+    .hub{ grid-template-columns:1fr 1fr; }
+    .stage{ grid-column:1 / -1; order:-1; grid-template-columns:auto 1fr auto; min-height:0; row-gap:12px; }
+    .verdict{ position:static; transform:none; grid-column:1 / -1; justify-self:center; max-width:100%; }
+    .row3{ grid-template-columns:1fr; }
+  }
+  @media (max-width:520px){
+    .bal b{ font-size:23px; } .brand h1{ font-size:17px; }
+    .orb{ width:64px; height:64px; }
+    .orb.scout i{ width:5px; height:13px; }
+    .orbcap{ font-size:9px; }
+    .tile{ grid-template-columns:18px 1fr; padding:5px 6px; } .tile .ic{ width:18px; height:18px; font-size:10px; }
+    .boom b{ font-size:22px; }
+    #eq{ height:200px; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a href="/" style="color:var(--dim);font:600 13px var(--display);text-decoration:none">← Back to the bot</a>
+  <section class="panel">
+    <div class="top">
+      <div class="logo" aria-hidden="true"><i></i><i></i></div>
+      <div class="brand"><h1>RoboMoney <span>× Head of Desk</span></h1><p id="sub">loading…</p></div>
+      <div class="bal"><small>BALANCE</small><b id="bal">$—</b><em id="balSub"></em></div>
+    </div>
+    <div class="tick" id="tick"></div>
+    <div class="days" id="days" aria-label="Days of the replay"></div>
+    <div class="controls">
+      <div class="opt" id="opt" role="group" aria-label="Option to replay"></div>
+      <button class="play" id="play" type="button" aria-label="Play the replay"><svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg><span>Replay</span></button>
+      <select class="speed" id="speed" aria-label="Replay speed"><option value="1">1 day/s</option><option value="4" selected>4 days/s</option><option value="10">10 days/s</option></select>
+      <div class="scrub"><input type="range" id="scrub" min="0" max="0" value="0" aria-label="Point in time"><span class="clock" id="clock">—</span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="cap"><span>Bot equity · daily candles</span><span id="eqNote"></span></div>
+    <div class="eqhead" id="eqhead"></div>
+    <svg id="eq" role="img" aria-label="Bot profit and loss as daily candles"></svg>
+  </section>
+
+  <section class="panel" id="hubPanel">
+    <div class="cap"><span>Scouts → Head of Desk decides · <span id="hubWhen"></span></span><span class="live">6/6 online</span></div>
+    <div class="hub">
+      <div class="col" id="left"></div>
+      <div class="stage" id="stage">
+        <div><div class="orb scout"><i></i><i></i></div><div class="orbcap"><b>SCOUTS</b> · <span id="scoutState">scanning</span></div></div>
+        <div class="link"></div>
+        <div><div class="orb desk"></div><div class="orbcap"><b>HEAD OF DESK</b> · <span id="deskState">deciding</span></div></div>
+        <div class="verdict" id="verdict">—</div>
+        <div class="boom" id="boom"><b id="boomBig"></b><span id="boomSmall"></span></div>
+      </div>
+      <div class="col" id="right"></div>
+    </div>
+  </section>
+
+  <div class="row3">
+    <section class="panel"><div class="cap"><span>Head of Desk · verdicts</span><span id="vCount"></span></div><ul class="list" id="verdicts"></ul></section>
+    <section class="panel"><div class="cap"><span>News feed · scored</span><span class="live">live</span></div><ul class="list" id="news"></ul></section>
+    <section class="panel"><div class="cap"><span>P/L tracking</span><span id="plNow"></span></div><svg id="pl" aria-hidden="true"></svg><div class="stats" id="stats"></div></section>
+  </div>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const usd = (n, sign = true) => (sign ? (n > 0.004 ? '+' : n < -0.004 ? '−' : '') : (n < 0 ? '−' : '')) + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const cls = n => n > 0.004 ? 'up' : n < -0.004 ? 'down' : 'dim';
+  const tz = {timeZone:'America/New_York'};
+  const when = t => new Date(t * 1000).toLocaleString('en-US', {...tz, month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  const short = s => s.replace('/USD', '');
+  const px = v => v >= 1000 ? '$' + v.toLocaleString('en-US', {maximumFractionDigits:0}) : '$' + v.toFixed(2);
+
+  // tile definitions: which agent lights each one, and what it says right now
+  const LEFT = [
+    {id:'feed', ic:'P', c:'var(--blue)', name:'PRICE FEED', on:() => false},
+    {id:'news', ic:'N', c:'var(--violet)', name:'NEWS SCAN', on:() => false},
+    {id:'search', ic:'S', c:'var(--blue)', name:'SEARCH', on:e => e.a === 'search'},
+    {id:'crash', ic:'C', c:'var(--red)', name:'CRASH CHECK', on:e => e.a === 'crash'},
+  ];
+  const RIGHT = [
+    {id:'risk', ic:'R', c:'var(--gold)', name:'RISK GATE', on:e => e.a === 'risk'},
+    {id:'sizer', ic:'$', c:'var(--gold)', name:'SIZE CALC', on:e => e.a === 'sizer'},
+    {id:'stop', ic:'X', c:'var(--red)', name:'STOP GUARD', on:e => e.a === 'exit' && e.tag === 'stop-loss'},
+    {id:'exit', ic:'E', c:'var(--green)', name:'EXIT PLAN', on:e => e.a === 'exit' && e.tag !== 'stop-loss'},
+  ];
+
+  let D, run, ri = 0, k = 0, playing = false, lastTick = 0, carry = 0, boomTimer = 0, lastBoomK = -1;
+  let stepsPerDay = 96;
+
+  function what(r){
+    const syms = Object.keys(r.stakes).map(short).join(', ');
+    return r.env && r.env.NEWS_BUY_THRESHOLD ? `buy line +${(+r.env.NEWS_BUY_THRESHOLD).toFixed(2)}` : `buy line +${r.buyLine.toFixed(2)} (live rules)`;
+  }
+
+  function select(i){
+    ri = i; run = D.runs[i];
+    const span = (run.ts[run.ts.length - 1] - run.ts[0]) / 86400;
+    stepsPerDay = run.ts.length / Math.max(span, 1);
+    $('scrub').max = run.ts.length - 1;
+    k = run.ts.length - 1;
+    $('opt').innerHTML = D.runs.map((r, j) => `<button type="button" data-i="${j}" class="${j === i ? 'on' : ''}" aria-pressed="${j === i}">${esc(r.label)} <span class="num ${cls(r.summary.pnl)}">${usd(r.summary.pnl)}</span></button>`).join('');
+    draw();
+  }
+
+  // -------- equity candles --------
+  function candles(){
+    const svg = $('eq'), W = Math.max(300, svg.clientWidth || 800), H = svg.clientHeight || 250;
+    const L = 8, R = 62, T = 12, B = 20;
+    const cs = run.candles, shown = cs.filter(c => c.k <= k);
+    const vals = cs.flatMap(c => [c.h, c.l]).concat([0]);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if(hi - lo < 4){ const m = (hi + lo) / 2; lo = m - 2; hi = m + 2; }
+    const pad = (hi - lo) * .1; lo -= pad; hi += pad;
+    const n = cs.length, cw = (W - L - R) / n;
+    const xc = i => L + cw * (i + .5), y = v => T + (H - T - B) * (1 - (v - lo) / (hi - lo));
+    const xt = j => L + (W - L - R) * (j / (run.ts.length - 1));
+    let g = '';
+    const raw = (hi - lo) / 4, mag = 10 ** Math.floor(Math.log10(raw)), step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw);
+    for(let v = Math.ceil(lo / step) * step; v <= hi; v += step)
+      g += `<line class="g" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${W - R + 6}" y="${y(v) + 3}">${usd(v, v !== 0)}</text>`;
+    g += `<line class="z" x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}"/>`;
+    let lastM = '';
+    cs.forEach((c, i) => { const m = c.d.slice(0, 7); if(m !== lastM){ lastM = m; if(i > 1 || cs.length < 3) g += `<text x="${xc(i)}" y="${H - 5}" text-anchor="middle">${new Date(c.d + 'T12:00:00').toLocaleString('en-US', {month:'short'})}</text>`; } });
+    cs.forEach((c, i) => {
+      const up = c.c >= c.o, played = c.k <= k || (i && cs[i - 1].k < k);
+      const bw = Math.max(1.5, cw * .62), top = y(Math.max(c.o, c.c)), bot = y(Math.min(c.o, c.c));
+      g += `<g class="${up ? 'cu' : 'cd'}${played ? '' : ' ghost'}"><line x1="${xc(i)}" x2="${xc(i)}" y1="${y(c.h)}" y2="${y(c.l)}" stroke-width="1"/><rect x="${xc(i) - bw / 2}" y="${top}" width="${bw}" height="${Math.max(1, bot - top)}"/></g>`;
+    });
+    const cx = xt(k);
+    g += `<line class="cur" x1="${cx}" x2="${cx}" y1="${T}" y2="${H - B}"/>`;
+    const v = run.pnl[k];
+    g += `<rect x="${W - R + 2}" y="${y(v) - 9}" width="${R - 4}" height="18" rx="3" fill="${v < -0.004 ? 'var(--red)' : 'var(--green)'}"/><text x="${W - R + 6}" y="${y(v) + 3.5}" style="fill:#07090d;font-weight:800">${usd(v)}</text>`;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.innerHTML = g;
+    const lastSell = [...run.trades].reverse().find(t => t.side === 'SELL' && t.k <= k);
+    const day = shown[shown.length - 1];
+    $('eqhead').innerHTML = (day ? `<span>O ${usd(day.o, false)} H ${usd(day.h, false)} L ${usd(day.l, false)} C ${usd(day.c, false)}</span>` : '')
+      + (lastSell ? `<span>last closed <b class="num">${esc(short(lastSell.s))}</b> <b class="tagbox ${cls(lastSell.pnl)}">${usd(lastSell.pnl)}</b> <span class="faint">${esc(lastSell.why)}</span></span>` : '<span>no closed trades yet</span>')
+      + `<span>just holding the same coins and QQQ: <b class="num ${cls(run.hold[k])}">${usd(run.hold[k])}</b></span>`;
+    $('eqNote').textContent = `${run.summary.buys} buys · ${run.summary.wins}W/${run.summary.closed - run.summary.wins}L`;
+  }
+
+  // -------- hub --------
+  // paused by the circuit breaker: no SEARCH call for any open market in the last few hours
+  function paused(){ const w = Math.round(stepsPerDay / 4); return k > w && !run.events.some(e => e.a === 'search' && e.k > k - w && e.k <= k) && run.trades.length && run.trades[run.trades.length - 1].k < k - w; }
+  function recentEvents(window){ return run.events.filter(e => e.k <= k && e.k > k - window); }
+  function hub(){
+    const win = Math.max(2, Math.round(stepsPerDay / 8));      // ~3 hours of checks counts as "now"
+    const recent = recentEvents(win);
+    const syms = Object.keys(run.stakes);
+    const openNow = syms.filter(s => run.open[s][k]);
+    const scored = openNow.map(s => ({s, sc:run.score[s][k] ?? 0, n:run.arts[s][k] || 0})).sort((a, b) => b.sc - a.sc);
+    const best = scored[0];
+    const headsDay = run.heads.filter(h => h.k <= k && h.k > k - stepsPerDay).length;
+    const lastOf = test => [...run.events].reverse().find(e => e.k <= k && test(e));
+    const info = {
+      feed: `${openNow.length}/${syms.length} markets open · ${openNow.map(short).join(' ') || '—'}`,
+      news: `${headsDay} headline${headsDay === 1 ? '' : 's'} in 24h`,
+      search: run.strategy !== 'news'
+        ? (e => e ? `${short(e.s)} ${e.x} signal · ${when(run.ts[e.k])}` : (run.strategy === 'trend' ? 'watching moving averages' : 'watching for a 3% dip'))(lastOf(e => e.a === 'search'))
+        : best ? `top ${short(best.s)} ${best.sc >= 0 ? '+' : ''}${best.sc.toFixed(2)} / line +${run.buyLine.toFixed(2)}` : 'waiting for open markets',
+      crash: (e => e ? `${short(e.s)} blocked ${when(run.ts[e.k])}` : `blocks after −${3}% drop`)(lastOf(e => e.a === 'crash')),
+      risk: (e => e ? `${short(e.s)} ${e.x} · ${e.tag || 'rules ok'}` : 'cooldown · daily limit')(lastOf(e => e.a === 'risk')),
+      sizer: (e => { const t = e && [...run.trades].reverse().find(t => t.side === 'BUY' && t.s === e.s && t.k >= e.k - 1); return t ? `${short(t.s)} ${usd(t.usd, false)} (Kelly)` : 'Kelly sizing'; })(lastOf(e => e.a === 'sizer')),
+      stop: (e => e ? `${short(e.s)} stop-loss ${when(run.ts[e.k])}` : `sells at −5%`)(lastOf(e => e.a === 'exit' && e.tag === 'stop-loss')),
+      exit: (e => e ? `${short(e.s)} ${e.tag || 'news exit'}` : 'trail 3% · 3-day limit')(lastOf(e => e.a === 'exit' && e.tag !== 'stop-loss')),
+    };
+    const hot = d => recent.some(e => d.on(e)) || (d.id === 'news' && run.heads.some(h => h.k <= k && h.k > k - win)) || (d.id === 'feed' && openNow.length > 0 && playing);
+    const tile = d => `<div class="tile${hot(d) ? ' hot' : ''}" style="--c:${d.c}"><span class="ic" style="background:${d.c}">${d.ic}</span><b>${d.name}</b><small>${esc(info[d.id])}</small></div>`;
+    $('left').innerHTML = LEFT.map(tile).join(''); $('right').innerHTML = RIGHT.map(tile).join('');
+    // verdict pill: latest desk decision or veto in the window, else the current read
+    const v = [...recent].reverse().find(e => e.a === 'desk' || e.x === 'veto');
+    const pill = $('verdict');
+    if(v && v.a === 'desk' && v.x === 'approve'){
+      const tr = run.trades.find(t => t.s === v.s && t.k === v.k);
+      const sell = /sell/.test(v.n);
+      pill.style.setProperty('--c', sell ? 'var(--gold)' : 'var(--green)');
+      pill.innerHTML = `APPROVE ${sell ? 'SELL' : 'BUY'} ${esc(short(v.s))}${tr ? ` · ${usd(tr.usd, false)}` : ''}<small>${esc(when(run.ts[v.k]))}</small>`;
+    } else if(v){
+      pill.style.setProperty('--c', 'var(--red)');
+      pill.innerHTML = `VETO ${esc(short(v.s))} · ${esc(v.a.toUpperCase())}<small>${esc(v.tag || v.n.slice(0, 40))}</small>`;
+    } else {
+      pill.style.setProperty('--c', 'var(--faint)');
+      pill.innerHTML = !openNow.length ? 'HOLD · markets shut<small>waiting</small>'
+        : run.strategy === 'trend' ? (paused() ? 'PAUSED · loss limit hit<small>circuit breaker: waits for you</small>' : 'HOLD · no crossover<small>moving averages flat</small>')
+        : run.strategy === 'meanrev' ? 'HOLD · no 3% dip<small>buy-the-dip rules</small>'
+        : best ? `HOLD · nothing over +${run.buyLine.toFixed(2)}<small>top: ${esc(short(best.s))} ${best.sc >= 0 ? '+' : ''}${best.sc.toFixed(2)}</small>` : 'HOLD · no headlines<small>nothing to score</small>';
+    }
+    $('scoutState').textContent = openNow.length ? 'scanning' : 'idle';
+    $('deskState').textContent = v ? 'decided' : 'watching';
+    $('hubPanel').classList.toggle('busy', playing);
+    $('hubWhen').textContent = when(run.ts[k]);
+  }
+
+  function boom(){
+    if(!playing) return;
+    const tr = run.trades.filter(t => t.k <= k && t.k > lastBoomK).pop();
+    lastBoomK = k;
+    if(!tr) return;
+    const b = $('boom');
+    const sell = tr.side === 'SELL', c = !sell ? 'var(--green)' : tr.pnl >= 0 ? 'var(--gold)' : 'var(--red)';
+    b.style.setProperty('--c', c);
+    $('boomBig').textContent = sell ? (tr.why === 'stop-loss' ? 'STOP-LOSS' : 'SOLD') : 'BOUGHT';
+    $('boomSmall').textContent = `${short(tr.s)} · ${sell ? usd(tr.pnl) : usd(tr.usd, false)} · ${when(run.ts[tr.k])}`;
+    b.classList.add('show'); clearTimeout(boomTimer); boomTimer = setTimeout(() => b.classList.remove('show'), 1100);
+  }
+
+  // -------- bottom --------
+  function bottom(){
+    const vs = [];
+    for(const e of run.events){
+      if(e.k > k || !(e.a === 'desk' || e.x === 'veto')) continue;
+      const prev = vs[vs.length - 1];
+      if(prev && e.x === 'veto' && prev.x === 'veto' && prev.s === e.s && prev.a === e.a && prev.tag === e.tag){ prev.times++; prev.k = e.k; continue; }
+      vs.push({...e, times:1});
+    }
+    vs.splice(0, Math.max(0, vs.length - 30)); vs.reverse();
+    $('vCount').textContent = `${run.events.filter(e => e.k <= k && e.a === 'desk').length} ok · ${run.events.filter(e => e.k <= k && e.x === 'veto').length} veto`;
+    $('verdicts').innerHTML = vs.length ? vs.map(e => {
+      const tr = run.trades.find(t => t.s === e.s && t.k === e.k && (/sell/.test(e.n) ? t.side === 'SELL' : t.side === 'BUY'));
+      const ok = e.a === 'desk' && e.x === 'approve';
+      const right = tr && tr.side === 'SELL' ? `<span class="${cls(tr.pnl)}">${usd(tr.pnl)}</span>` : tr ? `<span class="dim">${usd(tr.usd, false)}</span>` : `<span class="faint">${esc(e.tag || '')}</span>`;
+      return `<li><span class="k ${ok ? 'ok' : 'veto'}">${ok ? 'OK' : 'VETO'}</span><span class="t">${esc(short(e.s))} ${ok ? (/sell/.test(e.n) ? 'sell' : 'buy') : esc(e.a)}${e.times > 1 ? ` <span class="faint">×${e.times}</span>` : ''}</span>${right}</li>`;
+    }).join('') : `<li class="empty">${run.strategy === 'news' ? `No decisions yet. SEARCH hasn’t found a news score over +${run.buyLine.toFixed(2)}.` : run.strategy === 'meanrev' ? 'No decisions yet. No coin or QQQ dropped 3% below its recent average.' : 'No decisions yet.'}</li>`;
+    const hs = run.heads.filter(h => h.k <= k).slice(-25).reverse();
+    $('news').innerHTML = hs.length ? hs.map(h => `<li><span class="k">${esc(short(h.s))}</span><span class="h">${esc(h.h)}</span><span class="${h.sc >= run.buyLine ? 'up' : h.sc < 0 ? 'down' : 'faint'}">${h.sc >= 0 ? '+' : '−'}${Math.abs(h.sc).toFixed(2)}</span></li>`).join('') : '<li class="empty">No headlines yet.</li>';
+    // p/l sparkline
+    const svg = $('pl'), W = Math.max(200, svg.clientWidth || 360), H = svg.clientHeight || 110;
+    const arr = run.pnl.slice(0, k + 1), lo = Math.min(0, ...run.pnl), hi = Math.max(0, ...run.pnl), rng = (hi - lo) || 1;
+    const x = j => 8 + (W - 16) * (j / (run.pnl.length - 1)), y = v => 8 + (H - 16) * (1 - (v - lo) / rng);
+    const d = arr.map((v, j) => (j ? 'L' : 'M') + x(j).toFixed(1) + ' ' + y(v).toFixed(1)).join('');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = `<line class="z" x1="8" x2="${W - 8}" y1="${y(0)}" y2="${y(0)}"/>${arr.length > 1 ? `<path class="ar" d="${d}L${x(arr.length - 1)} ${y(0)}L${x(0)} ${y(0)}Z"/><path class="ln" d="${d}"/>` : ''}`;
+    $('plNow').innerHTML = `<span class="${cls(run.pnl[k])}">${usd(run.pnl[k])}</span>`;
+    const sells = run.trades.filter(t => t.side === 'SELL' && t.k <= k);
+    const days = run.candles.filter(c => c.k <= k).map(c => c.c - c.o);
+    const stops = sells.filter(t => t.why === 'stop-loss').length;
+    $('stats').innerHTML = [
+      ['best day', days.length ? usd(Math.max(...days)) : '—'], ['worst day', days.length ? usd(Math.min(...days)) : '—'],
+      ['won', `${sells.filter(t => t.pnl > 0).length}/${sells.length}`], ['stop-losses', stops],
+      ['vetoes', run.events.filter(e => e.k <= k && e.x === 'veto').length], ['vs holding', usd(run.pnl[k] - run.hold[k])],
+    ].map(([a, b]) => `<div>${a} <b>${b}</b></div>`).join('');
+  }
+
+  function top(){
+    const v = run.budget + run.pnl[k];
+    $('bal').textContent = '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+    $('bal').className = cls(run.pnl[k]);
+    $('balSub').innerHTML = `${usd(run.pnl[k])} from $${run.budget.toFixed(2)}`;
+    const day = Math.min(run.candles.length, run.candles.filter(c => c.k < k).length + 1);
+    const nTr = run.trades.filter(t => t.k <= k).length;
+    $('sub').textContent = `day ${day}/${run.candles.length} · ${nTr} trade${nTr === 1 ? '' : 's'} · scouts read prices + headlines, Head of Desk decides`;
+    $('tick').innerHTML = Object.keys(run.stakes).map(s => {
+      const p = run.prices[s][k], p0 = run.prices[s].find(x => x), ch = (p / p0 - 1) * 100;
+      return `<span class="chip${run.held[s][k] ? ' held' : ''}${run.open[s][k] ? '' : ' shut'}" title="${run.held[s][k] ? 'holding' : 'not held'}${run.open[s][k] ? '' : ' · market closed'}"><span class="dot"></span>${esc(short(s))} <span class="dim">${px(p)}</span> <span class="${cls(ch)}">${ch >= 0 ? '+' : '−'}${Math.abs(ch).toFixed(1)}%</span></span>`;
+    }).join('');
+    $('days').innerHTML = run.candles.map((c, i) => {
+      const st = c.k <= k ? (i + 1 === day ? 'now' : c.c - c.o < -0.004 ? 'lossy' : 'past') : (i + 1 === day ? 'now' : '');
+      return `<span class="${st}" title="${c.d}: ${usd(c.c - c.o)}">${i + 1}</span>`;
+    }).join('');
+    $('clock').textContent = when(run.ts[k]);
+    $('scrub').value = k;
+  }
+
+  function draw(){ top(); candles(); hub(); bottom(); }
+
+  function setPlaying(on){
+    playing = on;
+    $('play').innerHTML = on ? '<svg viewBox="0 0 12 12"><path d="M2 1h3v10H2zM7 1h3v10H7z"/></svg><span>Pause</span>' : '<svg viewBox="0 0 12 12"><path d="M2 1l9 5-9 5z"/></svg><span>Replay</span>';
+    $('play').setAttribute('aria-label', on ? 'Pause the replay' : 'Play the replay');
+    if(on){ lastTick = performance.now(); carry = 0; lastBoomK = k; requestAnimationFrame(tick); } else hub();
+  }
+  function tick(now){
+    if(!playing) return;
+    const dt = Math.min(.25, (now - lastTick) / 1000); lastTick = now;
+    carry += dt * (+$('speed').value) * stepsPerDay;
+    const adv = Math.floor(carry);
+    if(adv){ carry -= adv; k = Math.min(run.ts.length - 1, k + adv); draw(); boom(); }
+    if(k >= run.ts.length - 1){ setPlaying(false); return; }
+    requestAnimationFrame(tick);
+  }
+  $('play').addEventListener('click', () => { if(playing) return setPlaying(false); if(k >= run.ts.length - 1){ k = 0; draw(); } setPlaying(true); });
+  $('scrub').addEventListener('input', e => { setPlaying(false); k = +e.target.value; draw(); });
+  $('opt').addEventListener('click', e => { const b = e.target.closest('button'); if(b){ setPlaying(false); select(+b.dataset.i); } });
+  let rz; window.addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => run && (candles(), bottom()), 80); });
+
+  fetch('sim.json').then(r => { if(!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }).then(d => {
+    D = d;
+    $('foot').textContent = `Simulation on ${d.source.replace(/^saved /, '').replace(/\s*\(.*\)$/, '')}, ${d.from} to ${d.to}. Every check ran through RoboMoney’s real bot code (all agents and the Head of Desk) with a simulated broker: crypto every 15 minutes around the clock, QQQ only while its market is open. Paper only; nothing touched an account. ${d.notes || ''} Orders fill at the last 5-minute price, so real fills would be slightly worse. Past results don’t predict future ones. Not financial advice.`;
+    select(0);
+  }).catch(e => { $('sub').innerHTML = `<span class="err">Couldn’t load the simulation data (${esc(e.message)}). Reload to try again.</span>`; });
+})();
+</script>
+</body>
+</html>
