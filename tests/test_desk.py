@@ -1,6 +1,6 @@
 """Offline tests for the trading desk: the agents (agents.py), the Head of Desk (desk.py) and how
 bot.py wires them together."""
-import json, logging, os, sys, tempfile, time, unittest
+import json, logging, os, sys, tempfile, time, unittest, unittest.mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config  # noqa: E402
@@ -180,6 +180,13 @@ class CycleTests(unittest.TestCase):
             self.assertEqual(st["desk_alerts"][0]["symbol"], "NVDA")
             self.assertIn("buy blocked", [d for d in st["decisions"] if d["symbol"] == "NVDA"][0]["why"])
             self.assertTrue(any(e["agent"] == "crash" for e in st["desk_log"]))
+
+            # Next check 15 minutes later, still crashing: CRASH vetoes again but doesn't alert again.
+            with unittest.mock.patch("time.time", lambda: now + 900):
+                bot.run_cycle(b, logging.getLogger("test-desk"))
+            st = json.load(open(config.STATE_FILE))
+            self.assertEqual(st["desk"]["symbols"]["NVDA"]["verdicts"][-1]["agent"], "crash")
+            self.assertEqual(len(st["desk_alerts"]), 1)
 
 
 if __name__ == "__main__":

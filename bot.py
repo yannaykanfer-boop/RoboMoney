@@ -257,9 +257,12 @@ def _run_cycle(broker, log, notes):
                     if crash:
                         desk.hear(symbol, crash)
                         log.info(f"{symbol}: {crash.note}")
-                        desk.alert(symbol, f"SEARCH wanted to buy {symbol}, but CRASH stopped it: "
-                                           f"{crash.note.split('— ', 1)[-1]} Worth checking the news yourself.",
-                                   level="info")
+                        # One alert per stock per hour: a crash lasts several checks.
+                        if not any(x.get("symbol") == symbol and "CRASH stopped" in x.get("message", "")
+                                   and time.time() - x.get("t", 0) < 3600 for x in prior.get("desk_alerts", [])):
+                            desk.alert(symbol, f"SEARCH wanted to buy {symbol}, but CRASH stopped it: "
+                                               f"{crash.note.split('— ', 1)[-1]} Worth checking the news yourself.",
+                                       level="info")
                         action = "hold"
 
                 # SIZER: how many dollars.

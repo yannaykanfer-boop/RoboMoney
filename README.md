@@ -107,6 +107,23 @@ that SEARCH liked.
 Not on this desk: copying "whale" wallets (no clean free equivalent for stocks) and social-media
 hype tracking (needs paid APIs).
 
+### Desk sim
+
+`desk_sim.py` replays past prices and headlines through the **real** bot: the same
+`bot.run_cycle`, every agent, the Head of Desk, Kelly sizing, cooldowns and the circuit breaker.
+Only the broker and the clock are simulated, and it never places an order. It uses the live
+workflow's settings, checks every 15 minutes of market hours, and reports profit and loss against
+just holding, plus what each agent did.
+
+```bash
+python desk_sim.py --days 90 --compare   # real history (needs Alpaca keys); also runs with CRASH off
+python desk_sim.py --synthetic           # made-up data, no keys: checks the plumbing only
+```
+
+On GitHub: **Actions → Desk sim → Run workflow**. It also runs on pull requests that change the
+bot. The report is on the run's Summary page. Fills are at the last 5-minute close, so real orders
+would do slightly worse, and past results don't predict future ones.
+
 ## What this is and isn't
 
 - It's a deterministic rule-based bot, not an LLM deciding trades live —
