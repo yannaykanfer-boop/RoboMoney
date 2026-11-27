@@ -48,5 +48,8 @@ jobs:
           ALPACA_PAPER: "true"
           DAYS: ${{ github.event.inputs.days || '90' }}
         run: |
-          python desk_sim.py --days "$DAYS" --compare | tee sim.txt
+          # --print-data puts the compressed history in this log (stderr, not the summary) so the
+          # simulator page can be built from it.
+          python desk_sim.py --days "$DAYS" --compare --print-data \
+            --extra-symbols GOOG,MSFT,AMZN,META,TSLA,AMD | tee sim.txt
           { echo '## Trading desk sim'; echo '```'; cat sim.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

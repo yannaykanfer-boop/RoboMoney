@@ -18,7 +18,10 @@ Run:
 """
 
 import argparse
+import base64
 import bisect
+import gzip
+import hashlib
 import json
 import logging
 import os
@@ -186,7 +189,7 @@ def run(bars, articles, step_bars=3, crash_pct=None):
     tmp = tempfile.mkdtemp()
     config.STATE_FILE = os.path.join(tmp, "state.json")
     times = sorted({t for rows in bars.values() for t, _ in rows})
-    verdicts, alerts, paused_at = [], [], None
+    verdicts, alerts, paused_at, equity = [], [], None, []
 
     real_alert = desk.HeadOfDesk.alert
 
@@ -204,6 +207,7 @@ def run(bars, articles, step_bars=3, crash_pct=None):
                     continue
                 clock.t = t
                 bot.run_cycle(broker, log)
+                equity.append((t, round(broker.account_summary()["equity"], 2)))
                 with open(config.STATE_FILE) as f:
                     st = json.load(f)
                 if st.get("paused") and paused_at is None:
@@ -218,7 +222,7 @@ def run(bars, articles, step_bars=3, crash_pct=None):
 
     last = {s: rows[-1][1] for s, rows in bars.items() if rows}
     clock.t = max(times) if times else 0
-    return {"fills": broker.fills, "verdicts": verdicts, "alerts": alerts, "paused_at": paused_at,
+    return {"equity": equity, "fills": broker.fills, "verdicts": verdicts, "alerts": alerts, "paused_at": paused_at,
             "checks": len(range(0, len(times), step_bars)), "final_equity": broker.account_summary()["equity"],
             "open": {s: dict(p, price=last.get(s)) for s, p in broker.pos.items()}}
 
@@ -384,14 +388,76 @@ def synthetic(symbols, days, seed=7):
     return bars, articles
 
 
+DATA_BEGIN, DATA_END = "=====DESK-SIM-DATA-BEGIN=====", "=====DESK-SIM-DATA-END====="
+
+
+def encode_history(bars, articles):
+    """History as compressed text lines, so a CI log can carry it (see decode_history)."""
+    raw = json.dumps({"bars": {s: [[int(t), round(c, 4)] for t, c in rows] for s, rows in bars.items()},
+                      "articles": articles}, separators=(",", ":")).encode()
+    blob = base64.b64encode(gzip.compress(raw, 9)).decode()
+    return [DATA_BEGIN, f"sha256={hashlib.sha256(raw).hexdigest()}"] + \
+           [blob[i:i + 2000] for i in range(0, len(blob), 2000)] + [DATA_END]
+
+
+def decode_history(text):
+    """Reads the block encode_history printed, from a log (timestamps in front of lines are fine)."""
+    lines, inside, digest = [], False, None
+    for line in text.splitlines():
+        body = line.split(" ", 1)[1] if re.match(r"^\d{4}-\d\d-\d\dT\S+Z ", line) else line
+        if body.strip() == DATA_BEGIN:
+            inside, lines = True, []
+        elif body.strip() == DATA_END:
+            break
+        elif inside and body.startswith("sha256="):
+            digest = body.strip()[7:]
+        elif inside:
+            lines.append(body.strip())
+    raw = gzip.decompress(base64.b64decode("".join(lines)))
+    if digest and hashlib.sha256(raw).hexdigest() != digest:
+        raise ValueError("history block is damaged (checksum mismatch)")
+    d = json.loads(raw)
+    return {s: [tuple(r) for r in rows] for s, rows in d["bars"].items()}, d["articles"]
+
+
+def parse_variant(text):
+    """'Label|KEY=VALUE;KEY=VALUE' -> (label, {KEY: VALUE})."""
+    label, _, sets = text.partition("|")
+    env = {}
+    for part in filter(None, (x.strip() for x in sets.split(";"))):
+        k, _, v = part.partition("=")
+        env[k.strip().upper()] = v.strip()
+    return label.strip() or "variant", env
+
+
+def run_variant(label, env, bars, articles, step, crash_pct=None):
+    """Runs one setting change on top of the current settings, on the stocks those settings trade."""
+    old = apply_settings(env)
+    try:
+        b = {s: bars[s] for s in config.SYMBOLS if bars.get(s)}
+        a = {s: articles.get(s, []) for s in b}
+        res = run(b, a, step, crash_pct)
+        return {"label": label, "env": env, "stakes": dict(config.STAKES), "budget": config.TOTAL_BUDGET,
+                "buy_line": config.NEWS_BUY_THRESHOLD, "crash_pct": config.CRASH_BLOCK_PCT if crash_pct is None
+                else crash_pct, "summary": summarize(res, b), "result": res,
+                "prices": {s: rows[::step] for s, rows in b.items()}}
+    finally:
+        restore_settings(old)
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--days", type=int, default=90)
     p.add_argument("--step", type=int, default=3, help="check every N five-minute bars (3 = every 15 min)")
     p.add_argument("--compare", action="store_true", help="also run with CRASH off and show the difference")
+    p.add_argument("--variant", action="append", default=[], metavar="'LABEL|KEY=VALUE;KEY=VALUE'",
+                   help="also run with these settings changed, e.g. 'Lower line|NEWS_BUY_THRESHOLD=0.25'")
     p.add_argument("--synthetic", action="store_true", help="made-up data (no keys); tests the plumbing only")
     p.add_argument("--data", help="replay a file saved earlier with --save-data")
     p.add_argument("--save-data", help="save the downloaded history to this file")
+    p.add_argument("--extra-symbols", default="", help="also download these (comma-separated), e.g. for variants")
+    p.add_argument("--print-data", action="store_true", help="print the history, compressed, to stderr")
+    p.add_argument("--json", help="write every run's full results here (used by sim_page.py)")
     p.add_argument("--own-settings", action="store_true",
                    help="use your .env settings instead of the live workflow's")
     args = p.parse_args()
@@ -400,43 +466,76 @@ def main():
 
     if not args.own_settings:
         apply_settings(live_settings())
+    variants = [parse_variant(v) for v in args.variant]
+    wanted = list(dict.fromkeys(config.SYMBOLS + [x.strip().upper() for x in args.extra_symbols.split(",") if x.strip()]
+                                + [s for _, env in variants for s in config._parse_stakes(env.get("STAKES", ""), 0)]))
 
     if args.data:
         with open(args.data) as f:
-            raw = json.load(f)
-        bars = {s: [tuple(r) for r in rows] for s, rows in raw["bars"].items()}
-        articles, source = raw["articles"], f"saved history ({args.data})"
+            text = f.read()
+        if DATA_BEGIN in text:
+            bars, articles = decode_history(text)
+        else:
+            raw = json.loads(text)
+            bars = {s: [tuple(r) for r in rows] for s, rows in raw["bars"].items()}
+            articles = raw["articles"]
+        source = f"saved real history ({os.path.basename(args.data)})"
     elif args.synthetic:
-        bars, articles = synthetic(config.SYMBOLS, args.days)
+        bars, articles = synthetic(wanted, args.days)
         source = "SYNTHETIC data (made up; checks the plumbing, says nothing about the strategy)"
     else:
         problems = [x for x in config.validate() if "ALPACA" in x]
         if problems:
             p.error(problems[0] + " (or try --synthetic)")
-        print(f"Downloading {args.days} days of prices and headlines for {', '.join(config.SYMBOLS)}...")
-        bars, articles = news_backtest.fetch(config.SYMBOLS, args.days)
+        print(f"Downloading {args.days} days of prices and headlines for {', '.join(wanted)}...")
+        bars, articles = news_backtest.fetch(wanted, args.days)
         source = f"real prices and headlines, last {args.days} days"
     if args.save_data:
         with open(args.save_data, "w") as f:
             json.dump({"bars": bars, "articles": articles}, f)
+    if args.print_data:
+        print("\n".join(encode_history(bars, articles)), file=sys.stderr)
     bars = {s: rows for s, rows in bars.items() if rows}
-    if not bars:
+    if not any(bars.get(s) for s in config.SYMBOLS):
         sys.exit("No price data.")
 
     started = time.time()
-    res = run(bars, articles, args.step)
-    s = summarize(res, bars)
+    runs = [run_variant("Live settings", {}, bars, articles, args.step)]
     print()
-    print(report(s, bars, f"TRADING DESK SIM · {source}"))
+    print(report(runs[0]["summary"], {s: bars[s] for s in config.SYMBOLS if s in bars}, f"TRADING DESK SIM · {source}"))
     if args.compare:
-        res0 = run(bars, articles, args.step, crash_pct=0)
-        s0 = summarize(res0, bars)
+        runs.append(run_variant("Live settings, CRASH off", {}, bars, articles, args.step, crash_pct=0))
+        s, s0 = runs[0]["summary"], runs[-1]["summary"]
         print()
         print("WITH CRASH OFF (same data, same everything else):")
         print(f"  Bot: ${s0['pnl']:+.2f}  vs  ${s['pnl']:+.2f} with CRASH on  →  CRASH changed P/L by "
               f"${s['pnl'] - s0['pnl']:+.2f}")
         print(f"  Buys: {s0['buys']} without CRASH, {s['buys']} with it. "
               f"Closed trades won: {s0['wins']}/{s0['round_trips']} vs {s['wins']}/{s['round_trips']}.")
+    for label, env in variants:
+        missing = [x for x in config._parse_stakes(env.get("STAKES", ""), 0) if not bars.get(x)]
+        if missing:
+            print(f"\n{label}: skipped, no price data for {', '.join(missing)}")
+            continue
+        runs.append(run_variant(label, env, bars, articles, args.step))
+        old = apply_settings(env)
+        try:
+            print()
+            print(report(runs[-1]["summary"], {s: bars[s] for s in config.SYMBOLS},
+                         f"VARIANT · {label} · {'; '.join(f'{k}={v}' for k, v in env.items())}"))
+        finally:
+            restore_settings(old)
+    if len(runs) > 1:
+        print("\nSIDE BY SIDE")
+        for r in runs:
+            s = r["summary"]
+            print(f"  {r['label'][:34]:<34} bot ${s['pnl']:+8.2f}   holding ${s['hold_pnl']:+8.2f}   "
+                  f"{s['buys']:>3} buys   {s['wins']}/{s['round_trips']} won")
+    headline_counts = {s: len(articles.get(s, [])) for s in wanted}
+    print("\nHeadlines downloaded: " + ", ".join(f"{s} {n}" for s, n in headline_counts.items()))
+    if args.json:
+        with open(args.json, "w") as f:
+            json.dump({"source": source, "step": args.step, "headlines": headline_counts, "runs": runs}, f)
     print(f"\n(took {time.time() - started:.1f}s. Fills are at the last 5-minute close, so real orders would "
           f"do slightly worse. Past results don't predict future ones.)")
 
