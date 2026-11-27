@@ -159,7 +159,10 @@ def _run_cycle(broker, log, notes):
         pause_note = (f"overall account down ${abs(overall_change):.2f}, "
                        f"past the ${config.MAX_OVERALL_LOSS_DOLLARS} limit — paused automatically")
         log.warning(f"CIRCUIT BREAKER: {pause_note}")
-        desk.alert(None, f"Circuit breaker: {pause_note}. New trades are stopped until you look.", level="error")
+        # Alert once, when it first trips. A trend "resume" that the breaker cancels in the same run
+        # would otherwise send the same alert every 15 minutes.
+        if not prior.get("paused", False):
+            desk.alert(None, f"Circuit breaker: {pause_note}. New trades are stopped until you look.", level="error")
 
     # Same-story check (news strategy): if one article is the main reason for buying
     # several symbols this cycle, buy only the symbol with the strongest news score.

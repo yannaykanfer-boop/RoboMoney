@@ -40,6 +40,8 @@ import news_backtest
 
 NY = ZoneInfo("America/New_York")
 BAR_MINUTES = news_backtest.BAR_MINUTES
+CRYPTO_FEE_PCT = 0.25        # Alpaca's base crypto trading fee per fill; stock trades are commission-free
+SIM_STRATEGIES = ("news", "trend", "meanrev")
 WORKFLOW = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".github", "workflows", "trade.yml")
 
 
@@ -126,7 +128,9 @@ class SimBroker:
         i = self._i(sym)
         if i < 0 or not self.tradable(sym):
             return []
-        n = max(2, lookback // BAR_MINUTES)
+        # The news strategy's window is a time span (an hour of 1-minute bars = 12 five-minute bars).
+        # The price strategies count bars, so here they run on 5-minute bars instead of 1-minute ones.
+        n = max(2, lookback // BAR_MINUTES) if config.STRATEGY == "news" else lookback
         return [c for _, c in self.bars[sym][max(0, i - n + 1):i + 1]]
 
     def recent_news(self, sym, hours=24, limit=50):
@@ -149,10 +153,13 @@ class SimBroker:
         return {"qty": p["qty"], "entry": p["cost"] / p["qty"], "cost": p["cost"], "value": value,
                 "pnl": value - p["cost"]}
 
+    def fee(self, sym):
+        return CRYPTO_FEE_PCT / 100 if is_crypto(sym) else 0.0
+
     def buy_notional(self, sym, dollars):
         price = self.price(sym)
         p = self.pos.setdefault(sym, {"qty": 0.0, "cost": 0.0})
-        p["qty"] += dollars / price
+        p["qty"] += dollars * (1 - self.fee(sym)) / price
         p["cost"] += dollars
         self.cash -= dollars
         self.fills.append({"t": self.clock.t, "symbol": sym, "side": "BUY", "price": price, "dollars": dollars})
@@ -162,9 +169,10 @@ class SimBroker:
         p, price = self.pos.pop(sym, None), self.price(sym)
         if not p:
             return None
-        self.cash += p["qty"] * price
+        proceeds = p["qty"] * price * (1 - self.fee(sym))
+        self.cash += proceeds
         self.fills.append({"t": self.clock.t, "symbol": sym, "side": "SELL", "price": price,
-                           "dollars": p["qty"] * price, "cost": p["cost"]})
+                           "dollars": proceeds, "cost": p["cost"]})
         return type("Order", (), {"id": f"sim-{len(self.fills)}"})()
 
 
@@ -240,8 +248,8 @@ def _sim_datetime(clock):
 def run(bars, articles, step_bars=3, crash_pct=None):
     """Replays history through bot.run_cycle. Returns a result dict (see summarize)."""
     import bot
-    if config.STRATEGY != "news":
-        raise SystemExit("The sim supports the news strategy (what the live bot runs). Set STRATEGY=news.")
+    if config.STRATEGY not in SIM_STRATEGIES:
+        raise SystemExit(f"The sim supports these strategies: {', '.join(SIM_STRATEGIES)}.")
     old_crash = config.CRASH_BLOCK_PCT
     old_state = config.STATE_FILE
     if crash_pct is not None:

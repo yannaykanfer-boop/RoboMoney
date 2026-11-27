@@ -136,6 +136,23 @@ class HeadOfDeskTests(unittest.TestCase):
         self.assertEqual({e["agent"] for e in self.d.log_entries()}, {"search", "desk"})
 
 
+class BreakerAlertTests(unittest.TestCase):
+    def test_alerts_once_not_on_every_resume_and_retrip(self):
+        import bot
+        tmp = tempfile.mkdtemp()
+        closes = [100.0] * 15 + [100.0 + i for i in range(1, 11)]          # a strong uptrend: "resume"
+        with Patch(STRATEGY="trend", STATE_FILE=os.path.join(tmp, "s.json"), STAKES={"AAPL": 100.0}, SYMBOLS=["AAPL"],
+                   MAX_OVERALL_LOSS_DOLLARS=30.0):
+            json.dump({"history": [], "trades": [], "baseline_equity": 1100.0}, open(config.STATE_FILE, "w"))
+            b = FakeBroker(closes={"AAPL": closes}, articles={"AAPL": []})
+            for _ in range(3):
+                bot.run_cycle(b, logging.getLogger("test-desk"))
+            with open(config.STATE_FILE) as f:
+                st = json.load(f)
+            self.assertTrue(st["paused"])
+            self.assertEqual(sum("Circuit breaker" in a["message"] for a in st["desk_alerts"]), 1)
+
+
 class FakeBroker:
     def __init__(self, closes, articles):
         self.closes, self.articles, self.orders, self.qty = closes, articles, [], {}

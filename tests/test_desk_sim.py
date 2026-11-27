@@ -45,8 +45,12 @@ class SimBrokerTests(unittest.TestCase):
 
     def test_window_is_in_five_minute_bars(self):
         self.clock.t = 100 + 300 * 19
-        self.assertEqual(self.b.recent_closes("AAA", lookback=60), [10.0 + i for i in range(8, 20)])  # 12 bars
-        self.assertEqual(len(self.b.recent_closes("AAA", lookback=1)), 2)
+        old, config.STRATEGY = config.STRATEGY, "news"
+        try:
+            self.assertEqual(self.b.recent_closes("AAA", lookback=60), [10.0 + i for i in range(8, 20)])  # 12 bars
+            self.assertEqual(len(self.b.recent_closes("AAA", lookback=1)), 2)
+        finally:
+            config.STRATEGY = old
 
     def test_stocks_only_trade_in_market_hours_crypto_always(self):
         clock = desk_sim.Clock()
@@ -59,6 +63,25 @@ class SimBrokerTests(unittest.TestCase):
         self.assertEqual(b.price("QQQ"), 6.0)        # still valued at its last price
         self.assertTrue(b.tradable("BTC/USD")); self.assertEqual(b.recent_closes("BTC/USD"), [1.0, 2.0])
         self.assertEqual(desk_sim.news_symbol("BTC/USD"), "BTCUSD")
+
+    def test_crypto_pays_the_fee_both_ways(self):
+        clock = desk_sim.Clock(); clock.t = 1000
+        b = desk_sim.SimBroker({"BTC/USD": [(1000, 100.0)]}, {}, 1000.0, clock)
+        b.buy_notional("BTC/USD", 100.0)
+        self.assertAlmostEqual(b.get_position_qty("BTC/USD"), 0.9975)       # 0.25% off the buy
+        b.sell_all("BTC/USD")
+        self.assertAlmostEqual(b.cash, 900 + 99.75 * 0.9975)                 # and off the sale
+
+    def test_price_strategies_count_bars(self):
+        clock = desk_sim.Clock()
+        b = desk_sim.SimBroker({"BTC/USD": [(300 * i, float(i)) for i in range(40)]}, {}, 0.0, clock)
+        clock.t = 300 * 39
+        old = config.STRATEGY
+        try:
+            config.STRATEGY = "trend"; self.assertEqual(len(b.recent_closes("BTC/USD", lookback=25)), 25)
+            config.STRATEGY = "news"; self.assertEqual(len(b.recent_closes("BTC/USD", lookback=25)), 5)
+        finally:
+            config.STRATEGY = old
 
     def test_buy_sell_cash_and_positions(self):
         self.clock.t = 100                                                # price 10
