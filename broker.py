@@ -16,6 +16,16 @@ import config
 import news
 
 
+def in_regular_session(t_ny, sessions):
+    """True if a bar starting at t_ny (New York time) is inside that day's regular session.
+    sessions: {date: (open, close)} from the market calendar; falls back to 9:30-16:00."""
+    s = sessions.get(t_ny.date())
+    if s:
+        return s[0] <= t_ny < s[1]
+    mins = t_ny.hour * 60 + t_ny.minute
+    return 9 * 60 + 30 <= mins < 16 * 60
+
+
 class Broker:
     def __init__(self):
         self.trading = TradingClient(config.API_KEY, config.SECRET_KEY, paper=config.PAPER)
@@ -101,17 +111,34 @@ class Broker:
         rows = self.data.get_stock_bars(req).data.get(symbol, [])
         return float(rows[-1].close) if rows else None
 
+    def market_sessions(self, days=10):
+        """{date: (open, close)} in New York time from Alpaca's market calendar, so early-close days
+        (the day after Thanksgiving, Christmas Eve) end at 1 PM. Empty if the calendar can't be read."""
+        if getattr(self, "_sessions", None) is not None:
+            return self._sessions
+        ny = ZoneInfo("America/New_York")
+        try:
+            from alpaca.trading.requests import GetCalendarRequest
+            today = datetime.now(ny).date()
+            cal = self.trading.get_calendar(GetCalendarRequest(start=today - timedelta(days=days), end=today))
+            as_ny = lambda dt: dt.replace(tzinfo=ny) if dt.tzinfo is None else dt.astimezone(ny)
+            self._sessions = {c.date: (as_ny(c.open), as_ny(c.close)) for c in cal}
+        except Exception:
+            self._sessions = {}
+        return self._sessions
+
     def session_bars(self, symbol):
-        """Regular-hours (9:30-16:00 ET) 5-minute closes for the latest session.
+        """Regular-hours 5-minute closes for the latest session (the market calendar's hours, so a
+        1 PM early close isn't followed by after-hours prices; 9:30-16:00 ET if unknown).
         Returns (session_date, [(epoch, close), ...], previous_session_close)."""
         ny = ZoneInfo("America/New_York")
         req = StockBarsRequest(symbol_or_symbols=symbol, timeframe=TimeFrame(5, TimeFrameUnit.Minute),
                                start=datetime.now(timezone.utc) - timedelta(days=7))
+        sessions = self.market_sessions()
         by_day = {}
         for b in self.data.get_stock_bars(req).data.get(symbol, []):
             t = b.timestamp.astimezone(ny)
-            mins = t.hour * 60 + t.minute
-            if 9 * 60 + 30 <= mins < 16 * 60:  # skip pre-market / after-hours
+            if in_regular_session(t, sessions):  # skip pre-market / after-hours
                 by_day.setdefault(t.date(), []).append((b.timestamp.timestamp(), float(b.close)))
         if not by_day:
             return None, [], None
