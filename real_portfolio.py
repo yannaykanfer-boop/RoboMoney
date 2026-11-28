@@ -101,6 +101,10 @@ def update(broker, prior_state, log):
     refs, lives = cache["prices"], {}
     as_of = date.fromisoformat(port["as_of"])
     bars, prev, session = {}, {}, None
+    try:
+        market_open = broker.is_market_open()
+    except Exception:
+        market_open = True                     # unknown: keep using the last 5-minute price
     for sym in port["holdings"]:
         try:
             if sym not in refs:
@@ -112,6 +116,12 @@ def update(broker, prior_state, log):
                 bars[sym] = b
                 lives[sym] = b[-1][1]          # last regular-hours price
                 session = max(session or day, day)
+                if not market_open:
+                    # After the close, use the official daily close (what Greenlight shows), not the
+                    # last 5-minute bar, which can differ from the closing auction by a few cents.
+                    close = broker.close_on_or_before(sym, day)
+                    if close:
+                        lives[sym] = close
             if pc:
                 prev[sym] = pc
         except Exception as e:
