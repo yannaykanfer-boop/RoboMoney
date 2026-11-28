@@ -13,6 +13,7 @@ from alpaca.data.historical.news import NewsClient
 from alpaca.data.timeframe import TimeFrame, TimeFrameUnit
 
 import config
+import news
 
 
 class Broker:
@@ -22,9 +23,9 @@ class Broker:
         self.news = NewsClient(config.API_KEY, config.SECRET_KEY)
 
     def recent_news(self, symbol, hours=24, limit=50):
-        """Headlines mentioning `symbol` in the last `hours`, oldest first."""
+        """Headlines mentioning `symbol` (or its NEWS_ALIASES) in the last `hours`, oldest first."""
         req = NewsRequest(
-            symbols=symbol,
+            symbols=news.news_symbols(symbol),
             start=datetime.now(timezone.utc) - timedelta(hours=hours),
             limit=limit,
             sort=Sort.DESC,
@@ -34,7 +35,7 @@ class Broker:
         # back with the same ID for each of them, which is how the bot spots "same story".
         out = [{"id": getattr(a, "id", None), "t": a.created_at.timestamp(), "headline": a.headline or "",
                 "summary": a.summary or "", "source": a.source} for a in articles]
-        return sorted(out, key=lambda a: a["t"])
+        return sorted(news.dedupe(out), key=lambda a: a["t"])
 
     def account_summary(self):
         acct = self.trading.get_account()

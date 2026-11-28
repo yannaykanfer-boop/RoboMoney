@@ -5,6 +5,15 @@ real broker (Alpaca) instead of a simulated random walk. Defaults to **paper
 trading** (fake money, real prices) so you can watch it work before any real
 money is involved.
 
+## How it runs (no Terminal needed)
+
+- **GitHub Actions** runs one bot cycle per run (`.github/workflows/trade.yml`), in paper mode, and commits
+  the results to `state.json` for the dashboard. GitHub's own schedule for it is unreliable (it often runs
+  once a day, after the close), so:
+- **A Claude scheduled task** starts the workflow every hour on weekdays, 10:07 AM to 3:07 PM New York time.
+- **The control page** (https://robomoney-replay.vercel.app, source in `site/`) has a **Start bot** button,
+  plain-English status and the 90-day simulation. See `site/README.md` for its one-time setup.
+
 ## Setup
 
 1. Create a free account at https://alpaca.markets and generate **paper**
@@ -51,6 +60,8 @@ An event-driven mode that reads live headlines for each symbol (Alpaca News
 API — same keys, no extra signup) and trades on them:
 
 1. **Reads news**: last `NEWS_LOOKBACK_HOURS` (24) of headlines per symbol.
+   Some companies' news sits under another ticker: Alpaca files Alphabet's under GOOG, so a bot trading
+   GOOGL also reads GOOG's headlines (`NEWS_ALIASES`, default `GOOGL:GOOG`).
 2. **Scores it**: a transparent finance keyword lexicon ("beats estimates",
    "downgrade", "investigation"…), with negation handling, weighted toward
    recent stories (`NEWS_HALF_LIFE_HOURS`, 6). A single headline is
