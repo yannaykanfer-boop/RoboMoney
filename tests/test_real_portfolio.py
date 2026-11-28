@@ -18,7 +18,15 @@ class ValuateTests(unittest.TestCase):
 
     def test_real_file_matches_greenlight_total(self):
         v = real_portfolio.valuate(real_portfolio.load(os.path.join(os.path.dirname(__file__), "..", "real_portfolio.json")), {}, {})
-        self.assertAlmostEqual(v["total"] - v["cash"], 838.14, places=2)
+        self.assertAlmostEqual(v["total"], 846.21, places=2)          # Greenlight, Nov 27 close
+        self.assertAlmostEqual(v["gain"], -22.77, places=2)           # Greenlight's all-time change
+
+    def test_realized_gain_counts_in_all_time_only(self):
+        port = dict(PORT, realized_gain=-10.0)
+        v = real_portfolio.valuate(port, {}, {})
+        self.assertAlmostEqual(v["gain"], 4.0 - 8.0 - 10.0)          # holdings' gains + past sales
+        self.assertAlmostEqual(v["total"], 240.34)                     # value is unaffected
+        self.assertAlmostEqual(v["since_snapshot"], 0.0)
 
 
 class TodayTests(unittest.TestCase):

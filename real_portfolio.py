@@ -54,8 +54,11 @@ def valuate(port, ref_prices, live_prices):
         total += value
         snap_total += h["value"]
         total_gain += value - cost
+    # Gains or losses already locked in by selling, so "All-time" matches Greenlight's figure.
+    realized = port.get("realized_gain", 0.0)
+    total_gain += realized
     return {"as_of": port.get("as_of"), "cash": port.get("cash", 0.0), "holdings": rows,
-            "total": round(total, 2), "gain": round(total_gain, 2),
+            "realized_gain": realized, "total": round(total, 2), "gain": round(total_gain, 2),
             "since_snapshot": round(total - snap_total, 2)}
 
 
