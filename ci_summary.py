@@ -13,7 +13,7 @@ if not os.path.exists(config.STATE_FILE):
 with open(config.STATE_FILE) as f:
     d = json.load(f)
 
-print(f"## Trading bot status\n")
+print("## Trading bot status\n")
 print(f"- Strategy: `{d.get('strategy', '?')}` | Paused: `{d.get('paused', False)}`")
 print(f"- Market open: `{d.get('market_open', False)}`")
 print(f"- Equity: ${d.get('equity', 0):,.2f} | Cash: ${d.get('cash', 0):,.2f}")

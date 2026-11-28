@@ -58,6 +58,22 @@ QUESTION_DAMPING = 0.3
 _PHRASES = sorted(_LEXICON, key=len, reverse=True)
 
 
+def news_symbols(symbol):
+    """The tickers to ask for news about when trading `symbol` (itself plus any NEWS_ALIASES)."""
+    return ",".join(dict.fromkeys([symbol] + config.NEWS_ALIASES.get(symbol.upper(), [])))
+
+
+def dedupe(articles):
+    """One copy of each article: a story tagged with both GOOGL and GOOG comes back twice."""
+    seen, out = set(), []
+    for a in articles:
+        key = a.get("id") or (a.get("t"), a.get("headline"))
+        if key not in seen:
+            seen.add(key)
+            out.append(a)
+    return out
+
+
 def score_text(text):
     """Score one headline/summary in [-1, 1]. 0 = neutral / no known keywords."""
     damping = QUESTION_DAMPING if "?" in (text or "") else 1.0

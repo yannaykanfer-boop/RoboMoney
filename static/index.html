@@ -118,7 +118,7 @@
   td{ padding:5px 0 5px 12px; font-size:12px; vertical-align:top; border-bottom:1px solid var(--grid); overflow-wrap:anywhere; }
   th:last-child,td:last-child{ padding-right:12px; }
   tr:last-child td{ border-bottom:none; }
-  .log th:nth-child(1){ width:58px; } .log th:nth-child(2){ width:66px; }
+  .log th:nth-child(1){ width:84px; } .log th:nth-child(2){ width:66px; }
   .log td:nth-child(1){ color:var(--faint); }
   .log .act{ font:700 11px var(--mono); margin-right:6px; }
   th.r,td.r{ text-align:right; }
@@ -531,12 +531,41 @@
     const ranRecently = d.updated_at && Date.now() / 1000 - d.updated_at < 6 * 3600;
     if(ranRecently && Object.keys(pos).length) parts.push(articles ? `On its last check it read ${articles} news article${articles === 1 ? '' : 's'} about its stocks.` : 'On its last check it found no news about its stocks.');
     parts.push(nToday ? `${nToday} trade${nToday === 1 ? '' : 's'} today.` : 'No trades today.');
-    if(d.bh_value != null){
+    if(d.bh_value != null && !trades.length){
+      // Don't give a bot that never traded credit for sitting in cash while prices fell (or blame it when they rose).
+      const hold = d.bh_value - d.total_budget;
+      parts.push(`It hasn't traded yet, so it hasn't made or lost anything. Just holding the same stocks would be ${usd(hold, true)}.`);
+    } else if(d.bh_value != null){
       const equity = d.real_equity ?? d.total_budget, diff = equity - d.bh_value;
       parts.push(Math.abs(diff) < 0.5 ? 'So far it\'s even with just holding the same stocks.'
         : `So far it's ${diff > 0 ? 'ahead of' : 'behind'} just holding the same stocks by ${usd(Math.abs(diff))}.`);
     }
     return parts.join(' ');
+  }
+
+  // The bot's decision notes in plain words (they're written for the log, not for people).
+  function plainWhy(why){
+    why = why || '';
+    const n = +(why.match(/from (\d+) article/) || [])[1] || 0;
+    const sc = parseFloat((why.match(/news score ([+-]?\d+\.\d+)/) || [])[1] || '0');
+    if(/stop-loss/.test(why)) return 'sold: the price fell to the stop-loss';
+    if(/trailing-stop/.test(why)) return 'sold: the price dropped back from its high';
+    if(/time-limit/.test(why)) return 'sold: held 3 trading days without strong news';
+    if(/news turned negative/.test(why)) return 'sold: the news turned negative';
+    if(/same news story/.test(why)) return 'skipped: the same story already drove another buy';
+    if(/buy blocked/.test(why)) return 'skipped: the price is falling hard right now';
+    if(/exposure cap/.test(why) && /hold/.test(why)) return 'skipped: enough money is already in stocks';
+    if(/already priced in/.test(why)) return 'good news, but the price already jumped';
+    if(/market disagrees/.test(why)) return 'good news, but the price is falling';
+    if(/BUY ~\$/.test(why) || /not yet priced in, buy/.test(why)) return 'good news the price hadn\u2019t reacted to yet';
+    if(/outside the|cooldown|daily limit/.test(why)) return 'signal ignored: ' + why.replace(/^.*signal (noted |ignored )?/, '').replace(/ —.*$/, '');
+    if(!n) return 'no news';
+    return `${n} headline${n === 1 ? '' : 's'}, news score ${sc >= 0 ? '+' : '\u2212'}${Math.abs(sc).toFixed(2)} (buys at +0.35)`;
+  }
+  // "17:08" for today, "Fri 17:08" for earlier days.
+  function runWhen(t){
+    const dt = new Date(t * 1000), today = new Date().toDateString() === dt.toDateString();
+    return (today ? '' : dt.toLocaleDateString([], {weekday:'short'}) + ' ') + hhmm(t);
   }
 
   // What to say when the bot hasn't logged any decisions yet.
@@ -603,7 +632,7 @@
       return `<div class="wl-row">
         <div class="line"><div><div class="sym">${esc(tk)}</div><div class="sub">${symTrades} trade${symTrades === 1 ? '' : 's'} · ${held ? p.qty.toFixed(3) + ' sh · ' + usd(p.value) : 'not holding'}</div></div>
           <span class="r">${usd(p.price || 0)}</span><span class="r ${cls(pl)}">${held ? usd(pl, true) : '$0.00'}</span><span class="r tag ${action[1]}">${action[0]}</span></div>
-        ${s ? `<details class="why-d" data-tk="${esc(tk)}"${openWhy.has(tk) ? ' open' : ''}><summary>details</summary><div class="why">${esc(s)}</div></details>` : '<div class="why">no signal yet</div>'}
+        ${s ? `<details class="why-d" data-tk="${esc(tk)}"${openWhy.has(tk) ? ' open' : ''}><summary>details</summary><div class="why">${esc(plainWhy(s))}</div></details>` : '<div class="why">no signal yet</div>'}
       </div>`;
     }).join('') || '<div class="empty">waiting for first run…</div>';
 
@@ -626,13 +655,30 @@
     $('stats').innerHTML = stats.map(([k, v]) => `<div class="stat"><span>${k}</span>${v}</div>`).join('');
 
     // execution log: every decision (buys, sells AND holds with the reason), newest first
-    const decs = (d.decisions || []).slice().reverse().slice(0, 24);
+    // One row per run in plain words; a buy or sell gets its own row, the holds share one.
+    const decs = d.decisions || [];
     let logRows;
     if(decs.length){
-      logRows = decs.map(x => {
-        const c = x.action === 'buy' ? 'up' : x.action === 'sell' ? 'down' : 'dim';
-        return `<tr><td class="n">${hhmm(x.t)}</td><td class="n">${esc(x.symbol)}</td>
-          <td><span class="act ${c}">${esc(x.action.toUpperCase())}</span><span class="dim">${esc(x.why)}</span></td></tr>`;
+      const runs = [];
+      for(const x of decs){ const r = runs[runs.length - 1]; if(r && r.t === x.t) r.items.push(x); else runs.push({t:x.t, items:[x]}); }
+      logRows = runs.slice(-10).reverse().flatMap(r => {
+        const when = runWhen(r.t), rows = [];
+        for(const x of r.items.filter(x => x.action !== 'hold'))
+          rows.push(`<tr><td class="n">${when}</td><td class="n">${esc(x.symbol)}</td>
+            <td><span class="act ${x.action === 'buy' ? 'up' : 'down'}">${esc(x.action.toUpperCase())}</span><span class="dim">${esc(plainWhy(x.why))}</span></td></tr>`);
+        const holds = r.items.filter(x => x.action === 'hold');
+        if(holds.length){
+          const reasons = [...new Set(holds.map(x => plainWhy(x.why)))];
+          const who = holds.length === r.items.length && holds.length > 1 ? `All ${holds.length}` : holds.map(x => esc(x.symbol)).join(', ');
+          // When every hold is just "news too weak", say that once and name the closest one.
+          const scored = holds.map(x => ({s:x.symbol, sc:parseFloat((x.why.match(/news score ([+-]?\d+\.\d+)/) || [])[1]), weak:/^(no news|\d+ headline)/.test(plainWhy(x.why))}));
+          const best = scored.filter(x => !isNaN(x.sc)).sort((a, b) => b.sc - a.sc)[0];
+          const why = reasons.length === 1 ? reasons[0] + (holds.length > 1 && /^no news/.test(reasons[0]) ? ' on any of them' : '')
+                    : scored.every(x => x.weak) ? `no strong news${best ? ` (best: ${best.s} ${best.sc >= 0 ? '+' : '−'}${Math.abs(best.sc).toFixed(2)}, buys at +0.35)` : ''}`
+                    : holds.map(x => `${x.symbol}: ${plainWhy(x.why)}`).join(' · ');
+          rows.push(`<tr><td class="n">${when}</td><td class="n">${who}</td><td><span class="act dim">HOLD</span><span class="dim">${esc(why)}</span></td></tr>`);
+        }
+        return rows;
       });
     } else {
       logRows = [...trades].reverse().slice(0, 16).map(t => {

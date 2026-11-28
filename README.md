@@ -5,6 +5,15 @@ real broker (Alpaca) instead of a simulated random walk. Defaults to **paper
 trading** (fake money, real prices) so you can watch it work before any real
 money is involved.
 
+## How it runs (no Terminal needed)
+
+- **GitHub Actions** runs one bot cycle per run (`.github/workflows/trade.yml`), in paper mode, and commits
+  the results to `state.json` for the dashboard. GitHub's own schedule for it is unreliable (it often runs
+  once a day, after the close), so:
+- **A Claude scheduled task** starts the workflow every hour on weekdays, 10:07 AM to 3:07 PM New York time.
+- **The control page** (https://robomoney-replay.vercel.app, source in `site/`) has a **Start bot** button,
+  plain-English status and the 90-day simulation. See `site/README.md` for its one-time setup.
+
 ## Setup
 
 1. Create a free account at https://alpaca.markets and generate **paper**
@@ -51,6 +60,8 @@ An event-driven mode that reads live headlines for each symbol (Alpaca News
 API — same keys, no extra signup) and trades on them:
 
 1. **Reads news**: last `NEWS_LOOKBACK_HOURS` (24) of headlines per symbol.
+   Some companies' news sits under another ticker: Alpaca files Alphabet's under GOOG, so a bot trading
+   GOOGL also reads GOOG's headlines (`NEWS_ALIASES`, default `GOOGL:GOOG`).
 2. **Scores it**: a transparent finance keyword lexicon ("beats estimates",
    "downgrade", "investigation"…), with negation handling, weighted toward
    recent stories (`NEWS_HALF_LIFE_HOURS`, 6). A single headline is
@@ -123,6 +134,38 @@ python desk_sim.py --synthetic           # made-up data, no keys: checks the plu
 On GitHub: **Actions → Desk sim → Run workflow**. It also runs on pull requests that change the
 bot. The report is on the run's Summary page. Fills are at the last 5-minute close, so real orders
 would do slightly worse, and past results don't predict future ones.
+
+## Crypto trend pullback (research, not live)
+
+`crypto_pullback.py` is a rule-based, long-only, no-leverage strategy for BTC/USD and ETH/USD with its own
+backtester. It never places orders.
+
+- **Stays flat unless** the higher-timeframe trend is up (close above EMA200, EMA50 above EMA200 and
+  rising), volatility is in a workable band, and there was no shock bar in the last 6 bars.
+- **Buys** a pullback to the EMA20 that held above the EMA50, once price closes back above the EMA20
+  and the previous bar's high, with RSI 40-65. The order fills at the **next** bar's open.
+- **Risk:** stop under the pullback low, sized so a stop-out loses 1% of equity including fees;
+  at most 50% of equity per position, 2 positions, no leverage; no new trades after a 3% losing day.
+- **Exits:** stop, take-profit at 2R, stop to break-even at +1R, a time limit, or a trend break.
+  If a bar touches both the stop and the target, the backtest counts the stop.
+- **No lookahead:** decisions use closed bars only; the trend filter uses the last *closed* higher-
+  timeframe bar. A test rewrites future prices and checks no earlier signal changes.
+- **Live orders:** Alpaca crypto accepts only simple orders (market, limit, stop_limit; gtc or ioc), no
+  bracket or OCO. `order_plan()` therefore puts a resting stop-limit on the exchange as soon as the
+  entry fills and has the script manage the take-profit, so the stop survives a disconnect.
+
+```bash
+python crypto_pullback.py --download            # ~5 years of hourly bars, no keys needed
+python crypto_pullback.py --version A           # 1H entries, 4H trend
+python crypto_pullback.py --version B           # 4H entries, daily trend
+```
+
+**Results, Jan 2022 to Nov 2026, 0.25% fee per side plus slippage: both versions lose.** Version A:
+-83.6% over 509 trades. Its stops sit about 1% away, so costs take about half the risk on every trade, and
+even with zero costs its entries matched coin-flip odds. Version B (fixed before it was run): -36.3% over
+127 trades, losing in every year it traded, though its trend filter kept it out of the 2022 crash
+entirely. Neither is fit for paper or real money as is. Change the rules only for a reason stated in
+advance, and never tune them until a backtest looks good.
 
 ## What this is and isn't
 

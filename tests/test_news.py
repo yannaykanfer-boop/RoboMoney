@@ -253,3 +253,15 @@ class ScorerFixTests(unittest.TestCase):
         self.assertLess(q, 0)
         self.assertGreater(q, -0.3)
         self.assertLess(abs(news.score_text("Should you buy Apple before it surges?")), 0.3)
+
+
+class NewsAliasTests(unittest.TestCase):
+    def test_googl_also_reads_goog_news(self):
+        self.assertEqual(config.NEWS_ALIASES.get("GOOGL"), ["GOOG"])        # the default
+        self.assertEqual(news.news_symbols("GOOGL"), "GOOGL,GOOG")
+        self.assertEqual(news.news_symbols("AAPL"), "AAPL")
+
+    def test_one_copy_of_each_story(self):
+        arts = [{"id": 1, "t": 1, "headline": "a"}, {"id": 1, "t": 1, "headline": "a"},
+                {"id": None, "t": 2, "headline": "b"}, {"id": None, "t": 2, "headline": "b"}, {"id": 2, "t": 3, "headline": "c"}]
+        self.assertEqual([a["headline"] for a in news.dedupe(arts)], ["a", "b", "c"])

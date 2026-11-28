@@ -253,11 +253,11 @@ def fetch(symbols, days):
                 rows.append((b.timestamp.timestamp() + BAR_MINUTES * 60, float(b.close)))  # bar END time
         bars[sym] = rows
         # Same lookback padding as the live bot, so the first checks have news to look at.
-        nreq = NewsRequest(symbols=sym, start=start - timedelta(hours=config.NEWS_LOOKBACK_HOURS),
+        nreq = NewsRequest(symbols=news.news_symbols(sym), start=start - timedelta(hours=config.NEWS_LOOKBACK_HOURS),
                            end=end, limit=None)
         raw = news_client.get_news(nreq).data.get("news", [])
-        articles[sym] = sorted(({"id": getattr(a, "id", None), "t": a.created_at.timestamp(),
-                                 "headline": a.headline or "", "summary": a.summary or ""} for a in raw),
+        articles[sym] = sorted(news.dedupe([{"id": getattr(a, "id", None), "t": a.created_at.timestamp(),
+                                             "headline": a.headline or "", "summary": a.summary or ""} for a in raw]),
                                key=lambda a: a["t"])
         print(f"  {sym}: {len(rows)} price bars, {len(articles[sym])} headlines")
     return bars, articles

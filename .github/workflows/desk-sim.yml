@@ -9,6 +9,10 @@ on:
       days:
         description: "Days of history to replay"
         default: "90"
+      export_data:
+        description: "Also download candidate stocks and crypto, and put the history in the log (for building the replay page)"
+        type: boolean
+        default: false
   pull_request:
     paths:
       - agents.py
@@ -47,9 +51,13 @@ jobs:
           ALPACA_SECRET_KEY: ${{ secrets.ALPACA_SECRET_KEY }}
           ALPACA_PAPER: "true"
           DAYS: ${{ github.event.inputs.days || '90' }}
+          EXPORT: ${{ github.event.inputs.export_data || 'false' }}
         run: |
-          # --print-data puts the compressed history in this log (stderr, not the summary) so the
-          # simulator page can be built from it.
-          python desk_sim.py --days "$DAYS" --compare --print-data \
-            --extra-symbols GOOG,MSFT,AMZN,META,TSLA,AMD,BTC/USD,ETH/USD,SOL/USD | tee sim.txt
+          # Only when asked: extra symbols, and the compressed history in this log (stderr, not the
+          # summary) so the replay page can be rebuilt from it.
+          EXTRA=""
+          if [ "$EXPORT" = "true" ]; then
+            EXTRA="--print-data --extra-symbols GOOG,MSFT,AMZN,META,TSLA,AMD,BTC/USD,ETH/USD,SOL/USD"
+          fi
+          python desk_sim.py --days "$DAYS" --compare $EXTRA | tee sim.txt
           { echo '## Trading desk sim'; echo '```'; cat sim.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

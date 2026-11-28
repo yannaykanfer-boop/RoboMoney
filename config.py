@@ -92,6 +92,12 @@ NEWS_SELL_THRESHOLD = float(os.getenv("NEWS_SELL_THRESHOLD", "-0.25"))
 NEWS_MAX_RUNUP_PCT = float(os.getenv("NEWS_MAX_RUNUP_PCT", "1.5"))   # already moved this much = "priced in"
 NEWS_PRICE_WINDOW_BARS = int(os.getenv("NEWS_PRICE_WINDOW_BARS", "60"))  # minute bars used for the run-up check
 
+# Extra tickers to read news under. Alpaca files Alphabet's news under GOOG, not GOOGL, so a bot
+# trading GOOGL saw no headlines at all. Format: TRADED:EXTRA[|EXTRA2],... ("GOOGL:GOOG").
+NEWS_ALIASES = {k.strip().upper(): [x.strip().upper() for x in v.split("|") if x.strip()]
+                for k, _, v in (p.partition(":") for p in os.getenv("NEWS_ALIASES", "GOOGL:GOOG").split(","))
+                if k.strip() and v.strip()}
+
 # Kelly sizing (news strategy). Uses the bot's own realized win rate/payoff, shrunk
 # toward a conservative prior until it has real history. Fractional Kelly (0.25 = quarter
 # Kelly) because full Kelly on a noisy edge estimate is a fast way to blow up.
