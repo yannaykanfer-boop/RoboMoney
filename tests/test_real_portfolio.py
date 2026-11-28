@@ -80,3 +80,31 @@ class BuyAndHoldTests(unittest.TestCase):
         self.assertAlmostEqual(v, 100 + 330 + 190)
         self.assertIsNone(state.buy_and_hold_value(stakes, 600.0, {"A": 50}, {"A": 55, "B": 19}))
         self.assertIsNone(state.buy_and_hold_value(stakes, 600.0, None, {"A": 55, "B": 19}))
+
+
+class FakeBroker:
+    """Snapshot close $100; the last 5-minute bar is $101.90; the official close is $102."""
+    def __init__(self, market_open):
+        self.open = market_open
+    def is_market_open(self): return self.open
+    def close_on_or_before(self, sym, day): return 100.0 if str(day) == "2026-11-26" else 102.0
+    def session_bars(self, sym):
+        from datetime import date
+        return date(2026, 11, 27), [(1, 101.0), (2, 101.9)], 100.0
+
+
+class UpdatePricesTests(unittest.TestCase):
+    def run_update(self, market_open):
+        import logging
+        from unittest import mock
+        port = {"as_of": "2026-11-26", "cash": 0.0, "holdings": {"QQQ": {"value": 1000.0, "gain": 0.0}}}
+        with mock.patch.object(real_portfolio, "load", lambda path=None: port), \
+             mock.patch.object(real_portfolio, "load_history", lambda path=None: []):
+            res, _ = real_portfolio.update(FakeBroker(market_open), {}, logging.getLogger("t"))
+        return res
+
+    def test_after_the_close_uses_the_official_close(self):
+        self.assertAlmostEqual(self.run_update(False)["total"], 1020.0)    # 1000 x 102/100
+
+    def test_while_open_uses_the_latest_bar(self):
+        self.assertAlmostEqual(self.run_update(True)["total"], 1019.0)     # 1000 x 101.9/100
